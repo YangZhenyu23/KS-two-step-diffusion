@@ -1,0 +1,258 @@
+{
+  "schema": "ks_generated_training_v1",
+  "protocol": {
+    "schema": "particle_pipeline_v1",
+    "model_id": "ks3d_mainv2_current_gradient_regularized_3d_kernel_v1",
+    "name": "ks3d",
+    "dimension": 3,
+    "family": "ks",
+    "dt": 0.005,
+    "generations": 4096,
+    "final_time": 0.02,
+    "lam": 2.0,
+    "theta": 1.0,
+    "reaction_rate": 1.0,
+    "resample_every": 1,
+    "mu": 1.0,
+    "chi": 50.26548245743669,
+    "delta": 0.1,
+    "flow_amplitude": 1.0,
+    "n_train": 15000,
+    "n_eval": 10000,
+    "level_definition": "sigma=advection amplitude",
+    "boundary": "R^d",
+    "phase": null,
+    "potential": null,
+    "eigenvalue": null,
+    "resampler": null
+  },
+  "recipes": {
+    "training_initial": "Torch CPU unit_ball, seed88, shared across eight conditions",
+    "training_noise": "Continuous NumPy RandomState(88), 4 full (15000,3) normal draws per condition",
+    "native_eval": "Independent Torch unit_ball and NumPy RandomState, both seed999+1009*i",
+    "accuracy_reference": "Torch unit_ball seed2026100902+sigma; NumPy RandomState seed2026100903+sigma",
+    "accuracy_source": "New native-eval source prefix + 90000 Torch unit_ball points seed2026100901+sigma",
+    "historical_initial_identity": "15000-point initial cloud verified bitwise from seed88",
+    "historical_target_identity": "First 15000-point target verified bitwise; other seven conditions require independent comparison",
+    "native_eval_difference": "Original RNG sequence unavailable; explicit new fixed-seed realization"
+  },
+  "train_levels": [
+    15.0,
+    20.84243392944336,
+    28.960464477539062,
+    40.240440368652344,
+    55.913902282714844,
+    77.69212341308594,
+    107.95283508300781,
+    150.0
+  ],
+  "eval_levels": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130,
+    140,
+    150,
+    160,
+    170,
+    180,
+    190,
+    200
+  ],
+  "generator_sha256": {
+    "paper_reproduction/ks_data.py": "6cf906cf1a1bf6cb1ce95b487d34c3ab58cdd8175e3f74ec8b4045b5e283fe31",
+    "deepparticle/training/protocol.py": "7991789493e13f518fa097f9251dbddb11260ac683627250f867a57cb56f2809",
+    "deepparticle/training/core.py": "efefc6c6c6c97fcbbd3cc2c8791edb3995c6728c2f9e2a15f1ce893c2ec73d2c",
+    "deepparticle/particle_pipeline/physics.py": "a8a708f38478e8d33ce30d053b832dea220f177ed02aa96e635a42c98d4c5f2f",
+    "deepparticle/particle_pipeline/protocol.py": "6a1572aac766594a5fd4ceca77e39c510bd7b9f4752802320ce6536400a3a7d8"
+  },
+  "purpose": "paper",
+  "backend": {
+    "device": "cuda",
+    "numpy": "2.2.5",
+    "torch": "2.8.0+cu129"
+  },
+  "signature": "97641ad0fee95eaeed93ab0d1f1b6c55b5478aa4fbd0f148f6d86d3ebd13c2e9",
+  "status": "complete",
+  "train": [
+    {
+      "level": 15.0,
+      "parameter": 15.0,
+      "file": "clouds/train_00.npz",
+      "sha256": "f4cf1a6c8057327cacb3f96df3396b9f37951b717e6b3be5662fc4314083a038"
+    },
+    {
+      "level": 20.84243392944336,
+      "parameter": 20.84243392944336,
+      "file": "clouds/train_01.npz",
+      "sha256": "ad3f1afe3012b12ea71c4979f2c6247963be623bd1fd424d3401e3a527dd0066"
+    },
+    {
+      "level": 28.960464477539062,
+      "parameter": 28.960464477539062,
+      "file": "clouds/train_02.npz",
+      "sha256": "cfa5faba1a64d5fba2a428399711c45f2e433471998f67d210e6fd4d4a59f4ec"
+    },
+    {
+      "level": 40.240440368652344,
+      "parameter": 40.240440368652344,
+      "file": "clouds/train_03.npz",
+      "sha256": "536b65b2f1f4706ebbacb09fc612ba5a25503c00253a9ab3657249c4ab908a0e"
+    },
+    {
+      "level": 55.913902282714844,
+      "parameter": 55.913902282714844,
+      "file": "clouds/train_04.npz",
+      "sha256": "33c69d32bf35a1e4b7f0ff600e301f9324ff26122e0fff91b5d749647093bd95"
+    },
+    {
+      "level": 77.69212341308594,
+      "parameter": 77.69212341308594,
+      "file": "clouds/train_05.npz",
+      "sha256": "f528a9db88ee1c7fc4d9cdbeb2f944eb183adad4beddab1c81412de5fa00cda3"
+    },
+    {
+      "level": 107.95283508300781,
+      "parameter": 107.95283508300781,
+      "file": "clouds/train_06.npz",
+      "sha256": "1d97afa1ea180b2976c68b394c41ded4ef534c5f36c11d68c4c9f24a0c973172"
+    },
+    {
+      "level": 150.0,
+      "parameter": 150.0,
+      "file": "clouds/train_07.npz",
+      "sha256": "e7fe35c5aae8c962f35f6628e4e9737b1d22ad61a248bfc71e613ec940ba94c9"
+    }
+  ],
+  "eval": [
+    {
+      "level": 10.0,
+      "parameter": 10.0,
+      "file": "clouds/eval_00.npz",
+      "sha256": "12e082a0ff600ab96e7121a883ba7f2c08f50390bfd58011adadf08c15b293b4"
+    },
+    {
+      "level": 20.0,
+      "parameter": 20.0,
+      "file": "clouds/eval_01.npz",
+      "sha256": "a3992568144cfecd3e7a90f7f9d458b821f00542aac78001ac8a1e2c86f59579"
+    },
+    {
+      "level": 30.0,
+      "parameter": 30.0,
+      "file": "clouds/eval_02.npz",
+      "sha256": "42fd87c0ad53f0aea809285412fe3ab6fe0f131f818b20af7c438b638eb4ffe4"
+    },
+    {
+      "level": 40.0,
+      "parameter": 40.0,
+      "file": "clouds/eval_03.npz",
+      "sha256": "9de80a677476d6ef2165a02f5a53980517adee5bd66a4f159a7bb49eda3549ad"
+    },
+    {
+      "level": 50.0,
+      "parameter": 50.0,
+      "file": "clouds/eval_04.npz",
+      "sha256": "c025d93ef4c15e65af594874477bc46d4ebf6ef53ba2d2fde527e6ef4cd00e81"
+    },
+    {
+      "level": 60.0,
+      "parameter": 60.0,
+      "file": "clouds/eval_05.npz",
+      "sha256": "909c6fcd92a7bc0e06b9982e7e49908fdbb6a3f8242daa89dbafa95fc250df1b"
+    },
+    {
+      "level": 70.0,
+      "parameter": 70.0,
+      "file": "clouds/eval_06.npz",
+      "sha256": "d8d70c485dbf4dc2752b268422962d81e068236c5a6d785f929754cc62dec9a4"
+    },
+    {
+      "level": 80.0,
+      "parameter": 80.0,
+      "file": "clouds/eval_07.npz",
+      "sha256": "a767b30aa5b45aee994444c1a82a3c7b90b69cc82c11babb91db02b64450ad8d"
+    },
+    {
+      "level": 90.0,
+      "parameter": 90.0,
+      "file": "clouds/eval_08.npz",
+      "sha256": "3ed9db8a061a4873aaa5a793809a1f12e8a4d2b9dff93de8d2ea378ae37db643"
+    },
+    {
+      "level": 100.0,
+      "parameter": 100.0,
+      "file": "clouds/eval_09.npz",
+      "sha256": "69109e2d33d04402c836d91ff5541edf70a2935ef528476ac3f42794785c15d9"
+    },
+    {
+      "level": 110.0,
+      "parameter": 110.0,
+      "file": "clouds/eval_10.npz",
+      "sha256": "91e14fb9c117d18761addc6ec57d5e7358bd546521dde9d1bcadff7ea72aa224"
+    },
+    {
+      "level": 120.0,
+      "parameter": 120.0,
+      "file": "clouds/eval_11.npz",
+      "sha256": "a6a659c71f55daac616a4cc6a4bc690b2acc2c885cbae4904ea2527b905bf142"
+    },
+    {
+      "level": 130.0,
+      "parameter": 130.0,
+      "file": "clouds/eval_12.npz",
+      "sha256": "ed6ec2a30010b40d8efc2727de7d91b038e8da11a0769852cc48aa573e53ca47"
+    },
+    {
+      "level": 140.0,
+      "parameter": 140.0,
+      "file": "clouds/eval_13.npz",
+      "sha256": "875709bebf6155e016b015952064866ff62cec6a4f9be5fa6dfddde4b8925d94"
+    },
+    {
+      "level": 150.0,
+      "parameter": 150.0,
+      "file": "clouds/eval_14.npz",
+      "sha256": "cfbd06887f77810269ee1d27a273e2a224112bda1d6a7f45e94b77fb1d73164d"
+    },
+    {
+      "level": 160.0,
+      "parameter": 160.0,
+      "file": "clouds/eval_15.npz",
+      "sha256": "d72b707c05649f6c5d9d105f77824d2afbc11bcb93b5292f11364e0e523f10b2"
+    },
+    {
+      "level": 170.0,
+      "parameter": 170.0,
+      "file": "clouds/eval_16.npz",
+      "sha256": "31a8419a63a7ef210226d211298f0313d670b353f33f130b6d58929f36a76de5"
+    },
+    {
+      "level": 180.0,
+      "parameter": 180.0,
+      "file": "clouds/eval_17.npz",
+      "sha256": "1bcdd28b8f6f50a096803ef368871a417893fdc18526cdcd506d35cde06fd77c"
+    },
+    {
+      "level": 190.0,
+      "parameter": 190.0,
+      "file": "clouds/eval_18.npz",
+      "sha256": "36ed0da43175ebd67e6907132f1085596b13948a3d41db24c3beff98ec8d4f2c"
+    },
+    {
+      "level": 200.0,
+      "parameter": 200.0,
+      "file": "clouds/eval_19.npz",
+      "sha256": "c1fa9b188f7bbe73f266882b1654307b624b933a74f9a64e32e89174801f487a"
+    }
+  ]
+}

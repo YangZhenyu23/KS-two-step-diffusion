@@ -1,0 +1,5 @@
+model,method,scope,particles,seeds,repeats_per_seed,gpu_resident_mean,gpu_resident_sd
+ks3d,dp,gpu_resident,100000,3,40,4.3033166669677785,0.29869344847189266
+ks3d,mf,gpu_resident,100000,3,40,4.511333332933039,0.309052044192883
+ks3d,mf_dp,gpu_resident,100000,3,40,7.663983332956074,0.3925540098152207
+ks3d,mf_two_step,gpu_resident,100000,3,40,7.719949999530702,0.2902762002811472

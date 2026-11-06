@@ -1,0 +1,13 @@
+{
+  "schema": "ks_evaluation_v1",
+  "models": [
+    "ks3d"
+  ],
+  "generated": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\generated",
+  "generation_sha256": "27b66d27eade21ef14dde1f251f1c8408c1dd5957022c52aeaa76ff08c6e569a",
+  "workers": 4,
+  "particles": 100000,
+  "bins_per_axis": 16,
+  "physical_simulation_executed": false,
+  "model_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\training\\ks_kpp"
+}

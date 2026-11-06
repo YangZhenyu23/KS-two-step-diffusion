@@ -1,0 +1,13 @@
+model,method,scope,seed,median_ms,repeats
+ks3d,dp,gpu_resident,88,4.269450000720099,40
+ks3d,dp,gpu_resident,89,4.617500000676955,40
+ks3d,dp,gpu_resident,90,4.022999999506283,40
+ks3d,mf,gpu_resident,88,4.4357999995554565,40
+ks3d,mf,gpu_resident,89,4.8511499999222,40
+ks3d,mf,gpu_resident,90,4.247049999321462,40
+ks3d,mf_dp,gpu_resident,88,7.705549999627692,40
+ks3d,mf_dp,gpu_resident,89,8.034099999349564,40
+ks3d,mf_dp,gpu_resident,90,7.252299999890965,40
+ks3d,mf_two_step,gpu_resident,88,7.728799999313196,40
+ks3d,mf_two_step,gpu_resident,89,8.005699999557692,40
+ks3d,mf_two_step,gpu_resident,90,7.42534999972122,40

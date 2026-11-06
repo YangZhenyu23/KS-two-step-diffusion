@@ -1,0 +1,7 @@
+{
+  "pid": 45768,
+  "elapsed_seconds": 163.3670745999989,
+  "stage": "training_replay",
+  "model": "ks3d",
+  "seed": 90
+}

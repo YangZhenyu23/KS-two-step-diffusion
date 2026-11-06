@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "type": "fresh_result_figures",
+  "status": "complete",
+  "results": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation",
+  "stages": [
+    "ks"
+  ],
+  "figure_count": 2,
+  "figures": [
+    "ks/ks3d_w2.pdf",
+    "selected_dp_results_20261017/dplus1_ks3d_projection_20261016.pdf"
+  ],
+  "input_sha256": {
+    "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\reproduction_results.json": "034c1285d5b61351f95e2ac1387e8c197369ebc47bba3d9d16c50c1df3c9a687",
+    "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\verification.json": "dbc851b37c0664d05ce86c9306b99bb039d20bca9caf5588ef73ccb75d643f3c",
+    "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\summary.csv": "217daf982e0b137cb6f2d9c55ce15621f568e6bd299e03786706d933115a3d7d",
+    "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\metrics_per_seed.csv": "c30d132fd92d73b883d9c0600822c3607ee8e57dcecd2ea1851fadb17018d3c3",
+    "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\generated\\clouds\\ks3d\\sigma160.json": "77016da689c719babefa308baaf4db17d8ffb5b480bec4ec6e3d8481f4b7148f",
+    "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\generated\\clouds\\ks3d\\sigma160.npz": "1339fd32e9e40995bb7e748f6846e9e42111f8449719bbe5803701808c3f8100"
+  },
+  "producer_manifests": {
+    "ks": {
+      "status": "passed",
+      "models": [
+        "ks3d"
+      ],
+      "destination": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks",
+      "rows": 180,
+      "cases": 20,
+      "particles": 100000,
+      "bins_per_axis": 16,
+      "summary": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\summary.csv",
+      "metrics_per_seed": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\metrics_per_seed.csv",
+      "max_historical_w2_difference": 0.006624607883993494,
+      "historical_values_match": false,
+      "historical_difference_is_failure": false,
+      "all_mass_retained": true,
+      "max_marginal_residual": 1.74122868901172e-16,
+      "max_primal_dual_gap": 1.7280621378290562e-12,
+      "schema": "ks_evaluation_v1",
+      "generated": "generated",
+      "clouds_root": "generated/clouds",
+      "model_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\training\\ks_kpp",
+      "workers": 4,
+      "data_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data\\ks",
+      "elapsed_seconds": 63.595966099999714,
+      "physical_simulation_executed": false
+    }
+  },
+  "frozen_result_fallback": false
+}

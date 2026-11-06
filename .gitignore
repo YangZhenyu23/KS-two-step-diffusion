@@ -1,0 +1,36 @@
+# ---- 大体积数值产物：不入库，按 docs/REPRODUCTION.md 重跑生成 ----
+*.npz
+*.npy
+repro_ks3d/
+original papers/
+.venv-analysis/
+.venv-gpu/
+
+# ---- 本地原始目录：内容已归档到 upstream/ 与 docs/ ----
+MF-DeepParticle/
+future work/
+
+# ---- 保留的小体积结果（指标 JSON/CSV、图、manifest）不受影响 ----
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- 本地环境与编辑器 ----
+.venv/
+venv/
+.vscode/
+.idea/
+*.swp
+
+# ---- 操作系统 ----
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---- 临时与日志 ----
+*.log
+*.tmp

@@ -1,0 +1,22 @@
+{
+  "origin": [
+    -0.23611797392368317,
+    -1.5624663829803467,
+    -1.613221526145935
+  ],
+  "widths": [
+    0.28662286046892405,
+    0.19707846641540527,
+    0.20837216824293137
+  ],
+  "base_bins_per_axis": 16,
+  "dimension": 3,
+  "reference_particles": 100000,
+  "cloud_sha256": "3fee48ffa43679015a9902f85180e9b5af4663bcacb8de5edd4a064d06fd1cf7",
+  "occupied_bins": {
+    "reference": 1694,
+    "seed88_mf_two_step": 779,
+    "seed89_mf_two_step": 856,
+    "seed90_mf_two_step": 852
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "status": "complete",
+  "models": [
+    "ks3d"
+  ],
+  "paths": {
+    "multistep": "."
+  }
+}

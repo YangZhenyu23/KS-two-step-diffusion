@@ -1,0 +1,70 @@
+{
+  "ks3d": {
+    "88": {
+      "mf": {
+        "file": "training_replay/ks3d/seed88/mf.pt",
+        "sha256": "de0fd92d87636646c4d87de1e4abafdf5454a9e1a9b764d2754f5b6c9e7014f7",
+        "step": 1000
+      },
+      "mf_init": {
+        "file": "training_replay/ks3d/seed88/mf_init.pt",
+        "sha256": "8aa9b5734c70105549e6dd06a5f2438bddc7af2d80adc9bc0d973ebee90d5a38",
+        "step": 500
+      },
+      "dp": {
+        "file": "training_replay/ks3d/seed88/dp.pt",
+        "sha256": "e4b7590821ab7cb8b758ddd8aa7bfeb54dd1989072129368265b679bbb6b00cc",
+        "step": 1000
+      },
+      "mf_dp": {
+        "file": "training_replay/ks3d/seed88/mf_dp.pt",
+        "sha256": "efc57ec4061bbe7146b44d35f2a2532615a4f5021ec7f7743b85a99a61d868f7",
+        "step": 500
+      }
+    },
+    "89": {
+      "mf": {
+        "file": "training_replay/ks3d/seed89/mf.pt",
+        "sha256": "c7d256f9ff98ddcc5297d14cf0a125c828218023e9b586ec443088cf027181a1",
+        "step": 1000
+      },
+      "mf_init": {
+        "file": "training_replay/ks3d/seed89/mf_init.pt",
+        "sha256": "6a47fdeb11ede30deb6a966426b26cb71df3ee4cf631f146e1a7a14f32a7ced7",
+        "step": 500
+      },
+      "dp": {
+        "file": "training_replay/ks3d/seed89/dp.pt",
+        "sha256": "da55bbaea4beca7b493c2f18a9824b18d1053169526d45426c149757d9814314",
+        "step": 1000
+      },
+      "mf_dp": {
+        "file": "training_replay/ks3d/seed89/mf_dp.pt",
+        "sha256": "e18f87816208eec4b86fa331b271f75ce1fa919d3334e24223b1c42fa17c1c0f",
+        "step": 500
+      }
+    },
+    "90": {
+      "mf": {
+        "file": "training_replay/ks3d/seed90/mf.pt",
+        "sha256": "8468948676752fd37ae8b7794a1b9a7e48eeede638ef4bb0371e505f6824d9c2",
+        "step": 1000
+      },
+      "mf_init": {
+        "file": "training_replay/ks3d/seed90/mf_init.pt",
+        "sha256": "70436a9547066cb45e0ac97b87676caba63ff181feb3a075e060ce2999f809fa",
+        "step": 500
+      },
+      "dp": {
+        "file": "training_replay/ks3d/seed90/dp.pt",
+        "sha256": "9746353dd84b4084268be1cd237ace25f38a22971fc51451eec3f5b58a4bc8e0",
+        "step": 1000
+      },
+      "mf_dp": {
+        "file": "training_replay/ks3d/seed90/mf_dp.pt",
+        "sha256": "4857dda2c1964c8ad302ba60736e823f4efc8e8e06e473275328ce12f3f387b3",
+        "step": 500
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "models": [
+    "ks3d"
+  ],
+  "seeds": [
+    88,
+    89,
+    90
+  ],
+  "datasets": {
+    "ks3d": {
+      "path": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data\\ks\\datasets\\ks3d",
+      "signature": "97641ad0fee95eaeed93ab0d1f1b6c55b5478aa4fbd0f148f6d86d3ebd13c2e9",
+      "manifest_sha256": "9f05c7ab6cbc099fe756f3babeef0b41cca7c8a9ddea421a501de32a71a202c2"
+    }
+  },
+  "adopted_checkpoint_sha256": {},
+  "settings": {
+    "mf_steps": 500,
+    "dp_steps": 500,
+    "mf_lr": 0.001,
+    "dp_lr": 0.0001,
+    "width": 64,
+    "mf_width": 64,
+    "mf_hidden_layers": 3,
+    "dp_blocks": 4,
+    "alpha": 0.1,
+    "hybrid_alpha": 10.0,
+    "residual_weight": 0.1,
+    "profile": "original_tuned",
+    "batch_size": 2000,
+    "batch_refresh": 500,
+    "ot_refresh": 500,
+    "seeds": [
+      88,
+      89,
+      90
+    ],
+    "device": "cuda"
+  },
+  "physical_data": "newly_generated",
+  "data_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data",
+  "checkpoint_verification": "Finite parameters, protocol, architecture, step, dataset identity and file hash",
+  "historical_comparison_performed": false,
+  "strict_replay": false,
+  "python": "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+  "torch": "2.8.0+cu129"
+}

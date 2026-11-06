@@ -1,0 +1,49 @@
+{
+  "schema": "ks_generation_v1",
+  "status": "running",
+  "models": [
+    "ks3d"
+  ],
+  "destination": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\evaluation\\ks\\generated",
+  "clouds_root": "clouds",
+  "particles": 100000,
+  "bins_per_axis": 16,
+  "seeds": [
+    88,
+    89,
+    90
+  ],
+  "levels": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130,
+    140,
+    150,
+    160,
+    170,
+    180,
+    190,
+    200
+  ],
+  "methods": [
+    "mf",
+    "dp",
+    "mf_dp"
+  ],
+  "model_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\training\\ks_kpp",
+  "data_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data\\ks",
+  "physical_data_manifest_sha256": "cfe98eeaaeaffe86d4731e1c20b1e8da82f8f2bb7427b9e7b0a25c190dff3243",
+  "physical_simulation_executed": false,
+  "checkpoints": [],
+  "cases": []
+}

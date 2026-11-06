@@ -1,0 +1,20 @@
+{
+  "model": "ks3d",
+  "level": 140,
+  "seed": 88,
+  "method": "mf_two_step",
+  "particles": 100000,
+  "dimension": 3,
+  "bins_per_axis": 16,
+  "metric": "full_dimensional_exact_histogram_W2",
+  "w2": 0.30117234582354446,
+  "w2_squared": 0.09070478188885667,
+  "reference_occupied_bins": 1694,
+  "generated_occupied_bins": 779,
+  "solver_result_code": 1,
+  "marginal_residual": 4.336808689942018e-18,
+  "primal_dual_gap": 4.135580766728708e-15,
+  "transport_nonzeros": 2464,
+  "seconds": 0.4269523000002664,
+  "solver": "POT dense exact network simplex"
+}

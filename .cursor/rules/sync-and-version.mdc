@@ -1,0 +1,48 @@
+---
+description: 本仓库是本地为主、GitHub 为版本存档的复现仓库。每次改代码/结果/文档后必须登记 CHANGELOG 并同步推送。
+alwaysApply: true
+---
+
+# 同步与版本纪律
+
+## 硬性要求
+
+改完任何文件后，**同一轮对话内**完成这三步：
+
+1. 在 `CHANGELOG.md` 的 `[Unreleased]` 下按 `新增 / 变更 / 修复 / 移除 / 复现` 分类登记
+2. 执行 `.\scripts\sync.ps1 -Message "<类型>: <做了什么>"`
+3. 报告 commit hash 与推送结果
+
+提交信息必须是中文，并以类型前缀开头：`新增:` `变更:` `修复:` `移除:` `复现:` `文档:`。
+例如：`复现: 重跑 sigma=10 后 W2 从 0.3411 变为 0.3402`
+
+## 禁止入库
+
+`.gitignore` 已排除，**不要**用 `git add -f` 绕过：
+
+- `*.npz` `*.npy` — 粒子云（371 MB）
+- `repro_ks3d/` — 原始产物目录（用 `results/ks3d/` 的精选副本代替）
+- `.venv-analysis/` `.venv-gpu/` — 虚拟环境（8.3 GB）
+- `original papers/` — 原论文 PDF
+
+需要新增数据文件时，先确认 `< 5 MB`，且优先存"指标 + manifest（含 SHA256）"而不是原始数组。
+
+## 结果数值变化时
+
+1. 重跑 `python results/ks3d/analyze.py --run <run_dir> --out results/ks3d/analysis`
+2. 确认 `comparison.md` 里的最大偏差仍可接受
+3. 在 CHANGELOG 记下新的偏差数字
+4. 若结论发生变化（例如"复现成功"变成"未复现"），必须同时更新 `README.md` 的三步结论表
+
+## 提交前自检
+
+```powershell
+git status --porcelain          # 有没有遗漏
+git diff --cached --stat        # 暂存了什么
+.\scripts\sync.ps1 -DryRun      # 预览，不实际提交
+```
+
+## 上游代码
+
+`upstream/MF-DeepParticle/` 是**只读快照**，用于追溯复现时的上游状态。
+不要修改其中任何文件；如需改上游逻辑，复制到仓库根目录的新目录下改，并在 CHANGELOG 说明理由。

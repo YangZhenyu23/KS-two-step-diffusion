@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "models": [
+    "ks3d"
+  ],
+  "destination": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\multistep",
+  "rows": 60,
+  "cases": 20,
+  "particles": 100000,
+  "bins_per_axis": 16,
+  "summary": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\multistep\\summary.csv",
+  "metrics_per_seed": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\multistep\\metrics_per_seed.csv",
+  "max_historical_w2_difference": 0.002183331697602875,
+  "historical_values_match": false,
+  "historical_difference_is_failure": false,
+  "all_mass_retained": true,
+  "max_marginal_residual": 1.6252190565557711e-16,
+  "max_primal_dual_gap": 1.9096391135065005e-12,
+  "schema": "ks_multistep_v1",
+  "generated": ".",
+  "clouds_root": "clouds",
+  "model_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\training\\ks_kpp",
+  "workers": 4,
+  "schedule": [
+    [
+      1.0,
+      0.5
+    ],
+    [
+      0.5,
+      0.0
+    ]
+  ],
+  "data_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data\\ks",
+  "elapsed_seconds": 27.53186790000109,
+  "physical_simulation_executed": false
+}

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "status": "complete",
+  "models": [
+    "ks3d"
+  ],
+  "paths": {
+    "ks_kpp": "ks_kpp"
+  },
+  "results": {
+    "ks_kpp": {
+      "status": "passed",
+      "models": [
+        "ks3d"
+      ],
+      "destination": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\training\\ks_kpp",
+      "checkpoint_checks": 12,
+      "strict_replay": false,
+      "all_weights_bitwise_equal": null,
+      "historical_comparison_performed": false,
+      "data_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data",
+      "verification": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\training\\ks_kpp\\training_replay_verification.json",
+      "training_per_seed": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\training\\ks_kpp\\training_per_seed.csv"
+    }
+  },
+  "strict_replay": false,
+  "physical_reference_data": "generated",
+  "data_run": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data",
+  "data_run_sha256": "32c9b84f4ab300bd5d458de5b7cfe5655189fd89dc87fb74763c58e28771cd7c"
+}

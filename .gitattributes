@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+# PowerShell 脚本保留 CRLF，避免在 Windows 旧版 PowerShell 下出问题
+*.ps1 text eol=crlf
+
+# 文档统一 LF
+*.md text eol=lf
+*.json text eol=lf
+*.py text eol=lf

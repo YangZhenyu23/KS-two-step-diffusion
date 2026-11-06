@@ -1,0 +1,51 @@
+{
+  "file": "clouds/ks3d/sigma130.npz",
+  "sha256": "bfd7ade75b4e294476f76e1dcc4142b99a9f403a65120fb43d2d2948c9cf560c",
+  "schema": "ks_cloud_v1",
+  "model": "ks3d",
+  "level": 130,
+  "particles": 100000,
+  "dimension": 3,
+  "bins_per_axis": 16,
+  "protocol": {
+    "schema": "particle_pipeline_v1",
+    "model_id": "ks3d_mainv2_current_gradient_regularized_3d_kernel_v1",
+    "name": "ks3d",
+    "dimension": 3,
+    "family": "ks",
+    "dt": 0.005,
+    "generations": 4096,
+    "final_time": 0.02,
+    "lam": 2.0,
+    "theta": 1.0,
+    "reaction_rate": 1.0,
+    "resample_every": 1,
+    "mu": 1.0,
+    "chi": 50.26548245743669,
+    "delta": 0.1,
+    "flow_amplitude": 1.0,
+    "n_train": 15000,
+    "n_eval": 10000,
+    "level_definition": "sigma=advection amplitude",
+    "boundary": "R^d",
+    "phase": null,
+    "potential": null,
+    "eigenvalue": null,
+    "resampler": null
+  },
+  "schedule": [
+    [
+      1.0,
+      0.5
+    ],
+    [
+      0.5,
+      0.0
+    ]
+  ],
+  "reference_file": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data\\ks\\references\\ks3d\\sigma130.npz",
+  "reference_sha256": "fdf63dd1522c33f592e5c34b78ad3c876443bc18ccf72fcdfd06a44ef95a17e1",
+  "source_file": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\repro_ks3d\\data\\ks\\references\\ks3d\\sigma130.npz",
+  "source_sha256": "fdf63dd1522c33f592e5c34b78ad3c876443bc18ccf72fcdfd06a44ef95a17e1",
+  "physical_data_signature": "97641ad0fee95eaeed93ab0d1f1b6c55b5478aa4fbd0f148f6d86d3ebd13c2e9"
+}
