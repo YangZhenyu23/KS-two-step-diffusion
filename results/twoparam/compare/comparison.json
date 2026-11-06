@@ -1,0 +1,18 @@
+{
+  "A_single_param_slice": {
+    "single_param_mean_w2": 0.2722729807778558,
+    "single_param_max_w2": 0.6900765973482862
+  },
+  "B_lhs_ablation": {
+    "n_heldout": 80,
+    "one_param_mean_w2": 0.32159518926287306,
+    "two_param_mean_w2": 0.44815954853915424,
+    "mean_improvement": -0.1265643592762812,
+    "median_improvement": -0.15369705450176546,
+    "two_param_wins": 22,
+    "one_param_wins": 58,
+    "mean_relative_reduction": -0.6704853139140476,
+    "corr_improvement_vs_mu_distance": 0.14723264104982547
+  },
+  "n_train_cells": 20
+}

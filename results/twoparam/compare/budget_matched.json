@@ -1,0 +1,72 @@
+{
+  "protocol": {
+    "updates_per_cell": 400,
+    "single_param_steps": 4000,
+    "two_param_steps": 8000,
+    "single_param_cells": 10,
+    "two_param_cells": 20,
+    "particles": 15000,
+    "bins": 16,
+    "note": "Both models receive the same number of updates per training cell, so the comparison is not confounded by per-cell budget."
+  },
+  "slice": {
+    "label": "mu=1 slice (seen by single-param)",
+    "n_cells": 10,
+    "one_param_mean_w2": 0.1755854025953853,
+    "two_param_mean_w2": 0.22452162447122737,
+    "mean_improvement": -0.04893622187584208,
+    "median_improvement": -0.02271046336616879,
+    "relative_reduction": -0.2787032472660014,
+    "two_param_wins": 3,
+    "one_param_wins": 7,
+    "max_one_param_w2": 0.23984412303627262,
+    "max_two_param_w2": 0.36098434518798483,
+    "corr_improvement_vs_mu_distance": null
+  },
+  "heldout": {
+    "label": "held out from both models",
+    "n_cells": 72,
+    "one_param_mean_w2": 0.23832768030208415,
+    "two_param_mean_w2": 0.2749482680718531,
+    "mean_improvement": -0.03662058776976887,
+    "median_improvement": -0.011202686541529311,
+    "relative_reduction": -0.15365646039667635,
+    "two_param_wins": 32,
+    "one_param_wins": 40,
+    "max_one_param_w2": 0.6747461272311576,
+    "max_two_param_w2": 0.6588238307520206,
+    "corr_improvement_vs_mu_distance": 0.12784574267946172
+  },
+  "two_param_training": {
+    "checkpoint": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\results\\twoparam\\train\\lhs20_budget\\checkpoints\\mf_two_param.pt",
+    "checkpoint_sha256": "31e2c8a8b198a68540d540a2354cb0727f12e6996ee5f709f2bce9e796dfe3cd",
+    "steps": 8000,
+    "batch_size": 256,
+    "lr": 0.001,
+    "seconds": 65.61320559999876,
+    "cells": [
+      "s00_m02",
+      "s00_m05",
+      "s01_m04",
+      "s01_m07",
+      "s02_m02",
+      "s02_m05",
+      "s03_m01",
+      "s03_m09",
+      "s04_m04",
+      "s04_m08",
+      "s05_m03",
+      "s05_m06",
+      "s06_m00",
+      "s06_m08",
+      "s07_m03",
+      "s07_m06",
+      "s08_m00",
+      "s08_m07",
+      "s09_m01",
+      "s09_m09"
+    ],
+    "final_loss": 0.12765997648239136,
+    "seed": 88
+  }
+}

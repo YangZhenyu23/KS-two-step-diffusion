@@ -1,0 +1,36 @@
+{
+  "n_heldout": 72,
+  "runs": [
+    {
+      "updates_per_cell": 200,
+      "one_steps": 2000,
+      "two_steps": 4000,
+      "one_heldout_w2": 0.26201438080855,
+      "two_heldout_w2": 0.24598921870287407,
+      "better": "two",
+      "two_param_loss": 0.23824819922447205,
+      "two_param_seconds": 31.98787640000046
+    },
+    {
+      "updates_per_cell": 600,
+      "one_steps": 6000,
+      "two_steps": 12000,
+      "one_heldout_w2": 0.22596165383298317,
+      "two_heldout_w2": 0.1826786440474603,
+      "better": "two",
+      "two_param_loss": 0.08037641644477844,
+      "two_param_seconds": 97.48906990000069
+    },
+    {
+      "updates_per_cell": 1500,
+      "one_steps": 15000,
+      "two_steps": 30000,
+      "one_heldout_w2": 0.20905271071941675,
+      "two_heldout_w2": 0.1872710658842244,
+      "better": "two",
+      "two_param_loss": 0.061497848480939865,
+      "two_param_seconds": 242.6236312000001
+    }
+  ],
+  "batch_size": 256
+}

@@ -1,0 +1,13 @@
+{
+  "design": "lhs20",
+  "n_train_cells": 20,
+  "n_heldout_cells": 80,
+  "train_mean_w2": 0.27997703799326634,
+  "heldout_mean_w2": 0.2716961609244807,
+  "all_mean_w2": 0.2733523363382378,
+  "all_max_w2": 0.6618015055140264,
+  "baseline_slice_mean_w2": 0.22452162447122737,
+  "certified": true,
+  "max_marginal_residual": 1.1102230246251565e-16,
+  "max_primal_dual_gap": 1.2987874664638355e-12
+}

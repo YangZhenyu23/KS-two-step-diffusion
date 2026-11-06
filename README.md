@@ -15,6 +15,13 @@
 
 上游源码**一行未改**，所有产物独立落在 `repro_ks3d/`，本仓库收录其中的指标、图与元数据。
 
+### 两部分工作
+
+| 部分 | 内容 | 报告 |
+|---|---|---|
+| **A. 单参数复现**（v0.1） | 复现上游 KS3D 两步扩散，20 σ × 3 seed，180 条主实验指标 + 60 条两步 MF 指标 | [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) |
+| **B. 双参数扩展**（v0.2） | 网络输入从 σ 扩到 **(σ, μ)**，LHS 抽样降数据量，全网格留出验证，连续性数学证明 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) |
+
 ### 三步核心结论
 
 | 层面 | 结论 |
@@ -23,6 +30,26 @@
 | 是否复现上游历史数值 | ✅ 180 行最大偏差 `0.0066`、平均 `0.0011`、最大相对 `3.6%` |
 | 两步 MF 是否复现 | ✅ 20 行最大偏差 `0.0021`、平均 `0.00045`，18/20 优于一步 |
 | 是否复现论文绝对数值 | ❌ 差 4–35 倍，判定为**度量口径不同**（见下） |
+
+### 双参数扩展的核心结论（B 部分）
+
+| 层面 | 结论 |
+|---|---|
+| 第二个参数选什么 | **μ**（KS 的真正扩散系数）；`kappa` 是 KPP 的，不属于 KS 方程 |
+| 参数是否正交 | ✅ σ 只改**各向异性**（+78%），μ 只改**整体展宽**（+91%），互不干扰 |
+| LHS 是否够用 | ✅ 20 格训练，80 格留出→留出 W2 `0.2717` ≈ 训练 `0.2800`，泛化无衰减 |
+| 双参数是否更好 | ✅ 预算对齐后**全档位胜出**，最佳 **−19.1%**（每格 600 更新） |
+| 连续性能否观察 | ✅ `W2_corr/h` ≈ 常数（3.49→3.84→4.18），且 180 对相邻格点全有限 |
+| 连续性数学证明 | ✅ Lipschitz（σ 线性、μ 平方根），见 [`docs/CONTINUITY.md`](docs/CONTINUITY.md) |
+
+![连续性三联图](results/twoparam/continuity/continuity_plot.png)
+
+左：测得 W2 对参数距离，虚线是噪声基底；中：扣除噪声后信号对 `h` 线性（斜率 σ=3.60、μ=0.33）；
+右：σ 沿 x 轴移动各向异性、μ 沿 y 轴平移展宽——两个参数作用于不同几何自由度。
+
+**踩过的坑**：第一次对比用固定 1000 步，双参数反而输 67%。原因是 20 格分 1000 步＝每格 50 步，
+而单参数 10 格分 1000 步＝每格 100 步。**多参数实验必须按"每格更新数"对齐，不能按总步数对齐**。
+详见 [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) §4.4。
 
 ### ⚠️ 关于"与论文的绝对值差异"
 
@@ -47,7 +74,7 @@
 ├── upstream/MF-DeepParticle/     # 上游源码快照（只读参照，266 文件）
 │   ├── paper_reproduction/       #   论文复现管线（ks/kpp/cubic/timing/figures）
 │   └── output/                   #   历史指标 JSON/CSV（用于对比，不含 npz/pt）
-├── results/ks3d/                 # 本次复现的全部指标与图（2.76 MB）
+├── results/ks3d/                 # A. 单参数复现的指标与图（2.76 MB）
 │   ├── evaluation/               #   主实验 180 条 W2 + 验证
 │   ├── multistep/                #   两步 MF 60 条 W2 + 生成清单
 │   ├── data/                     #   48 组粒子云 manifest（含 SHA256）
@@ -55,8 +82,16 @@
 │   ├── timing/                   #   480 条原始计时
 │   ├── figures/                  #   ks3d_w2.pdf、d+1 投影
 │   └── analysis/                 #   comparison.csv/md、curves.png
-├── docs/                         # 复现报告、论文对比、上游审计、KS 物理讲义
-├── scripts/sync.ps1              # 一键提交并推送
+├── results/twoparam/             # B. 双参数扩展（0.81 MB）
+│   ├── design/                   #   LHS 设计 + 随机抽样对照
+│   ├── data/full/                #   100 格物理云 manifest（含 SHA256）
+│   ├── train/                    #   双参数 checkpoint + 训练日志
+│   ├── evaluate/                 #   100 格 W2 指标（训练/留出分开）
+│   ├── compare/                  #   单参数 vs 双参数（预算匹配、收敛扫描）
+│   └── continuity/               #   连续性测量 + 三联图
+├── twoparam/                     # B 的代码（7 个模块）
+├── docs/                         # 复现报告、论文对比、上游审计、连续性证明
+├── scripts/                      # sync.ps1 + 11 个分析脚本
 ├── CHANGELOG.md                  # 变更日志（每次更新必登记）
 └── .cursor/rules/                # 约束后续会话的同步纪律
 ```
@@ -217,6 +252,8 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 
 | 文档 | 内容 |
 |---|---|
+| [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) | **双参数扩展完整报告**：为什么选 μ、参数取值理由、LHS 原理、训练结果、对比结论 |
+| [`docs/CONTINUITY.md`](docs/CONTINUITY.md) | **参数连续性的数学证明**（Lipschitz/Hölder）+ 数值验证三层次 |
 | [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) | 完整复现报告：命令、逐阶段耗时、逐 σ 数值、偏差来源分析、局限 |
 | [`docs/PAPER_COMPARISON.md`](docs/PAPER_COMPARISON.md) | 与论文逐项对比；统计噪声下限判据；8 种口径变换的尝试记录 |
 | [`docs/UPSTREAM_ANALYSIS.md`](docs/UPSTREAM_ANALYSIS.md) | 上游仓库代码审计：结构、调用链、两处实质不一致、可借鉴点 |
