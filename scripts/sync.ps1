@@ -97,10 +97,14 @@ if ($big.Count -gt 0) {
 
 # ---- 组织提交信息 ----
 if (-not $Message) {
-    $Message = Read-Host "请输入提交说明（中文，例如：补充 sigma=10 的云图）"
-    if (-not $Message) {
-        Write-Err "提交说明不能为空。"
-        exit 1
+    if ($DryRun) {
+        $Message = "<提交说明>"
+    } else {
+        $Message = Read-Host "请输入提交说明（中文，例如：补充 sigma=10 的云图）"
+        if (-not $Message) {
+            Write-Err "提交说明不能为空。"
+            exit 1
+        }
     }
 }
 $prefixes = @("新增:", "变更:", "修复:", "移除:", "复现:", "文档:", "新增：", "变更：", "修复：", "移除：", "复现：", "文档：")
