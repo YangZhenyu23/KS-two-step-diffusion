@@ -4,6 +4,7 @@
 > 并归档完整的粒子云指标、训练权重校验与图表。
 >
 > 上游代码：[fire-lit-band/MF-DeepParticle](https://github.com/fire-lit-band/MF-DeepParticle)（源码快照见 `upstream/`）
+> 本仓库：[YangZhenyu23/KS-two-step-diffusion](https://github.com/YangZhenyu23/KS-two-step-diffusion)（private）
 
 ---
 

@@ -20,6 +20,10 @@
 - 补齐 `docs/PAPER_COMPARISON.md` §5 提出的网络结构对照实验（正弦嵌入 + depth 5 + skip + small-gain 头；DP 用 SiLU+LayerNorm 的 depth-4 ResNet）
 - 用论文 KPP 的 72×72 直方图口径校验度量约定是否一致
 
+### 文档
+
+- 补充仓库地址链接到 `README.md` 头部
+
 ---
 
 ## [v0.1.0] — 2026-11-07
