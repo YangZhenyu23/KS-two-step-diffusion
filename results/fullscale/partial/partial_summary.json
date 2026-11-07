@@ -1,0 +1,13 @@
+{
+  "available_cells": 71,
+  "floor": 0.06443,
+  "two_param_train_mean": 0.15319632983036757,
+  "two_param_heldout_mean": 0.1532318979807976,
+  "partial_ablation": {
+    "n_cells": 31,
+    "one_param_mean": 0.15471277101244943,
+    "two_param_mean": 0.1532318979807976,
+    "relative_reduction": 0.009571756888335226,
+    "two_param_wins": 12
+  }
+}

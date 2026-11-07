@@ -1,0 +1,13 @@
+{
+  "n_cells": 144,
+  "one_param_mean_w2": 0.2139502426727697,
+  "two_param_mean_w2": 0.15598663330269408,
+  "relative_reduction": 0.27092097978467444,
+  "median_improvement": 0.03219112022614023,
+  "two_param_wins": 117,
+  "one_param_wins": 27,
+  "corr_improvement_vs_mu_distance": 0.6595901097234941,
+  "floor_16bins": 0.06443,
+  "one_param_over_floor": 3.3206618449909935,
+  "two_param_over_floor": 2.4210248844124487
+}

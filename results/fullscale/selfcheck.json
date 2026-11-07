@@ -1,0 +1,14 @@
+{
+  "cells": [
+    "s00_m01",
+    "s00_m06",
+    "s01_m05",
+    "s01_m09",
+    "s02_m00",
+    "s02_m08"
+  ],
+  "failures": 0,
+  "steps": 300,
+  "final_loss": 0.12581565976142883,
+  "sampler_better_count": 6
+}

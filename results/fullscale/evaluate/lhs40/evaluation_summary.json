@@ -1,0 +1,18 @@
+{
+  "design": "lhs40",
+  "steps": 1,
+  "n_cells": 200,
+  "n_train_cells": 40,
+  "n_heldout_cells": 160,
+  "train_mean_w2": 0.15319632983036757,
+  "heldout_mean_w2": 0.1547221535964444,
+  "all_mean_w2": 0.15441698884322905,
+  "all_max_w2": 0.3937735858401118,
+  "baseline_slice_mean_w2": 0.14107711413974056,
+  "floor_16bins": 0.06443,
+  "all_mean_over_floor": 2.3966628720041756,
+  "certified": true,
+  "max_marginal_residual": 2.220446049250313e-16,
+  "max_primal_dual_gap": 1.6809609260093339e-12,
+  "elapsed_seconds": 23.870605899999646
+}

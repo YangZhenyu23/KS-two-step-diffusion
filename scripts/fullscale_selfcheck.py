@@ -127,8 +127,12 @@ def main() -> int:
     print("5. endpoint convention (short training run must beat the initial cloud)")
     config = Config(n_train=int(first.shape[0]), device="cuda")
     work = G.ensure("selfcheck")
-    summary = train_two_param(chosen, config, work, steps=a.steps, batch_size=min(2048, config.n_train),
-                              log=lambda t: None)
+    import contextlib
+    import io
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        summary = train_two_param(chosen, config, work, steps=a.steps,
+                                  batch_size=min(2048, config.n_train))
     from fullscale.train import load_two
     model, _ = load_two(work / "mf_two_param.pt")
     print(f"       trained {a.steps} steps, final loss {summary['final_loss']:.4g}")

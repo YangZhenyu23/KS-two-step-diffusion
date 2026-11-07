@@ -1,0 +1,32 @@
+{
+  "design": "baseline",
+  "cells": [
+    "s00_m05",
+    "s01_m05",
+    "s02_m05",
+    "s03_m05",
+    "s04_m05",
+    "s05_m05",
+    "s06_m05",
+    "s07_m05",
+    "s08_m05",
+    "s09_m05",
+    "s10_m05",
+    "s11_m05",
+    "s12_m05",
+    "s13_m05",
+    "s14_m05",
+    "s15_m05",
+    "s16_m05",
+    "s17_m05",
+    "s18_m05",
+    "s19_m05"
+  ],
+  "updates_per_cell": 2000,
+  "checkpoint": "C:\\Users\\90592\\Desktop\\KS two-step diffusion\\results\\fullscale\\train\\baseline\\mf_one_param.pt",
+  "sha256": "4da7237f36ebc96ed2a70049934b730e2281af5f654bf6bdf92858199aabfb59",
+  "steps": 40000,
+  "seconds": 253.46542620000037,
+  "final_loss": 0.1160518154501915,
+  "n_cells": 20
+}

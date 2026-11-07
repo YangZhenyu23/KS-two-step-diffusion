@@ -20,7 +20,23 @@
 | 部分 | 内容 | 报告 |
 |---|---|---|
 | **A. 单参数复现**（v0.1） | 复现上游 KS3D 两步扩散，20 σ × 3 seed，180 条主实验指标 + 60 条两步 MF 指标 | [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) |
-| **B. 双参数扩展**（v0.2） | 网络输入从 σ 扩到 **(σ, μ)**，LHS 抽样降数据量，全网格留出验证，连续性数学证明 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) |
+| **B. 双参数 pilot**（v0.2） | 网络输入从 σ 扩到 **(σ, μ)**，LHS-20 抽样，100 格验证 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) |
+| **C. 双参数全量**（v0.3） | **200 格 × 100k 粒子**（论文版），LHS-40，训练至收敛 | [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) |
+
+### 全量实验的核心结论（C 部分）
+
+| 层面 | 结论 |
+|---|---|
+| 数据规模 | 20σ × 10μ = **200 格 × 100k 粒子**，637 MB，191 分钟 |
+| 噪声基底 | 100k 粒子 / 16 箱 = **0.0644**（pilot 20k 是 0.0931） |
+| LHS 覆盖率 | 留出 160 格 `0.1547` ≈ 训练 40 格 `0.1532`，**泛化无衰减** |
+| **双参数是否更好** | ✅ **改进 27.1%**（0.1560 vs 0.2140，144 双留出格，117/144 胜） |
+| **是否学到 μ 耦合** | ✅ 增益随 μ 偏离**单调增长**（`corr=0.660`），μ=10 处改进 **48.5%** |
+| 连续性 | ✅ 370 对相邻格点 `W2/h` 全部有限 |
+
+![全量结果](results/fullscale/analysis/fullscale_summary.png)
+
+左：双参数模型在 200 格上的误差；右：单参数模型"不知道 μ"的代价随 μ 偏离上升，双参数保持平坦。
 
 ### 三步核心结论
 
@@ -252,9 +268,10 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 
 | 文档 | 内容 |
 |---|---|
-| [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) | **双参数扩展完整报告**：为什么选 μ、参数取值理由、LHS 原理、训练结果、对比结论 |
+| [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) | **全量实验完整报告**：200 格协议、LHS-40、训练结果、27.1% 改进、连续性重测 |
+| [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) | 双参数 pilot 报告：为什么选 μ、LHS 原理、100 格结果 |
 | [`docs/CONTINUITY.md`](docs/CONTINUITY.md) | **参数连续性的数学证明**（Lipschitz/Hölder）+ 数值验证三层次 |
-| [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) | 完整复现报告：命令、逐阶段耗时、逐 σ 数值、偏差来源分析、局限 |
+| [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) | 单参数复现报告：命令、逐阶段耗时、逐 σ 数值、偏差来源、局限 |
 | [`docs/PAPER_COMPARISON.md`](docs/PAPER_COMPARISON.md) | 与论文逐项对比；统计噪声下限判据；8 种口径变换的尝试记录 |
 | [`docs/UPSTREAM_ANALYSIS.md`](docs/UPSTREAM_ANALYSIS.md) | 上游仓库代码审计：结构、调用链、两处实质不一致、可借鉴点 |
 | [`docs/KS_physical_parameters.md`](docs/KS_physical_parameters.md) | KS 方程三个位移尺度的量级分析（剪切主导区间） |
