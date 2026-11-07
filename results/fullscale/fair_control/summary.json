@@ -1,0 +1,51 @@
+{
+  "updates_per_cell": 2000,
+  "n_lhs_cells": 40,
+  "n_heldout": 144,
+  "two_param_training_fit": 0.15319632983036757,
+  "two_param_heldout": 0.15598663330269408,
+  "controls": {
+    "same-cells": {
+      "name": "same-cells",
+      "description": "sigma-only on the same 40 LHS cells",
+      "n_cells": 40,
+      "steps": 80000,
+      "updates_per_cell": 2000,
+      "training_fit_w2": 0.2492658018936603,
+      "heldout_mean_w2": 0.25725056042012073,
+      "two_param_heldout_w2": 0.15598663330269408,
+      "improvement": 0.10126392711742663,
+      "relative_reduction": 0.39363928674071935,
+      "two_param_wins": 136,
+      "n_heldout": 144
+    },
+    "slice-20": {
+      "name": "slice-20",
+      "description": "sigma-only on the mu=1 row (20 cells)",
+      "n_cells": 20,
+      "steps": 40000,
+      "updates_per_cell": 2000,
+      "training_fit_w2": 0.1230675202617039,
+      "heldout_mean_w2": 0.21252774262026977,
+      "two_param_heldout_w2": 0.15598663330269408,
+      "improvement": 0.05654110931757569,
+      "relative_reduction": 0.2660410759577846,
+      "two_param_wins": 113,
+      "n_heldout": 144
+    },
+    "same-4": {
+      "name": "same-4",
+      "description": "sigma-only on the 4 LHS cells with mu=1",
+      "n_cells": 4,
+      "steps": 8000,
+      "updates_per_cell": 2000,
+      "training_fit_w2": 0.1332290661821365,
+      "heldout_mean_w2": 0.26153437024243215,
+      "two_param_heldout_w2": 0.15598663330269408,
+      "improvement": 0.10554773693973801,
+      "relative_reduction": 0.403571189675374,
+      "two_param_wins": 131,
+      "n_heldout": 144
+    }
+  }
+}

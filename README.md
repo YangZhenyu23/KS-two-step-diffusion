@@ -31,12 +31,21 @@
 | 噪声基底 | 100k 粒子 / 16 箱 = **0.0644**（pilot 20k 是 0.0931） |
 | LHS 覆盖率 | 留出 160 格 `0.1547` ≈ 训练 40 格 `0.1532`，**泛化无衰减** |
 | **双参数是否更好** | ✅ **改进 27.1%**（0.1560 vs 0.2140，144 双留出格，117/144 胜） |
+| **公平对照** | ✅ 在同一 40 格上训练，单参数训练误差下界 `0.2493` vs 双参数 `0.1532` —— **信息下界，非数据量差异** |
+| **DP 精修** | ✅ MF+DP **0.1442**，再改进 7.5%（134/144 胜），累计 **32.6%** |
 | **是否学到 μ 耦合** | ✅ 增益随 μ 偏离**单调增长**（`corr=0.660`），μ=10 处改进 **48.5%** |
-| 连续性 | ✅ 370 对相邻格点 `W2/h` 全部有限 |
+| 连续性 | ✅ σ 与 μ 都连续（斜率 3.60 vs 0.33），370 对相邻格点全部有限 |
 
 ![全量结果](results/fullscale/analysis/fullscale_summary.png)
 
 左：双参数模型在 200 格上的误差；右：单参数模型"不知道 μ"的代价随 μ 偏离上升，双参数保持平坦。
+
+**完整误差链条**：单参数 `0.2140` → 双参数 MF `0.1560` → +DP `0.1442`。
+
+| 文档 | 用途 |
+|---|---|
+| [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) | 全量协议、结果、公平对照、DP 精修与踩坑记录 |
+| [`docs/CONTINUITY_ARGUMENT.md`](docs/CONTINUITY_ARGUMENT.md) | 连续性的**直觉判断 + 数学框架**（四步证明骨架 + 可分辨阈值推论） |
 
 ### 三步核心结论
 
@@ -268,9 +277,10 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 
 | 文档 | 内容 |
 |---|---|
-| [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) | **全量实验完整报告**：200 格协议、LHS-40、训练结果、27.1% 改进、连续性重测 |
+| [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) | **全量实验完整报告**：200 格协议、LHS-40、27.1% 改进、公平对照、DP 精修 |
+| [`docs/CONTINUITY_ARGUMENT.md`](docs/CONTINUITY_ARGUMENT.md) | **连续性：直觉判断 + 数学框架**（四步证明骨架、可分辨阈值推论） |
 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) | 双参数 pilot 报告：为什么选 μ、LHS 原理、100 格结果 |
-| [`docs/CONTINUITY.md`](docs/CONTINUITY.md) | **参数连续性的数学证明**（Lipschitz/Hölder）+ 数值验证三层次 |
+| [`docs/CONTINUITY.md`](docs/CONTINUITY.md) | 连续性详细证明（假设逐条验证、Fournier–Guillin 速率） |
 | [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) | 单参数复现报告：命令、逐阶段耗时、逐 σ 数值、偏差来源、局限 |
 | [`docs/PAPER_COMPARISON.md`](docs/PAPER_COMPARISON.md) | 与论文逐项对比；统计噪声下限判据；8 种口径变换的尝试记录 |
 | [`docs/UPSTREAM_ANALYSIS.md`](docs/UPSTREAM_ANALYSIS.md) | 上游仓库代码审计：结构、调用链、两处实质不一致、可借鉴点 |

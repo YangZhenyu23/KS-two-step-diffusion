@@ -167,18 +167,29 @@ def train_one_param(
     batch_size: int = 4096,
     lr: float = 1e-3,
     seed: int = 88,
+    allow_mixed_mu: bool = False,
 ) -> dict:
-    """The upstream sigma-only architecture, trained on a single mu level."""
+    """The upstream sigma-only architecture.
+
+    By default the control must see exactly one mu value, which keeps it a
+    genuine single-parameter model. ``allow_mixed_mu=True`` relaxes this for the
+    deliberate diagnostic where the sigma-only network is trained on cells that
+    carry several mu values: it then cannot fit the data by construction, and the
+    resulting irreducible training error measures exactly how much information
+    mu carries.
+    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if config.device == "cuda" and torch.cuda.is_available() else "cpu")
     mus = {c.mu for c in cells}
-    if len(mus) != 1:
-        raise ValueError("the single-parameter control must see exactly one mu value")
+    if len(mus) != 1 and not allow_mixed_mu:
+        raise ValueError("the single-parameter control must see exactly one mu value; "
+                         "pass allow_mixed_mu=True only for the information-loss diagnostic")
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    log(f"training one-parameter control: {len(cells)} cells (mu={mus.pop()}), "
+    mu_label = f"mu={mus.pop()}" if len(mus) == 1 else f"{len(mus)} mixed mu values"
+    log(f"training one-parameter control: {len(cells)} cells ({mu_label}), "
         f"{steps} steps, batch {batch_size}")
     initial, targets = load_training_tensors(cells, device)
     log_sigma = torch.tensor([math.log10(c.sigma) for c in cells],

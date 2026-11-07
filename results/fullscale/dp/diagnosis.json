@@ -1,0 +1,10 @@
+{
+  "alpha": 10.0,
+  "mean_correction_ratio": 0.44145352753311146,
+  "mean_w2_increase": 0.3426733771945787,
+  "loss_first": 0.02528395876288414,
+  "loss_last": 1.1347899436950684,
+  "loss_min": 0.02528395876288414,
+  "ot_refresh": 50,
+  "updates_per_cell": 60
+}
