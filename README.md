@@ -23,6 +23,21 @@
 | **B. 双参数 pilot**（v0.2） | 网络输入从 σ 扩到 **(σ, μ)**，LHS-20 抽样，100 格验证 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) |
 | **C. 双参数全量**（v0.3） | **200 格 × 100k 粒子**（论文版），LHS-40，训练至收敛 | [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) |
 | **D. 样本效率三实验**（v0.5） | 全量对照 / 学习曲线 / LHS vs 随机（多种子） | [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) |
+| **E. 三条改进路径的否定实验**（v0.6） | W2 覆盖准则 / 更大网络 / Fourier 编码 —— **全部无效** | [`docs/DESIGN_CRITERION.md`](docs/DESIGN_CRITERION.md) |
+
+### 改进尝试的边界（E 部分，全部为否定结果）
+
+| 尝试 | 结果 |
+|---|---|
+| 用 W2 覆盖代价 J 选训练点 | ❌ `corr(J, error) = **−0.715**`（负相关，方向相反）|
+| 加宽网络 64→128→256（9k→134k 参数，15 倍）| ❌ 无改善，非单调 |
+| Fourier 参数编码 + skip + small-gain 头 | ❌ 单种子看似最好，3 种子后不可分辨（+0.6 SE）|
+
+**误差稳定停在 0.149–0.158，即 2.3–2.5× 噪声基底，三条路都未突破。**
+
+**机制**：J 奖励"训练点密集覆盖分布空间"，但分布相近的区域恰是物理响应**平滑**处——最小化 J 等于在容易处过度采样、困难处欠采样。正确判据应基于**响应曲率**。
+
+**对论文的影响**：W2 作为衡量标准**不变**（否定 J 的实验本身就是用 W2 裁决的）；最小间距作为硬约束**始终保留**；但**不能声称覆盖准则能指导选点**。
 
 ### 样本效率的核心结论（D 部分）
 
@@ -292,6 +307,7 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 
 | 文档 | 内容 |
 |---|---|
+| [`docs/DESIGN_CRITERION.md`](docs/DESIGN_CRITERION.md) | **三条改进路径的否定实验**：W2 覆盖准则（负相关）、更大网络（无效）、Fourier 编码（不可分辨）|
 | [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) | **样本效率三实验**：冻结测试集设计、学习曲线、LHS vs 随机多种子判定 |
 | [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) | **全量实验完整报告**：200 格协议、LHS-40、27.1% 改进、公平对照、DP 精修 |
 | [`docs/CONTINUITY_ARGUMENT.md`](docs/CONTINUITY_ARGUMENT.md) | **连续性：直觉判断 + 数学框架**（四步证明骨架、可分辨阈值推论） |
