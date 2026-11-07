@@ -22,6 +22,21 @@
 | **A. 单参数复现**（v0.1） | 复现上游 KS3D 两步扩散，20 σ × 3 seed，180 条主实验指标 + 60 条两步 MF 指标 | [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) |
 | **B. 双参数 pilot**（v0.2） | 网络输入从 σ 扩到 **(σ, μ)**，LHS-20 抽样，100 格验证 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) |
 | **C. 双参数全量**（v0.3） | **200 格 × 100k 粒子**（论文版），LHS-40，训练至收敛 | [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) |
+| **D. 样本效率三实验**（v0.5） | 全量对照 / 学习曲线 / LHS vs 随机（多种子） | [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) |
+
+### 样本效率的核心结论（D 部分）
+
+| 层面 | 结论 |
+|---|---|
+| 数据量是瓶颈吗 | ❌ **不是**。80 格（0.1460）已优于全量 160 格（0.1527）|
+| 小样本够用吗 | ✅ 40 格（0.1513）已接近饱和，20→40 降 30% |
+| LHS 比随机好吗 | ⚠️ **未能证明**：4 次重复差值 +0.0138 = **0.89 SE**，不可分辨 |
+| LHS 的优势在哪 | 几何间距 2 倍（0.1053 vs 0.0526），但**未转化为误差优势**；方差反而大 3.9 倍 |
+| 那瓶颈是什么 | 模型容量 / 训练充分性（误差停在 2.3× 噪声基底）|
+
+**关键区分**：LHS 提供的是**确定性覆盖保证**（不漏 σ/μ 层），不是**精度提升**。而这个问题在 40–80 格就饱和了，用什么方法抽样都够。
+
+![样本效率](results/fullscale/sample_efficiency/sample_efficiency.png)
 
 ### 全量实验的核心结论（C 部分）
 
@@ -277,6 +292,7 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 
 | 文档 | 内容 |
 |---|---|
+| [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) | **样本效率三实验**：冻结测试集设计、学习曲线、LHS vs 随机多种子判定 |
 | [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) | **全量实验完整报告**：200 格协议、LHS-40、27.1% 改进、公平对照、DP 精修 |
 | [`docs/CONTINUITY_ARGUMENT.md`](docs/CONTINUITY_ARGUMENT.md) | **连续性：直觉判断 + 数学框架**（四步证明骨架、可分辨阈值推论） |
 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) | 双参数 pilot 报告：为什么选 μ、LHS 原理、100 格结果 |

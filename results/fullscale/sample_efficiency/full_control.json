@@ -1,0 +1,14 @@
+{
+  "name": "full160",
+  "n_cells": 160,
+  "steps": 320000,
+  "updates_per_cell": 2000,
+  "training_seconds": 2396.272783700002,
+  "final_train_loss": 0.18508294224739075,
+  "training_fit_w2": 0.15117397512214012,
+  "test_mean_w2": 0.1526632342312016,
+  "test_median_w2": 0.13638230450215527,
+  "test_max_w2": 0.34418962926229657,
+  "test_over_floor": 2.369443337439106,
+  "n_test": 40
+}
