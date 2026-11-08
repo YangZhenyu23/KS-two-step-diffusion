@@ -1,0 +1,113 @@
+{
+  "floor": 0.0644304534689117,
+  "n": 100000,
+  "sigma": {
+    "rows": [
+      {
+        "step": 10.0,
+        "sigma": 110.0,
+        "h": 0.04139268515822508,
+        "w2": 0.18741164857032008,
+        "corrected": 0.17598818905152575,
+        "ratio": 4.251673656318848,
+        "seconds": 114.79452440000023
+      },
+      {
+        "step": 5.0,
+        "sigma": 105.0,
+        "h": 0.021189299069938092,
+        "w2": 0.1308915788356702,
+        "corrected": 0.11393560495246809,
+        "ratio": 5.377035105144748,
+        "seconds": 114.78390079999917
+      },
+      {
+        "step": 2.5,
+        "sigma": 102.5,
+        "h": 0.010723865391773066,
+        "w2": 0.0922462197944266,
+        "corrected": 0.06601576881436788,
+        "ratio": 6.155967685403121,
+        "seconds": 114.51748640000005
+      }
+    ],
+    "monotone": true,
+    "ratio_spread": 1.4478928024624154
+  },
+  "mu": {
+    "rows": [
+      {
+        "step": 1.0,
+        "mu": 2.0,
+        "h": 0.3010299956639812,
+        "w2": 0.14658992431106532,
+        "corrected": 0.13167126708327168,
+        "ratio": 0.43740248141333776,
+        "seconds": 115.12984400000096
+      },
+      {
+        "step": 0.5,
+        "mu": 1.5,
+        "h": 0.17609125905568124,
+        "w2": 0.10192978509433219,
+        "corrected": 0.07898352837881548,
+        "ratio": 0.448537473139654,
+        "seconds": 115.12239190000037
+      },
+      {
+        "step": 0.25,
+        "mu": 1.25,
+        "h": 0.09691001300805642,
+        "w2": 0.07228292344157537,
+        "corrected": 0.032764884969293744,
+        "ratio": 0.3380959712240458,
+        "seconds": 115.27478679999876
+      }
+    ],
+    "monotone": true,
+    "ratio_spread": 1.3266572550857816
+  },
+  "T2_normalised": {
+    "slices": {
+      "mu|sigma=10.0": {
+        "median_slope": 0.4103765055629533,
+        "max_slope": 1.0047414953565357,
+        "max_at_mu": 10.0,
+        "peak_over_median": 2.448340686507465
+      },
+      "mu|sigma=50.0": {
+        "median_slope": 0.43879014027777946,
+        "max_slope": 1.0110797453076343,
+        "max_at_mu": 10.0,
+        "peak_over_median": 2.304244449676017
+      },
+      "mu|sigma=90.0": {
+        "median_slope": 0.43089407127652624,
+        "max_slope": 1.0701609334650397,
+        "max_at_mu": 10.0,
+        "peak_over_median": 2.483582404127032
+      },
+      "mu|sigma=130.0": {
+        "median_slope": 0.4456036478997941,
+        "max_slope": 1.0939816323282663,
+        "max_at_mu": 10.0,
+        "peak_over_median": 2.4550553782142224
+      },
+      "mu|sigma=170.0": {
+        "median_slope": 0.5131479792166301,
+        "max_slope": 1.1405820376259148,
+        "max_at_mu": 10.0,
+        "peak_over_median": 2.222715637245855
+      }
+    },
+    "worst_peak_over_median": 2.483582404127032
+  },
+  "verdict": {
+    "sigma: W2 decays monotonically under refinement": true,
+    "mu: W2 decays monotonically under refinement": true,
+    "sigma: corrected slope stable (spread < 2x)": true,
+    "mu: corrected slope stable (spread < 2x)": true,
+    "T2: no slice peak above 3x its median normalised slope": true
+  },
+  "all_pass": true
+}
