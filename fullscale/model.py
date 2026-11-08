@@ -36,12 +36,14 @@ from torch import nn
 
 
 class TwoParamMeanflow(nn.Module):
-    def __init__(self, width: int = 64, hidden_layers: int = 3, dimension: int = 3):
+    def __init__(self, width: int = 64, hidden_layers: int = 3, dimension: int = 3,
+                 conditioning: str = "log10"):
         super().__init__()
         self.width = int(width)
         self.hidden_layers = int(hidden_layers)
         self.dimension = int(dimension)
-        self.condition_mode = "log10_sigma_log10_mu"
+        self.conditioning = conditioning
+        self.condition_mode = f"{conditioning}_sigma_{conditioning}_mu"
         layers: list[nn.Module] = [nn.Linear(dimension + 4, width), nn.SELU()]
         for _ in range(self.hidden_layers - 1):
             layers += [nn.Linear(width, width), nn.SELU()]
@@ -51,6 +53,11 @@ class TwoParamMeanflow(nn.Module):
     def forward(self, z, r, t, logsigma, logmu):
         return self.net(torch.cat((z, t, r, logsigma, logmu), dim=-1))
 
+    def condition(self, sigma, mu, *, dtype=None, device=None):
+        """Encode physical (sigma, mu) into the two condition columns."""
+        return encode_condition(sigma, mu, self.conditioning,
+                                dtype=dtype, device=device)
+
     def architecture(self) -> dict:
         return {
             "kind": "mf",
@@ -58,9 +65,9 @@ class TwoParamMeanflow(nn.Module):
             "hidden_layers": self.hidden_layers,
             "activation": "SELU",
             "dimension": self.dimension,
-            "conditioning": "log10(sigma), log10(mu)",
+            "conditioning": f"{self.conditioning}(sigma), {self.conditioning}(mu)",
             "condition_mode": self.condition_mode,
-            "input_order": ["z", "t", "r", "log10_sigma", "log10_mu"],
+            "input_order": ["z", "t", "r", "cond_sigma", "cond_mu"],
             "input_features": self.dimension + 4,
             "profile": "fullscale_two_param",
         }
@@ -115,6 +122,50 @@ def sample_times(batch: int, mean: float = -0.4, std: float = 1.0):
     return torch.from_numpy(r[:, None]), torch.from_numpy(t[:, None])
 
 
+# ---------------------------------------------------------------- conditioning ---
+# The two physical parameters live on different scales: sigma spans 10..200 and mu
+# spans 0.1..10, so raw values differ by a factor of ~20 and the ranges by ~200.
+# Feeding them raw would let one axis dominate the first linear layer. The
+# encodings below are all O(1) and all cost exactly nothing at inference time, so
+# the choice is purely about conditioning quality (scripts/check_conditioning.py).
+#
+# ``grid`` statistics are used rather than design statistics so that the encoding
+# is a fixed property of the parameter box, not of a particular training subset.
+_GRID_LOG_SIGMA_MEAN = 1.6505
+_GRID_LOG_SIGMA_SD = 0.4046
+_GRID_LOG_MU_MEAN = 0.0
+_GRID_LOG_MU_SD = 0.5903
+
+CONDITIONING_MODES = ("log10", "log10_norm", "unit01")
+
+
+def encode_condition(sigma, mu, mode: str = "log10", *, dtype=None, device=None):
+    """Map physical parameters to the network's conditioning features.
+
+    ``log10``      log10 of each parameter -- cheap, but the two axes keep a mean
+                   offset of 2.0 and unequal spreads (sd ratio 0.57).
+    ``log10_norm`` zero mean and unit variance on both axes -- the two inputs then
+                   enter the first layer on equal footing.
+    ``unit01``     linear map of each log axis onto [0, 1].
+
+    All three have identical inference cost (a few flops per particle), so this
+    does not touch the single-step constraint.
+    """
+    import torch as _torch
+
+    ls = _torch.log10(_torch.as_tensor(sigma, dtype=dtype, device=device))
+    lm = _torch.log10(_torch.as_tensor(mu, dtype=dtype, device=device))
+    if mode == "log10":
+        return ls, lm
+    if mode == "log10_norm":
+        return ((ls - _GRID_LOG_SIGMA_MEAN) / _GRID_LOG_SIGMA_SD,
+                (lm - _GRID_LOG_MU_MEAN) / _GRID_LOG_MU_SD)
+    if mode == "unit01":
+        # log ranges of the grid: sigma 1.0..2.301, mu -1.0..1.0
+        return (ls - 1.0) / (2.30103 - 1.0), (lm + 1.0) / 2.0
+    raise ValueError(f"unknown conditioning mode {mode}")
+
+
 def meanflow_loss(error: torch.Tensor):
     if error.ndim != 2 or min(error.shape) == 0:
         raise ValueError("MF error must have shape (nonempty batch, vector dimension)")
@@ -134,8 +185,12 @@ def sample_two_param(model: TwoParamMeanflow, source: torch.Tensor, sigma: float
     device = next(model.parameters()).device
     x = source.detach().to(device)
     batch = len(x)
-    logsigma = torch.full((batch, 1), math.log10(float(sigma)), dtype=x.dtype, device=device)
-    logmu = torch.full((batch, 1), math.log10(float(mu)), dtype=x.dtype, device=device)
+    conditioning = getattr(model, "conditioning", "log10")
+    sigma_t = torch.as_tensor(float(sigma), dtype=x.dtype, device=device)
+    mu_t = torch.as_tensor(float(mu), dtype=x.dtype, device=device)
+    cs, cm = encode_condition(sigma_t, mu_t, conditioning, dtype=x.dtype, device=device)
+    logsigma = cs.expand(batch, 1)
+    logmu = cm.expand(batch, 1)
     if steps == 1:
         t = torch.ones(batch, 1, dtype=x.dtype, device=device)
         r = torch.zeros(batch, 1, dtype=x.dtype, device=device)

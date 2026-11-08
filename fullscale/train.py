@@ -94,6 +94,7 @@ def train_two_param(
     lr: float = 1e-3,
     seed: int = 88,
     checkpoint_every: int = 0,
+    conditioning: str = "log10",
 ) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -103,14 +104,17 @@ def train_two_param(
     torch.set_num_threads(min(8, torch.get_num_threads()))
 
     log(f"training two-parameter MeanFlow: {len(cells)} cells, {steps} steps, "
-        f"batch {batch_size}, N={config.n_train}")
+        f"batch {batch_size}, N={config.n_train}, conditioning={conditioning}")
     initial, targets = load_training_tensors(cells, device)
-    log_sigma = torch.tensor([math.log10(c.sigma) for c in cells],
-                             dtype=torch.float32, device=device)
-    log_mu = torch.tensor([math.log10(c.mu) for c in cells],
-                          dtype=torch.float32, device=device)
 
-    model = TwoParamMeanflow(width=64, hidden_layers=3, dimension=3).to(device)
+    model = TwoParamMeanflow(width=64, hidden_layers=3, dimension=3,
+                             conditioning=conditioning).to(device)
+    # Encode each cell's parameters through the model's own conditioning, so the
+    # training inputs and the inference inputs are guaranteed to be identical.
+    log_sigma, log_mu = model.condition(
+        torch.tensor([c.sigma for c in cells], device=device),
+        torch.tensor([c.mu for c in cells], device=device),
+        dtype=torch.float32, device=device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     rows = []
     started = time.perf_counter()
@@ -243,7 +247,8 @@ def _save(path: Path, model: TwoParamMeanflow, cells: list[Cell], config: Config
           step: int, seed: int) -> None:
     torch.save({
         "model": {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
-        "architecture": model.architecture(),
+        "architecture": {**model.architecture(),
+                         "conditioning_mode": model.conditioning},
         "step": step,
         "cells": [c.key for c in cells],
         "sigma_grid": SIGMA_GRID,
@@ -257,9 +262,17 @@ def _save(path: Path, model: TwoParamMeanflow, cells: list[Cell], config: Config
 def load_two(path: Path, device: str = "cuda") -> TwoParamMeanflow:
     payload = torch.load(Path(path), map_location="cpu", weights_only=True)
     arch = payload.get("architecture", {})
+    # Older checkpoints predate the conditioning field; they were all trained with
+    # plain log10, so that is the correct default for them.
+    mode = arch.get("conditioning_mode") or "log10"
+    if "condition_mode" in arch and "log10_norm" in str(arch["condition_mode"]):
+        mode = "log10_norm"
+    elif "condition_mode" in arch and "unit01" in str(arch["condition_mode"]):
+        mode = "unit01"
     model = TwoParamMeanflow(width=arch.get("width", 64),
                              hidden_layers=arch.get("hidden_layers", 3),
-                             dimension=arch.get("dimension", 3))
+                             dimension=arch.get("dimension", 3),
+                             conditioning=mode)
     model.load_state_dict(payload["model"], strict=True)
     target = "cuda" if device == "cuda" and torch.cuda.is_available() else "cpu"
     return model.to(target).eval().requires_grad_(False), payload
