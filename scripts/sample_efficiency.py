@@ -203,22 +203,34 @@ def score_on(model, cells: list[Cell], *, label: str) -> dict:
 
 
 def run_one(name: str, cells: list[Cell], test: list[Cell], pool: list[Cell],
-            *, reuse_existing: bool = False) -> dict:
-    """Train one model (unless a matching checkpoint exists) and score it on ``test``."""
+            *, reuse_existing: bool = False, updates_per_cell: int | None = None) -> dict:
+    """Train one model (unless a matching checkpoint exists) and score it on ``test``.
+
+    ``updates_per_cell`` defaults to the module constant, so existing callers keep
+    their behaviour. Pass a larger value to retrain at a better-converged budget;
+    the checkpoint directory is the same, and a stored run whose budget differs is
+    retrained rather than silently reused.
+    """
+    budget = UPDATES_PER_CELL if updates_per_cell is None else int(updates_per_cell)
     work = OUT / "runs" / name
     checkpoint = work / "mf_two_param.pt"
     meta_path = work / "run_meta.json"
-    steps = UPDATES_PER_CELL * len(cells)
+    steps = budget * len(cells)
 
     if reuse_existing and meta_path.is_file() and checkpoint.is_file():
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        if meta.get("cells") == [c.key for c in cells]:
+        same_cells = meta.get("cells") == [c.key for c in cells]
+        same_budget = meta.get("updates_per_cell") == budget
+        if same_cells and same_budget:
             log(f"  reusing {name} ({meta['steps']} steps)")
         else:
+            if not same_budget:
+                log(f"  {name}: stored budget {meta.get('updates_per_cell')} != {budget}, "
+                    f"retraining")
             reuse_existing = False
 
     if not (reuse_existing and meta_path.is_file()):
-        log(f"  training {name}: {len(cells)} cells x {UPDATES_PER_CELL} = {steps} steps")
+        log(f"  training {name}: {len(cells)} cells x {budget} = {steps} steps")
         config = Config(n_train=G.N_PARTICLES, device="cuda")
         import contextlib
         import io
@@ -227,7 +239,7 @@ def run_one(name: str, cells: list[Cell], test: list[Cell], pool: list[Cell],
             summary = train_two_param(cells, config, work, steps=steps,
                                       batch_size=4096, lr=1e-3, seed=SEED)
         meta = {"name": name, "cells": [c.key for c in cells],
-                "steps": steps, "updates_per_cell": UPDATES_PER_CELL,
+                "steps": steps, "updates_per_cell": budget,
                 "seed": SEED, "seconds": summary["seconds"],
                 "final_loss": summary["final_loss"],
                 "n_cells": len(cells)}
@@ -247,7 +259,7 @@ def run_one(name: str, cells: list[Cell], test: list[Cell], pool: list[Cell],
         "name": name,
         "n_cells": len(cells),
         "steps": steps,
-        "updates_per_cell": UPDATES_PER_CELL,
+        "updates_per_cell": budget,
         "training_seconds": meta.get("seconds"),
         "final_train_loss": meta.get("final_loss"),
         "training_fit_w2": train_score["mean_w2"],
@@ -270,13 +282,15 @@ def stage_full(test: list[Cell], pool: list[Cell]) -> dict:
     return record
 
 
-def stage_curve(test: list[Cell], pool: list[Cell]) -> dict:
+def stage_curve(test: list[Cell], pool: list[Cell], *,
+                updates_per_cell: int | None = None) -> dict:
     log("=== experiment 2: learning curve ===")
     results = []
     for n in (20, 40, 80, 160):
         cells = stratified_subset(pool, n, seed=20261107 + n)
         log(f"  n={n} cells selected")
-        results.append(run_one(f"curve{n}", cells, test, pool, reuse_existing=True))
+        results.append(run_one(f"curve{n}", cells, test, pool, reuse_existing=True,
+                               updates_per_cell=updates_per_cell))
     write_csv(OUT / "learning_curve.csv", results)
     write_json(OUT / "learning_curve.json", {"n_test": len(test), "results": results})
 
@@ -342,18 +356,20 @@ def stage_lhs_vs_random(test: list[Cell], pool: list[Cell]) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", choices=["all", "full", "curve", "lhs"], default="all")
+    ap.add_argument("--updates-per-cell", type=int, default=UPDATES_PER_CELL,
+                    help="training budget per cell; use 32000 for the converged regime")
     a = ap.parse_args()
 
     torch.set_num_threads(min(8, torch.get_num_threads()))
     OUT.mkdir(parents=True, exist_ok=True)
     test, pool = frozen_test_set()
     log(f"test cells {len(test)}, pool cells {len(pool)}, "
-        f"updates/cell {UPDATES_PER_CELL}, floor {G.FLOOR_16}")
+        f"updates/cell {a.updates_per_cell}, floor {G.FLOOR_16}")
 
     if a.stage in ("all", "full"):
         stage_full(test, pool)
     if a.stage in ("all", "curve"):
-        stage_curve(test, pool)
+        stage_curve(test, pool, updates_per_cell=a.updates_per_cell)
     if a.stage in ("all", "lhs"):
         stage_lhs_vs_random(test, pool)
     return 0
