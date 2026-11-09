@@ -55,16 +55,31 @@
 
 ### 全量实验的核心结论（C 部分）
 
+> ⚠️ **以下数值为早期欠训练基线。充分训练（每格 32,000 更新）后的权威结果见
+> [`docs/OPTIMAL_BASELINE.md`](docs/OPTIMAL_BASELINE.md)：双参数改进为 **+38.4%**
+> （0.1228 vs 0.1992），121/143 格胜出。**
+
 | 层面 | 结论 |
 |---|---|
 | 数据规模 | 20σ × 10μ = **200 格 × 100k 粒子**，637 MB，191 分钟 |
 | 噪声基底 | 100k 粒子 / 16 箱 = **0.0644**（pilot 20k 是 0.0931） |
 | LHS 覆盖率 | 留出 160 格 `0.1547` ≈ 训练 40 格 `0.1532`，**泛化无衰减** |
-| **双参数是否更好** | ✅ **改进 27.1%**（0.1560 vs 0.2140，144 双留出格，117/144 胜） |
+| **双参数是否更好** | ✅ **改进 27.1%**（欠训练）→ **38.4%**（充分训练）|
 | **公平对照** | ✅ 在同一 40 格上训练，单参数训练误差下界 `0.2493` vs 双参数 `0.1532` —— **信息下界，非数据量差异** |
 | **DP 精修** | ✅ MF+DP **0.1442**，再改进 7.5%（134/144 胜），累计 **32.6%** |
-| **是否学到 μ 耦合** | ✅ 增益随 μ 偏离**单调增长**（`corr=0.660`），μ=10 处改进 **48.5%** |
-| 连续性 | ✅ σ 与 μ 都连续（斜率 3.60 vs 0.33），370 对相邻格点全部有限 |
+| **是否学到 μ 耦合** | ✅ 增益随 μ 偏离**单调增长**（`corr=0.611`），μ=10 处改进 **58.7%** |
+| 连续性 | ✅ σ 与 μ 都连续（斜率 4.25 vs 0.44），370 对相邻格点全部有限 |
+
+### 训练预算（最关键的改进，D 部分）
+
+| 预算/格 | 测试 W2 | 相对基底 |
+|---:|---:|---:|
+| 2,000 | 0.1675 | 2.60× |
+| 8,000 | 0.1415 | 2.20× |
+| **32,000** | **0.1207** | **1.87×** ← 最优 |
+| 128,000 | 0.1261 | 1.96× ← 学习率震荡导致回弹 |
+
+**16 倍预算 → −27.9%，推理成本零增加。** 详见 [`docs/BUDGET_SWEEP.md`](docs/BUDGET_SWEEP.md)。
 
 ![全量结果](results/fullscale/analysis/fullscale_summary.png)
 
@@ -307,8 +322,11 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 
 | 文档 | 内容 |
 |---|---|
-| [`docs/DESIGN_CRITERION.md`](docs/DESIGN_CRITERION.md) | **三条改进路径的否定实验**：W2 覆盖准则（负相关）、更大网络（无效）、Fourier 编码（不可分辨）|
-| [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) | **样本效率三实验**：冻结测试集设计、学习曲线、LHS vs 随机多种子判定 |
+| [`docs/OPTIMAL_BASELINE.md`](docs/OPTIMAL_BASELINE.md) | **充分训练下的权威基线**：双参数 +38.4%（121/143 格胜出），μ=10 处 +58.7% |
+| [`docs/BUDGET_SWEEP.md`](docs/BUDGET_SWEEP.md) | **训练预算扫描**：最优每格 32,000，−27.9%，128000 回弹源于学习率震荡 |
+| [`docs/CONTINUITY_EVIDENCE.md`](docs/CONTINUITY_EVIDENCE.md) | **连续依赖性五项检验**：σ Lipschitz、μ 1/2 阶 Hölder |
+| [`docs/DESIGN_CRITERION.md`](docs/DESIGN_CRITERION.md) | **三条改进路径的否定实验**：W2 覆盖准则（负相关）、更大网络、Fourier 编码 |
+| [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) | 样本效率三实验：冻结测试集、学习曲线、LHS vs 随机多种子判定 |
 | [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) | **全量实验完整报告**：200 格协议、LHS-40、27.1% 改进、公平对照、DP 精修 |
 | [`docs/CONTINUITY_ARGUMENT.md`](docs/CONTINUITY_ARGUMENT.md) | **连续性：直觉判断 + 数学框架**（四步证明骨架、可分辨阈值推论） |
 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) | 双参数 pilot 报告：为什么选 μ、LHS 原理、100 格结果 |
