@@ -1,0 +1,34 @@
+{
+  "subsample": 3000,
+  "index_draws": 1,
+  "rows": [
+    {
+      "key": "s00_m00",
+      "sigma": 10.0,
+      "mu": 0.1,
+      "particle_error_mean": 0.08568536606276236,
+      "particle_error_sd": 0.0,
+      "particle_floor_mean": 0.09040590435069128,
+      "particle_floor_sd": 0.0,
+      "histogram_error": 0.06473115445317532,
+      "histogram_floor": 0.04482904473014247,
+      "ot_gap_max": 8.760353553682876e-17,
+      "ratio_particle": 0.9477850664529875,
+      "ratio_histogram": 1.443955695305078
+    },
+    {
+      "key": "s09_m05",
+      "sigma": 100.0,
+      "mu": 1.0,
+      "particle_error_mean": 0.12703191300838512,
+      "particle_error_sd": 0.0,
+      "particle_floor_mean": 0.12037843352627679,
+      "particle_floor_sd": 0.0,
+      "histogram_error": 0.1170633405522719,
+      "histogram_floor": 0.06242513240882596,
+      "ot_gap_max": 2.171526847227767e-14,
+      "ratio_particle": 1.0552713578936543,
+      "ratio_histogram": 1.8752597877665202
+    }
+  ]
+}

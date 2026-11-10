@@ -1,0 +1,48 @@
+{
+  "rows": [
+    {
+      "sigma": 10.0,
+      "mu": 0.1,
+      "key": "s00_m00",
+      "floor_particle_subsample": 0.08383956471926259,
+      "floor_particle_scaled": 0.02867272780995665,
+      "floor_histogram": 0.051198010853544994,
+      "model_error": 0.06473115201419137,
+      "ratio_particle": 2.2575861091149263,
+      "ratio_histogram": 1.264329432628911
+    },
+    {
+      "sigma": 100.0,
+      "mu": 1.0,
+      "key": "s09_m05",
+      "floor_particle_subsample": 0.11288021393365433,
+      "floor_particle_scaled": 0.03860449013645373,
+      "floor_histogram": 0.06571702897796249,
+      "model_error": null,
+      "ratio_particle": null,
+      "ratio_histogram": null
+    },
+    {
+      "sigma": 200.0,
+      "mu": 0.1,
+      "key": "s19_m00",
+      "floor_particle_subsample": 0.08683164554647615,
+      "floor_particle_scaled": 0.029696005058966194,
+      "floor_histogram": 0.057462302090183805,
+      "model_error": 0.12138357988122175,
+      "ratio_particle": 4.08753903564453,
+      "ratio_histogram": 2.112403705836866
+    },
+    {
+      "sigma": 200.0,
+      "mu": 10.0,
+      "key": "s19_m09",
+      "floor_particle_subsample": 0.2084729664153225,
+      "floor_particle_scaled": 0.07129675162050807,
+      "floor_histogram": 0.12273490843738466,
+      "model_error": 0.22726573255899732,
+      "ratio_particle": 3.187602904669022,
+      "ratio_histogram": 1.8516796521255472
+    }
+  ]
+}
