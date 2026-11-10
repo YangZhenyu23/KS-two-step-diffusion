@@ -1,0 +1,462 @@
+{
+  "subsample": 10000,
+  "index_seed": 20261110,
+  "summary": {
+    "mf": {
+      "n": 20,
+      "particle_mean": 0.31936923911032483,
+      "particle_sd": 0.21745035722893336,
+      "histogram_mean": 0.34325626230731193,
+      "ratio_particle_over_hist": 0.9304105246720847
+    },
+    "mf_dp": {
+      "n": 20,
+      "particle_mean": 0.15300393901421508,
+      "particle_sd": 0.06201485304521945,
+      "histogram_mean": 0.17929351816789627,
+      "ratio_particle_over_hist": 0.8533712795514293
+    }
+  },
+  "rows": [
+    {
+      "sigma": 10,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.3555597128651559,
+      "solver_code": 1,
+      "seconds": 22.73,
+      "w2_histogram": 0.36827165231368475
+    },
+    {
+      "sigma": 10,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.12064014787394449,
+      "solver_code": 1,
+      "seconds": 15.41,
+      "w2_histogram": 0.15045248926041774
+    },
+    {
+      "sigma": 20,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.12191457272991614,
+      "solver_code": 1,
+      "seconds": 15.45,
+      "w2_histogram": 0.15339947562647135
+    },
+    {
+      "sigma": 20,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.11733600780540426,
+      "solver_code": 1,
+      "seconds": 15.23,
+      "w2_histogram": 0.1426935979706594
+    },
+    {
+      "sigma": 30,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.1206590589232549,
+      "solver_code": 1,
+      "seconds": 14.97,
+      "w2_histogram": 0.14186459986140978
+    },
+    {
+      "sigma": 30,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.11254965314610359,
+      "solver_code": 1,
+      "seconds": 14.59,
+      "w2_histogram": 0.13730216647881321
+    },
+    {
+      "sigma": 40,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.15657899075524434,
+      "solver_code": 1,
+      "seconds": 16.33,
+      "w2_histogram": 0.18278607207140493
+    },
+    {
+      "sigma": 40,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.11130950567058187,
+      "solver_code": 1,
+      "seconds": 13.2,
+      "w2_histogram": 0.13108709189249296
+    },
+    {
+      "sigma": 50,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.1838219190810229,
+      "solver_code": 1,
+      "seconds": 17.2,
+      "w2_histogram": 0.20643917952905447
+    },
+    {
+      "sigma": 50,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.10833337744543999,
+      "solver_code": 1,
+      "seconds": 13.61,
+      "w2_histogram": 0.12974417993229173
+    },
+    {
+      "sigma": 60,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.19680725049433703,
+      "solver_code": 1,
+      "seconds": 17.55,
+      "w2_histogram": 0.22546796173415556
+    },
+    {
+      "sigma": 60,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.10905201548876085,
+      "solver_code": 1,
+      "seconds": 14.18,
+      "w2_histogram": 0.13481397531327202
+    },
+    {
+      "sigma": 70,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.20360208318011908,
+      "solver_code": 1,
+      "seconds": 17.82,
+      "w2_histogram": 0.21623040205260233
+    },
+    {
+      "sigma": 70,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.118565496601402,
+      "solver_code": 1,
+      "seconds": 14.63,
+      "w2_histogram": 0.131539720301471
+    },
+    {
+      "sigma": 80,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.17761907487282189,
+      "solver_code": 1,
+      "seconds": 16.21,
+      "w2_histogram": 0.2059730863011656
+    },
+    {
+      "sigma": 80,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.11415731311389078,
+      "solver_code": 1,
+      "seconds": 14.1,
+      "w2_histogram": 0.13388850040390438
+    },
+    {
+      "sigma": 90,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.1692516511858593,
+      "solver_code": 1,
+      "seconds": 15.96,
+      "w2_histogram": 0.19433800189036898
+    },
+    {
+      "sigma": 90,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.12005987637769298,
+      "solver_code": 1,
+      "seconds": 14.42,
+      "w2_histogram": 0.14804685189765912
+    },
+    {
+      "sigma": 100,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.1584872230920125,
+      "solver_code": 1,
+      "seconds": 15.57,
+      "w2_histogram": 0.18310698639285874
+    },
+    {
+      "sigma": 100,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.1247028470562517,
+      "solver_code": 1,
+      "seconds": 14.59,
+      "w2_histogram": 0.15374054861326497
+    },
+    {
+      "sigma": 110,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.1695078226516245,
+      "solver_code": 1,
+      "seconds": 15.91,
+      "w2_histogram": 0.1981952611245504
+    },
+    {
+      "sigma": 110,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.1289950281704545,
+      "solver_code": 1,
+      "seconds": 14.39,
+      "w2_histogram": 0.16140029898387573
+    },
+    {
+      "sigma": 120,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.2007878913391026,
+      "solver_code": 1,
+      "seconds": 16.2,
+      "w2_histogram": 0.22769650749424447
+    },
+    {
+      "sigma": 120,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.12785221225567256,
+      "solver_code": 1,
+      "seconds": 13.7,
+      "w2_histogram": 0.1605228557497781
+    },
+    {
+      "sigma": 130,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.2372120514384239,
+      "solver_code": 1,
+      "seconds": 18.07,
+      "w2_histogram": 0.27560703793366437
+    },
+    {
+      "sigma": 130,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.14231085434255314,
+      "solver_code": 1,
+      "seconds": 14.46,
+      "w2_histogram": 0.16155050816764716
+    },
+    {
+      "sigma": 140,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.30911457562257755,
+      "solver_code": 1,
+      "seconds": 17.78,
+      "w2_histogram": 0.3372969250971602
+    },
+    {
+      "sigma": 140,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.13861770222924405,
+      "solver_code": 1,
+      "seconds": 13.59,
+      "w2_histogram": 0.1596425704419082
+    },
+    {
+      "sigma": 150,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.3910924093419959,
+      "solver_code": 1,
+      "seconds": 18.15,
+      "w2_histogram": 0.40938785076116685
+    },
+    {
+      "sigma": 150,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.15361289899581154,
+      "solver_code": 1,
+      "seconds": 15.02,
+      "w2_histogram": 0.1763267699209239
+    },
+    {
+      "sigma": 160,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.4528885936899717,
+      "solver_code": 1,
+      "seconds": 19.49,
+      "w2_histogram": 0.48451418361734766
+    },
+    {
+      "sigma": 160,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.16493368354500398,
+      "solver_code": 1,
+      "seconds": 14.62,
+      "w2_histogram": 0.20305465567975667
+    },
+    {
+      "sigma": 170,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.5492852324825762,
+      "solver_code": 1,
+      "seconds": 18.79,
+      "w2_histogram": 0.5730438177655128
+    },
+    {
+      "sigma": 170,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.19351791497133894,
+      "solver_code": 1,
+      "seconds": 16.68,
+      "w2_histogram": 0.23522467897649996
+    },
+    {
+      "sigma": 180,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.6586037157282583,
+      "solver_code": 1,
+      "seconds": 20.28,
+      "w2_histogram": 0.6673825421641743
+    },
+    {
+      "sigma": 180,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.24448625047645403,
+      "solver_code": 1,
+      "seconds": 16.84,
+      "w2_histogram": 0.27091655860245906
+    },
+    {
+      "sigma": 190,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.7392427184723236,
+      "solver_code": 1,
+      "seconds": 20.07,
+      "w2_histogram": 0.7624700818772389
+    },
+    {
+      "sigma": 190,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.2793399875278776,
+      "solver_code": 1,
+      "seconds": 17.97,
+      "w2_histogram": 0.3106103787399406
+    },
+    {
+      "sigma": 200,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.8353482342598987,
+      "solver_code": 1,
+      "seconds": 20.42,
+      "w2_histogram": 0.8516536205380038
+    },
+    {
+      "sigma": 200,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 10000,
+      "w2_particle": 0.3297060071904186,
+      "solver_code": 1,
+      "seconds": 18.03,
+      "w2_histogram": 0.35331196603088916
+    }
+  ]
+}

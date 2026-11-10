@@ -128,12 +128,19 @@
 - Meanflow 比值 4.3–35×（均值 17.5），曲线相关系数 `0.94`
 - MF+DP 比值 19–30×（均值 **25.4**，几乎恒定），相关系数 `0.99`
 
-**形状对得上，量级对不上。** 决定性判据：把 100k 参考云随机对半切成两个 50k 独立样本，
-它们之间的 W2 就有 `0.067–0.081`；而论文报告的 DP 精修值是 `0.0047–0.0214`，
-**比"自己和自己比"还小 3–15 倍**。任何经验测度之间的 W2 都不可能低于有限样本自身的涨落，
-所以论文的 W2 不是"生成云 vs 参考云在物理坐标下的经验 W2"，正文也未给出归一化/离散化定义。
+**形状对得上，量级对不上（差 15–25 倍）。**
 
-完整论证与试过的 8 种口径变换见 [`docs/PAPER_COMPARISON.md`](docs/PAPER_COMPARISON.md)。
+早期曾用「100k 参考云对半切成两个 50k 样本，其 16 箱直方图 W2 = 0.067–0.081」作为统计下限，
+论证论文数值（0.0047–0.0214）"不可能"。**该论证已失效**——后续发现该数值 94% 来自直方图量化伪影
+（保持粒子位置不变、仅重抽箱内计数即得 0.0428），且劈半成 50k 也使抽样噪声偏大 1.26 倍。
+
+修正后：以粒子级底噪外推至 $N=10^5$ 约为 0.028–0.072，论文数值仍偏低 1.4–6.5 倍，
+但**差距已不足以构成严格的不可能论证**。坐标尺度变换也已排除（需除以云对角线的 2.2–4.2 倍且不恒定）。
+
+**结论：论文数值为何如此之小，根本原因未知。** 论文正文明确使用粒子级 $N\times N$ 精确 OT（式 7），
+未提及直方图；亦未声明是否采用 Sinkhorn 熵正则，未给出 $N$ 的具体取值。
+
+完整论证见 [`docs/PAPER_COMPARISON.md`](docs/PAPER_COMPARISON.md)。
 
 ---
 
@@ -332,7 +339,7 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 | [`docs/TWO_PARAM_REPORT.md`](docs/TWO_PARAM_REPORT.md) | 双参数 pilot 报告：为什么选 μ、LHS 原理、100 格结果 |
 | [`docs/CONTINUITY.md`](docs/CONTINUITY.md) | 连续性详细证明（假设逐条验证、Fournier–Guillin 速率） |
 | [`docs/REPRODUCTION.md`](docs/REPRODUCTION.md) | 单参数复现报告：命令、逐阶段耗时、逐 σ 数值、偏差来源、局限 |
-| [`docs/PAPER_COMPARISON.md`](docs/PAPER_COMPARISON.md) | 与论文逐项对比；统计噪声下限判据；8 种口径变换的尝试记录 |
+| [`docs/PAPER_COMPARISON.md`](docs/PAPER_COMPARISON.md) | 与论文逐项对比；度量口径的修正分析；8 种口径变换的尝试记录 |
 | [`docs/UPSTREAM_ANALYSIS.md`](docs/UPSTREAM_ANALYSIS.md) | 上游仓库代码审计：结构、调用链、两处实质不一致、可借鉴点 |
 | [`docs/KS_physical_parameters.md`](docs/KS_physical_parameters.md) | KS 方程三个位移尺度的量级分析（剪切主导区间） |
 | [`docs/KS_equation_and_two_parameter_design.md`](docs/KS_equation_and_two_parameter_design.md) | 单参数 → 两参数条件化：推荐 (σ, χ)，不建议 (σ, T) |
