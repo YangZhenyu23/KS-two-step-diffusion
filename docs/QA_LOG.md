@@ -645,3 +645,215 @@ $m=30000$ 时内存（6.7 GiB）在 32 GB 机器上可行，但 143 格需 85 �
 | **对齐到全量** | 用 $W_2^2=a+b\,m^{-2/3}$ 外推到 $m\to\infty$（已拟合）|
 
 **直方图在本场景是合理选择，但不是最优**；其致命缺陷（量化占底噪 94%）会使"离极限多远"的判断失真。粒子级的缺陷是子采样，但可通过外推修正。
+
+---
+
+## Q4. 模型架构、损失函数、优化算法；"两步"的确切含义
+
+### 提问
+
+> （1）神经网络到底用了什么架构？
+> （2）损失函数是什么？
+> （3）优化算法是什么？如何反向传播？
+> （4）我的理解："两步"是先 MF 把高斯分布输出成中间分布，再用 DP 以中间分布为输入训练。对吗？
+> （5）优化器选的是什么？
+
+---
+
+### A4.1 网络架构：极简 MLP
+
+#### MeanFlow（主方法）
+
+代码位置：`upstream/MF-DeepParticle/deepparticle/training/core.py:86`
+
+```python
+class Meanflow(nn.Module):
+    def __init__(self, width=64):
+        self.net = nn.Sequential(
+            nn.Linear(6, width), nn.SELU(),
+            nn.Linear(width, width), nn.SELU(),
+            nn.Linear(width, width), nn.SELU(),
+            nn.Linear(width, 3),
+        )
+    def forward_logsigma(self, z, r, t, logsigma):
+        return self.net(torch.cat((z, t, r, logsigma), dim=-1))
+```
+
+| 项 | 值 |
+|---|---|
+| 结构 | 4 层全连接（3 隐层 + 1 输出层）|
+| 输入维度 | 6 = 3（坐标 $z$）+ $t$ + $r$ + $\log_{10}\sigma$ |
+| 宽度 | 64 |
+| 激活 | **SELU** |
+| 输出 | 3（速度场 $u_\theta\in\mathbb R^3$）|
+| 参数量 | **9,027** |
+
+**没有卷积、注意力、残差连接或 LayerNorm。** 输入顺序为 `(z, t, r, log10 σ)`，与上游 notebook 一致。
+
+#### 本工作的双参数扩展
+
+唯一改动是输入从 6 维变 7 维（增加 $\log_{10}\mu$）：
+
+```python
+nn.Linear(7, 64) -> SELU -> ... -> nn.Linear(64, 3)
+```
+
+参数量 9,155。
+
+#### DP 修正器
+
+```python
+nn.Linear(4, 64) -> [LayerNorm(64) -> Linear(64,64) -> SiLU -> Linear(64,64)] x 2
+                 -> Linear(64, 3)   # 输出层零初始化
+```
+
+残差形式：$x_{\text{out}}=x+\alpha\cdot\text{MLP}(x,c)$，每块 $h\leftarrow h+0.2\cdot\text{block}(h)$。
+
+---
+
+### A4.2 损失函数：两个网络、两种损失
+
+#### MeanFlow —— MeanFlow 恒等式
+
+设 $x_0$ 为目标端（$t=0$）、$x_1$ 为初值端（$t=1$）：
+
+$$
+v=x_1-x_0,\qquad z=(1-t)x_0+t\,x_1 .
+$$
+
+沿插值轨道的时间导数由 Jacobian-向量积给出：
+
+$$
+\frac{du}{dt}=\frac{\partial u_\theta}{\partial z}v+\frac{\partial u_\theta}{\partial t}.
+$$
+
+**损失**：
+
+$$
+\boxed{
+\mathcal L_{\text{MF}}=\mathbb E\left\|u_\theta(z,r,t,c)-\Big[v-(t-r)\frac{du}{dt}\Big]\right\|^2
+}
+$$
+
+$(t-r)\frac{du}{dt}$ 项使网络学习**区间 $[r,t]$ 上的平均速度**，而非瞬时速度，因而支持一步跳跃。
+
+**代码实现**（`core.py:372`）：
+
+```python
+u, derivative = jvp(lambda zz, rr, tt: model.forward_logsigma(zz, rr, tt, condition),
+                    (z, r, t), (velocity, torch.zeros_like(r), torch.ones_like(t)))
+desired = (velocity - (t - r) * derivative).detach()    # detach 不可省略
+loss, _ = meanflow_loss(u - desired)
+```
+
+`.detach()` 的必要性：目标项含 $du/dt$（依赖 $\theta$），若不 detach，梯度会经目标回传，等价于对目标求导，训练发散。
+
+**时间对采样**：$r,t$ 由 $\sigma(-0.4+\mathcal N(0,1))$ 经 sigmoid 得到，取 $t=\max$、$r=\min$；**一半样本强制 $r=t$**，此时损失退化为纯速度回归。
+
+#### DP 修正器
+
+$$
+\mathcal L_{\text{DP}}=\underbrace{\|x_{\text{refined}}-x_{\text{matched}}\|^2}_{\text{传输}}+\lambda\underbrace{\|x_{\text{refined}}-x_{\text{source}}\|^2}_{\text{残差}},\qquad\lambda=1
+$$
+
+$x_{\text{matched}}$ 为用**精确 OT** 重排后的对应点；匹配每 50 步重算（`ot_refresh=50`）。
+
+---
+
+### A4.3 优化算法与反向传播
+
+**优化器**：Adam。
+
+**梯度传播的特殊性**：损失依赖网络自身的导数 $du/dt$，反向传播需穿过 Jacobian-向量积。`torch.func.jvp` 在前向中同时给出 $u$ 与 $du/dt$，反向时正常反传。**这不是标准监督学习**——损失含网络自身导数。
+
+**学习率演进**（本工作改进）：
+
+| 方案 | 学习率 | 测试 $W_2$ |
+|---|---|---:|
+| 固定 | $10^{-3}$ | 0.1207 |
+| + cosine | $10^{-3}\to10^{-5}$ | 0.1028 |
+| **+ warm-up 2%** | $0\to10^{-3}\to10^{-5}$ | **0.0978** |
+
+warm-up 作用：前 2% 步数从 0 线性升至 $10^{-3}$，避免初期大步长破坏随机初始化。
+
+---
+
+### A4.4 「两步」的确切含义：需要重要修正
+
+#### 用户的表述
+
+> 先用 MeanFlow 把高斯分布输出成中间分布，再用 DP 以该中间分布为输入训练修正器。
+
+#### 实际实现
+
+**「两步」指 MeanFlow 自己走两段，与 DP 无关。**
+
+采样调度（`ks_workflows.py:488`）：
+
+```python
+schedule = [[1., .5], [.5, 0.]]
+```
+
+即
+
+$$
+x_1 \xrightarrow{\ \text{区间}[0.5,1]\ } x_{0.5} \xrightarrow{\ \text{区间}[0,0.5]\ } x_0
+$$
+
+**使用同一个网络、同一份权重，调用两次，每次用不同的时间对 $(r,t)$**：
+
+```python
+for t_hi, t_lo in ((1.0, 0.5), (0.5, 0.0)):
+    velocity = model(x, r=t_lo, t=t_hi, cond)
+    x = x - (t_hi - t_lo) * velocity
+```
+
+**本质**：把 $[0,1]$ 拆成两段，每段使用 MeanFlow 的区间平均速度——是对同一条概率流的更精细离散化，**不是两个不同的网络**。
+
+#### MF 与 DP 是并列方法，不是串行两步
+
+| 方法 | 内容 |
+|---|---|
+| **MF** | 一步生成（核心方法）|
+| **DP** | 直接学"初值 → 终值"的确定性映射 |
+| **MF + DP** | 先 MF 一步，再用 DP 修正器微调 |
+| **MF 两步** | MF 走两段，不使用 DP |
+
+本工作的主体是 **MF 一步**，DP 修正为可选（且推理开销 1.71 倍，不符合一步约束）。两步 MF 仅在最初复现阶段做过（`results/ks3d/multistep/`）。
+
+#### 另一处修正：初始分布不是高斯
+
+实际初始分布是**单位球内均匀分布**：
+
+```python
+radius = torch.rand(n, 1).pow(1/3)          # 1/3 次幂保证球内均匀
+direction = torch.randn(n, 3)
+x0 = radius * direction / ||direction||
+```
+
+不是正态分布。这一区别影响流的路径形状。
+
+---
+
+### A4.5 优化器与训练配置
+
+| 项 | 值 |
+|---|---|
+| 优化器 | **Adam**（MeanFlow 与 DP 相同）|
+| 学习率 | $10^{-3}$，后改为 cosine + warm-up |
+| 批大小 | 4096（10 万粒子）/ 256（2 万粒子 pilot）|
+| 总步数 | 1,280,000（每格 32,000 × 40 格）|
+| 未使用 | SGD、AdamW（保持与上游一致以便对比）|
+
+---
+
+### A4.6 汇总
+
+| 问题 | 答案 |
+|---|---|
+| 网络架构 | 4 层 MLP，宽 64，3 隐层 SELU，9,027 参数 |
+| MF 损失 | $\lVert u-[v-(t-r)\dot u]\rVert^2$，含 jvp 与 detach |
+| DP 损失 | OT 匹配误差 $+\lambda\cdot$残差惩罚 |
+| 「两步」含义 | **同一 MF 网络走 $[0.5,1]$ 与 $[0,0.5]$ 两段**，非 MF+DP |
+| 初始分布 | **单位球均匀**，非高斯 |
+| 优化器 | Adam，$10^{-3}$（本工作加入 cosine + warm-up）|
