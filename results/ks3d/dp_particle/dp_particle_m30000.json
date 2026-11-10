@@ -1,0 +1,44 @@
+{
+  "subsample": 30000,
+  "index_seed": 20261110,
+  "summary": {
+    "mf": {
+      "n": 1,
+      "particle_mean": 0.1450312534146517,
+      "particle_sd": 0.0,
+      "histogram_mean": 0.18310698639285874,
+      "ratio_particle_over_hist": 0.792057453796356
+    },
+    "mf_dp": {
+      "n": 1,
+      "particle_mean": 0.1116440173801952,
+      "particle_sd": 0.0,
+      "histogram_mean": 0.15374054861326497,
+      "ratio_particle_over_hist": 0.7261845907746578
+    }
+  },
+  "rows": [
+    {
+      "sigma": 100,
+      "seed": 88,
+      "method": "mf",
+      "particles_total": 100000,
+      "subsample": 30000,
+      "w2_particle": 0.1450312534146517,
+      "solver_code": 1,
+      "seconds": 437.45,
+      "w2_histogram": 0.18310698639285874
+    },
+    {
+      "sigma": 100,
+      "seed": 88,
+      "method": "mf_dp",
+      "particles_total": 100000,
+      "subsample": 30000,
+      "w2_particle": 0.1116440173801952,
+      "solver_code": 1,
+      "seconds": 330.54,
+      "w2_histogram": 0.15374054861326497
+    }
+  ]
+}
