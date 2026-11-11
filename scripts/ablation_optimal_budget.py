@@ -65,6 +65,8 @@ def main() -> int:
     ap.add_argument("--updates-per-cell", type=int, default=DEFAULT_UPDATES)
     ap.add_argument("--batch-size", type=int, default=4096)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--seed", type=int, default=88,
+                    help="training seed for both models; separate output dir per seed")
     a = ap.parse_args()
 
     torch.set_num_threads(min(8, torch.get_num_threads()))
@@ -96,7 +98,7 @@ def main() -> int:
         return {r["key"]: r["w2"] for r in rows}
 
     # ---- two parameters ---------------------------------------------------
-    two_dir = OUT / f"two_{a.updates_per_cell}"
+    two_dir = OUT / f"two_{a.updates_per_cell}_s{a.seed}"
     two_ckpt = two_dir / "mf_two_param.pt"
     if two_ckpt.is_file():
         log("two-parameter checkpoint exists, reusing")
@@ -106,7 +108,7 @@ def main() -> int:
         with contextlib.redirect_stdout(io.StringIO()):
             train_two_param(design, config, two_dir,
                             steps=a.updates_per_cell * len(design),
-                            batch_size=a.batch_size, lr=a.lr, seed=88,
+                            batch_size=a.batch_size, lr=a.lr, seed=a.seed,
                             conditioning="log10")
         log(f"  finished in {time.perf_counter() - started:.0f}s")
     two_model, _ = load_two(two_ckpt)
@@ -116,7 +118,7 @@ def main() -> int:
     torch.cuda.empty_cache()
 
     # ---- one parameter ----------------------------------------------------
-    one_dir = OUT / f"one_{a.updates_per_cell}"
+    one_dir = OUT / f"one_{a.updates_per_cell}_s{a.seed}"
     one_ckpt = one_dir / "mf_one_param.pt"
     if one_ckpt.is_file():
         log("one-parameter checkpoint exists, reusing")
@@ -126,7 +128,7 @@ def main() -> int:
         with contextlib.redirect_stdout(io.StringIO()):
             train_one_param(slice_cells, config, one_dir,
                             steps=a.updates_per_cell * len(slice_cells),
-                            batch_size=a.batch_size, lr=a.lr, seed=88)
+                            batch_size=a.batch_size, lr=a.lr, seed=a.seed)
         log(f"  finished in {time.perf_counter() - started:.0f}s")
     one_model, _ = load_one(one_ckpt)
     one_scores = score(one_model, lambda m, src, c:
@@ -143,7 +145,7 @@ def main() -> int:
                        "improvement": w_one - w_two, "ratio": w_two / w_one,
                        "mu_off_baseline": abs(math.log10(cell.mu))})
     detail.sort(key=lambda r: (r["mu_off_baseline"], r["sigma"]))
-    write_csv(OUT / "detail.csv", detail)
+    write_csv(OUT / f"detail_s{a.seed}.csv", detail)
 
     m_one = float(np.mean([r["w2_one_param"] for r in detail]))
     m_two = float(np.mean([r["w2_two_param"] for r in detail]))
@@ -178,7 +180,7 @@ def main() -> int:
         "by_mu_band": band_summary,
         "noise_floor": G.FLOOR_16,
     }
-    write_json(OUT / "summary.json", summary)
+    write_json(OUT / f"summary_s{a.seed}.json", summary)
 
     print(f"\nnoise floor {G.FLOOR_16:.5f}")
     print(f"one-parameter  {m_one:.5f}  ({m_one / G.FLOOR_16:.2f}x floor)")
@@ -192,3 +194,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

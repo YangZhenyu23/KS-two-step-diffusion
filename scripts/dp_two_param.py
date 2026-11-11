@@ -64,7 +64,7 @@ from fullscale.train import load_cell, load_two  # noqa: E402
 from sample_efficiency import frozen_test_set, stratified_subset  # noqa: E402
 
 OUT = G.RESULTS / "dp_two_param"
-MF_CHECKPOINT = G.RESULTS / "optimal_budget_ablation" / "two_32000" / "mf_two_param.pt"
+DEFAULT_MF = G.RESULTS / "optimal_budget_ablation" / "two_32000" / "mf_two_param.pt"
 
 
 class TwoParamCorrector(nn.Module):
@@ -235,10 +235,15 @@ def main() -> int:
     ap.add_argument("--ot-refresh", type=int, default=10)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--seed", type=int, default=88)
+    ap.add_argument("--mf-checkpoint", type=Path, default=None,
+                    help="MF weights to correct; defaults to the seed-88 model, "
+                         "but each DP seed must use its own MF model, otherwise the "
+                         "seed pairing is meaningless")
     a = ap.parse_args()
 
     torch.set_num_threads(min(8, torch.get_num_threads()))
-    OUT.mkdir(parents=True, exist_ok=True)
+    out_dir = OUT / f"s{a.seed}"
+    out_dir.mkdir(parents=True, exist_ok=True)
     log = lambda t: print(f"[{time.strftime('%H:%M:%S')}] {t}", flush=True)
     config = G  # namespace for n_train
 
@@ -253,8 +258,20 @@ def main() -> int:
             if c.key not in design_keys and c.key not in slice_keys]
     log(f"train cells {len(design)}, held-out cells {len(held)}")
 
-    mf_model, _ = load_two(MF_CHECKPOINT, "cuda")
-    log(f"MF checkpoint: {MF_CHECKPOINT.relative_to(ROOT)}")
+    mf_path = a.mf_checkpoint
+    if mf_path is None:
+        # default to the MF model trained with the same seed, so the MF/DP pair
+        # shares one run; fall back to the seed-88 model only for seed 88
+        candidate = (G.RESULTS / "optimal_budget_ablation" / f"two_32000_s{a.seed}"
+                     / "mf_two_param.pt")
+        mf_path = candidate if candidate.is_file() else DEFAULT_MF
+    if not mf_path.is_file():
+        raise SystemExit(f"MF checkpoint not found: {mf_path}")
+    mf_model, mf_payload = load_two(mf_path, "cuda")
+    log(f"MF checkpoint: {mf_path.relative_to(ROOT)}")
+    if mf_payload.get("seed") not in (None, a.seed):
+        log(f"WARNING: MF checkpoint was trained with seed {mf_payload.get('seed')}, "
+            f"but this DP run uses seed {a.seed}; the pair is mixed")
 
     result = train_corrector(mf_model, design, cfg,
                              updates_per_cell=a.updates_per_cell, batch=a.batch,
@@ -270,7 +287,7 @@ def main() -> int:
                 "updates_per_cell": a.updates_per_cell, "batch": a.batch,
                 "alpha": a.alpha, "blocks": a.blocks,
                 "ot_refresh": a.ot_refresh, "lr": a.lr, "seed": a.seed},
-               OUT / "dp_corrector.pt")
+               out_dir / "dp_corrector.pt")
 
     # ---- evaluate: MF alone vs MF + DP, histogram W2 --------------------
     log(f"scoring {len(held)} held-out cells")
@@ -300,7 +317,7 @@ def main() -> int:
                        "ratio": w_dp / w_mf if w_mf else None,
                        "mu_off_baseline": abs(math.log10(meta["mu"]))})
     detail.sort(key=lambda r: (r["mu_off_baseline"], r["sigma"]))
-    write_csv(OUT / "detail.csv", detail)
+    write_csv(out_dir / "detail.csv", detail)
 
     m_mf = float(np.mean([r["w2_mf"] for r in detail]))
     m_dp = float(np.mean([r["w2_mf_dp"] for r in detail]))
@@ -337,7 +354,7 @@ def main() -> int:
         "training_seconds": result["seconds"],
         "noise_floor": G.FLOOR_16,
     }
-    write_json(OUT / "summary.json", summary)
+    write_json(out_dir / "summary.json", summary)
 
     print(f"\nnoise floor {G.FLOOR_16:.5f}")
     print(f"  MF        {m_mf:.5f}  ({m_mf / G.FLOOR_16:.2f}x floor)")
@@ -345,9 +362,10 @@ def main() -> int:
     print(f"  reduction {summary['relative_reduction']:+.1%}   "
           f"DP wins {summary['dp_wins']}/{len(detail)}")
     print(f"  corr(gain, |log10 mu|) = {summary['corr_gain_vs_mu_distance']:.3f}")
-    print(f"\nwrote {OUT}")
+    print(f"\nwrote {out_dir}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
