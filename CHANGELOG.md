@@ -13,6 +13,48 @@
 
 ---
 
+## [v1.7.0] — 2026-11-12
+
+**重写数学理论文档 `docs/THEORY.md`：修正 4 处实质错误，新增"位移律"与"DP 收敛到 Brenier 映射"两条定理级结论。**
+
+### 新增
+
+- **`docs/THEORY.md` 全面重写**（903 → 约 900 行，结构重排为 8 部分 + 3 附录），每条结论标注严格程度（【定理·严格】/【定理·定性】/【经验定律】/【启发式】/【已否定】），并在开头给出"取舍建议表"，便于挑选哪些写进论文
+- **经验定律 1（位移律）**：$W_2\approx c_S|\Delta S|+c_G|\Delta G|$，其中 $S=\sigma T$、$G=\sqrt{2\mu T}$。实测 $c_S=0.897$、$c_G=1.981\pm0.026$
+- **定理 5（DP 的极限是 Brenier 最优映射）**：DP 目标在理想极限下收敛到 $\nabla\varphi_\theta$，推前精确等于 $\nu_\theta$。这与 MF 学条件期望 $T^*$ 是**不同的目标**——第二步换掉了损失函数，故原则上可超越单步的上限
+- **`scripts/mu_holder_test.py`** + `scripts/mu_holder_table.py` → `results/fullscale/holder/mu_holder.json`：检验 μ 方向的经验 Hölder 指数
+- **`scripts/displacement_law.py`** → `results/fullscale/displacement/displacement_law.json`：全 370 对格点的 $W_2$ 与两种候选预测
+- **`scripts/displacement_law_fit.py`** → `.../law_comparison.json`：扣除底噪后的两律拟合对比
+- **`scripts/displacement_law_mu.py`**：检查 μ 对被底噪裁剪的比例
+- **`scripts/displacement_checks.py`** → `.../displacement_checks.json`：三项验证（$c_S$ 无趋势、$c_G\approx\sqrt3$、加性为上界）
+
+### 修复
+
+- **μ 方向的 $1/2$ 阶 Hölder 是错的，真实为 Lipschitz**。旧版由 $|\sqrt{2\mu_1}-\sqrt{2\mu_2}|\le C\sqrt{|\Delta\mu|}$ 推"μ 本质更难分辨"，但该式虽成立却极松；在 $\mu\ge0.1$ 上有 $|\sqrt{2\mu_1}-\sqrt{2\mu_2}|\le4.47|\Delta\mu|$，是**线性**界。$\sqrt\cdot$ 只在 $\mu\to0$ 退化时才给出 $1/2$ 阶
+- **假设 (A1) 中 $\|\nabla^2K_\delta\|_\infty<\infty$ 是假的**。$\nabla K_\delta$ 在原点不连续，$\nabla^2K_\delta$ 在原点奇异（$\sim1/r$）。改为"卷积后的场 Lipschitz"（(A1c)），并给出骨架证明
+- **"$L_\sigma\approx4.6$、$L_\mu\approx0.45$ 是常数"是统计假象**。实际 $\partial W_2/\partial\log_{10}\sigma\propto\sigma$（跨格点 $20\times$）、$\partial W_2/\partial\log_{10}\mu\propto\sqrt\mu$（$10\times$）。旧版的 4.6/0.45 只是这两列在 $\sigma\approx100,\mu\approx1$ 处的中位数
+- **"底噪有严格下界"是错的**，已撤回。$W_2$ 对"宽分布 + 小幅平滑"只敏感于 $O(\sigma^2)$，故不存在与网络无关的正下界。正确表述只能是"已达物理可复现性"
+- **泛化速率 $n^{-1/4}$ 改为 $n^{-1/2}$**。旧速率来自错误的 $1/2$ 阶 Hölder；修正后 $n=40$ 的覆盖误差预测 $0.175$ 与实测 $0.150$ 吻合
+- **μ 可分辨阈值从 $2.0\%$ 修正为 $32\%$**（旧版与实测 $25\%$ 差 12 倍，新版差 1.3 倍），旧版 §7.1 的"未解决点"因此关闭
+
+### 复现
+
+- **$c_S$ 是常数而 $L_\sigma$ 不是**：$\log$-$\log$ 斜率 $+0.095$（$0$=常数 $c_S$，$1$=常数 $L_\sigma$），全网格跨度 $1.29\times$；常数 $L_\sigma$ 假说要求 $20\times$ → **位移律赢 15 倍**
+- **$c_S$ 从 0.786（$\sigma{=}10$）单调升到 1.014（$\sigma{=}190$），逼近理论天花板 $|g|_\infty=1$**（不是拟合，是上确界被数据逼近）
+- **$c_G=1.981\pm0.026$ vs 纯布朗预言 $\sqrt d=\sqrt3=1.732$，比值 $1.144$**。14% 超出是相互作用与剪切的耦合
+- **加性在斜对角上是上界**：171 个斜对角对，观测/加性 $=0.679$（p05 0.640，p95 0.795）。略低于正交值 $1/\sqrt2=0.707$，说明两方向部分对消
+- **μ 方向 54/180 对埋在底噪下**——这本身就是"μ 更难分辨"的直接证据
+
+### 其他
+
+- 新增 §1.5.4：由位移律推出**自然度量** $d_{\text{nat}}=c_S|\Delta S|+c_G|\Delta G|$，解释了旧版 `DESIGN_CRITERION.md` 中"J 准则方向错误"（$\mathrm{corr}(J,\text{误差})=-0.715$）与"8 个固定间距设计全部无效"——那些准则都在均匀对数度量下工作，而真实敏感度相差 $20\times$
+- 该节给出**可证伪预测**（尚未实验）：在 $d_{\text{nat}}$ 下做 maximin 应优于均匀 LHS，成本约 3 次 $n{=}40$ 训练
+
+---
+
+
+---
+
 ## [v1.6.0] — 2026-11-11
 
 **补上双参数的第二步：MF + DP，误差降至 0.1043（−15.0%）。**
