@@ -122,7 +122,31 @@ def density_panels(clouds: dict[str, np.ndarray], edges_per_axis, bins: int):
     return out
 
 
-def shared_edges(clouds: list[np.ndarray], bins: int):
+def upstream_edges(clouds: list[np.ndarray], step: float = 0.05, pad: float = 0.05):
+    """Exactly ``ks.py::_projections`` with ``bins=None``: fixed step, floor/ceil to it.
+
+    Upstream uses a *fixed* 0.05 step rather than a fixed number of bins, so a wider
+    cloud gets more bins, not wider ones. This matters for the figure's texture: 158 x
+    140 bins on 1e5 particles gives ~5 particles per bin, which is why the published
+    panels look grainier than a 90-bin rendering of the same cloud.
+    """
+    lows = np.min([c.min(0) for c in clouds], axis=0)
+    highs = np.max([c.max(0) for c in clouds], axis=0)
+    return [np.arange(np.floor(lo / step) * step - pad,
+                      np.ceil(hi / step) * step + step + 0.025, step)
+            for lo, hi in zip(lows, highs)]
+
+
+def shared_edges(clouds: list[np.ndarray], bins: int | None = None):
+    """Axis edges, shared across all clouds in one figure.
+
+    ``bins=None`` reproduces the upstream fixed-0.05-step convention; an integer gives
+    equal bin *counts* (used by the sweep figure, where the axis range grows with
+    sigma and a fixed 0.05 step would give 3x more bins to the last column than the
+    first, making the columns visually incomparable).
+    """
+    if bins is None:
+        return upstream_edges(clouds)
     lows = np.min([c.min(0) for c in clouds], axis=0)
     highs = np.max([c.max(0) for c in clouds], axis=0)
     pad = 0.03 * (highs - lows)
@@ -372,10 +396,13 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
 
     # ---------- figure 1: the paper-style 3x3 for one representative cell ----------
+    # Uses the upstream *fixed 0.05 step* (not a fixed bin count) so the texture and
+    # the colour-bar range match the published figure as closely as the data allows.
     hero_sigma, hero_mu = G.SIGMA_GRID[HERO_INDEX[0]], G.MU_GRID[HERO_INDEX[1]]
     print(f"hero cell sigma={hero_sigma:g} mu={hero_mu:g}")
     ref, mf, dp = cell_clouds(HERO_INDEX, mf_model, corrector, a.seed, device)
-    edges = shared_edges([ref, mf, dp if dp is not None else mf], a.bins)
+    edges = shared_edges([ref, mf, dp if dp is not None else mf], None)
+    print(f"  upstream 0.05 step -> {len(edges[0]) - 1} x {len(edges[1]) - 1} bins")
     clouds = {"ref": ref, "mf": mf}
     titles = ["Reference", "MF (1 step)"]
     if dp is not None:

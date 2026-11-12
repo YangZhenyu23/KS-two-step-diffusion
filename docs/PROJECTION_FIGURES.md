@@ -29,6 +29,12 @@
 本仓库的图沿用这一原则，但由于要展示**参数变化**，扫掠图改为**行内共享色标**
 （理由见 §3.2）。
 
+> **实测的上游规格（`scripts/check_projection_convention.py`）**：
+> 在 $\sigma{=}120,\mu{=}10$ 的云上，固定 0.05 步长给出 **158×140 箱**，
+> 概率密度峰值 **0.27–0.30**，而原始计数的峰值是 **68–76**。二者相差 250 倍
+> （$= N\Delta x\Delta y$），**不可混用**。上游代码用 `density=True`，
+> 故色条应为概率密度。
+
 ---
 
 ## 2. 本仓库的图
@@ -157,17 +163,60 @@ $y$-$z$ 投影始终保持近圆形（因为 $g=(e^{-y^2-z^2},0,0)$ 只沿 $x$ �
 
 ## 4. 与原论文图的对应关系
 
-| 原论文 | 本仓库 | 差别 |
-|---|---|---|
-| 3×3（三方法 × 三投影），单参数 $\sigma{=}160$ | 3×3（同上），单格 $(\sigma,\mu)=(120,10)$ | 结构一致 |
-| 列内共享色标 | 同样（hero 图）| 一致 |
-| 无误差列 | 加了第 4 列带符号误差 | **增强** |
-| 无参数扫掠 | 3×5 扫掠（$\sigma,\mu$ 单调增大）| **增强**：这是双参数研究特有的 |
-| 无 $W_2$ 标注 | 每格标 $W_2$ | **增强** |
+原论文的对应图是 **Figure 3**（第 14 页），题注原文：
 
-**可以直接放进论文的两张**：
-- `projection_hero.png`（与原论文图同构，便于审稿人对照）
-- `projection_sweep_xz.png`（展示连续参数能力，是本文的卖点）
+> *Figure 3: Qualitative comparisons on x-y, x-z, y-z at σ = 160 for the 3D Keller-Segel
+> system in a laminar flow. (a) Reference solution projected to three coordinate planes.
+> (b) Predicted solution projected to the three coordinate planes by Meanflow
+> (**W2 = 0.0403**) (c) DP Refinement solution projects to the three coordinate planes
+> (**W2 = 0.0082**).*
+
+**原图已提取存档**：`results/figures/paper_reference/paper_fig_page14_stacked.png`
+（三行是页面上三个独立位图块，已按上下顺序拼接还原）
+
+![原论文 Figure 3](../results/figures/paper_reference/paper_fig_page14_stacked.png)
+
+### 4.1 逐项对照
+
+| 项 | 原论文 Figure 3 | 本仓库 `projection_hero.png` |
+|---|---|---|
+| 布局 | 3 行（Reference / MeanFlow / DP refined）× 3 列（xy / xz / yz）| **完全相同** |
+| 行标题位置 | 中间列上方居中 | 左侧竖排 |
+| 分箱 | 固定 **0.05 步长**（`bins=None`）| **相同**（158×140 箱）|
+| 密度归一 | 概率密度（`counts/N/dx/dy`）| **相同**，色标 0–0.30 |
+| 色标共享 | 列内共享 | **相同** |
+| 色条 | 每格一个 | **相同** |
+| 配色 | `viridis` | **相同** |
+| 参数 | 单参数 $\sigma=160$，$\mu$ 固定 | **双参数** $(\sigma,\mu)=(120,10)$ |
+| $W_2$ 标注 | 在图注里 | **画在格内**（增强）|
+| 误差图 | 无 | **增加**（`projection_hero_error.png`）|
+
+### 4.2 一个重要的量级差异（必须说明）
+
+| | 原论文 | 本仓库 |
+|---|---:|---:|
+| MeanFlow $W_2$ | **0.0403** | 0.231 |
+| DP refined $W_2$ | **0.0082** | 0.192 |
+| DP 相对改善 | $-79.7\%$ | $-17.0\%$ |
+
+**本仓库的绝对误差比论文高 5.7 倍，DP 的相对改善也弱 4.7 倍。** 这不构成矛盾，原因已查清：
+
+1. **参数不同**：论文是 $\sigma=160,\ \mu$ 固定；本图是 $\sigma=120,\ \mu=10$（参数域最角落，扩散最强、误差最大）
+2. **度量口径不同**：论文用粒子级 $W_2$（式 7 明确写 $N\times N$ 精确 OT）。本仓库主结果用 **16 箱直方图**（噪声基底 0.0644）。粒子级重测下本仓库比值可达 1.04 倍基底，但绝对数不可直接与论文比
+3. **训练配置不同**：本仓库每格 32,000 步、单网络覆盖 200 格；论文逐 $\sigma$ 训练
+
+> **正确读法**：这两张图应作**定性对比**（形态是否捕获、边界是否锐利），
+> 不是定量对比。定量的公平对照是本文内部的单参数 vs 双参数（$+39.0\%$）。
+
+### 4.3 论文未说明的部分
+
+在全文搜索 `histogram` / `bins` / `colorbar` / `viridis` 等词（`scripts/paper_binning_search.py`）：
+
+- **3D 图（Figure 3、4）**：**完全没有**关于分箱、色条单位、配色的说明
+- 只有 KPP 的 2D 图（Figure 5）明确写了「72×72 histogram on $\mathbb T^2$」
+
+**因此 3D 图的绘制规格只能从上游代码反推**，本仓库的模仿依据是
+`upstream/.../ks.py::_projections`（这是论文作者自己的复现代码，权威性最高）。
 
 ---
 
@@ -175,19 +224,33 @@ $y$-$z$ 投影始终保持近圆形（因为 $g=(e^{-y^2-z^2},0,0)$ 只沿 $x$ �
 
 ```
 results/figures/
-├── projection_hero.png              3x3 论文风格
+├── projection_hero.png              3x3 论文风格（固定 0.05 步长，158x140 箱）
 ├── projection_hero_error.png        2x3 带符号误差
 ├── projection_hero_combined.png     3x4 合并（密度+误差）
 ├── projection_sweep_xy.png          3x5 扫掠 xy
 ├── projection_sweep_xz.png          3x5 扫掠 xz
-└── projection_sweep_yz.png          3x5 扫掠 yz
+├── projection_sweep_yz.png          3x5 扫掠 yz
+└── paper_reference/
+    ├── paper_fig_page14_stacked.png   原论文 Figure 3（σ=160，层流）
+    ├── paper_fig_page16_stacked.png   原论文 Figure 4（σ=110，Kolmogorov 流）
+    ├── paper_page14_rank3.png         整页渲染（含题注上下文）
+    └── paper_page21_rank1.png         原论文 Figure 8（KPP 3D，题注参照）
 ```
 
-**复现**（约 20 秒，无需重新模拟，只做前向 + 直方图）：
+**复现**（约 30 秒，无需重新模拟，只做前向 + 直方图）：
 
 ```powershell
 .\.venv-gpu\Scripts\python.exe scripts\projection_figure.py --seed 88
 .\.venv-gpu\Scripts\python.exe scripts\projection_figure.py --seed 89   # 换 DP 种子
+
+# 提取原论文图以对照（需 pymupdf）
+.\.venv-gpu\Scripts\python.exe scripts\extract_paper_figure.py
+.\.venv-gpu\Scripts\python.exe scripts\crop_paper_figure.py --page 14 --stack
+.\.venv-gpu\Scripts\python.exe scripts\crop_paper_figure.py --page 16 --stack
+
+# 核对直方图约定（计数 vs 密度）
+.\.venv-gpu\Scripts\python.exe scripts\check_projection_convention.py
+.\.venv-gpu\Scripts\python.exe scripts\paper_binning_search.py
 ```
 
 **依赖**：`results/fullscale/data/full/clouds/`（200 格云）、

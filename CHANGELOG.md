@@ -13,7 +13,43 @@
 
 ---
 
+## [v1.9.0] — 2026-11-12
+
+**提取原论文 Figure 3 作权威对照，并据此修正分箱规格。**
+
+### 新增
+
+- **pymupdf 安装完成**（PyMuPDF 1.28.6，耗时约 64 分钟）
+- **`scripts/extract_paper_figure.py`** — 按关键词定位并渲染论文中含分布图的页面
+- **`scripts/crop_paper_figure.py`** — 裁剪并拼接原论文图的图像块（Figure 3 是页面上**三个独立位图块**，只裁最大块会丢掉后两行）
+- **`scripts/paper_binning_search.py`** — 全文搜索直方图/色条规范
+- **`scripts/check_projection_convention.py`** — 在同一云上对照"计数"与"概率密度"两种约定
+- **`results/figures/paper_reference/`** 4 张（合计 1.6 MB）：
+  - `paper_fig_page14_stacked.png` — **原论文 Figure 3**（$\sigma{=}160$，层流），三行已拼接还原
+  - `paper_fig_page16_stacked.png` — 原论文 Figure 4（$\sigma{=}110$，Kolmogorov 流）
+  - `paper_page14_rank3.png` — 整页渲染（含题注上下文）
+  - `paper_page21_rank1.png` — 原论文 Figure 8（KPP 3D）
+
+### 修复
+
+- **分箱规格改为上游的固定 0.05 步长**（原实现用 90 箱）。原实现与上游差在：上游按**固定步长**分箱，宽云得更多箱（$158\times140$）；固定箱数会让宽云的每箱更宽，纹理变粗。修正后 hero 图纹理与论文一致
+- **色条量级已确认**：上游代码用 `density=True`（概率密度），实测峰值 0.27–0.30；原始计数峰值 68–76。二者相差 **250 倍**（$=N\Delta x\Delta y$），**不可混用**
+
+### 复现
+
+- **原论文 Figure 3 题注的精确数值**：MeanFlow $W_2=0.0403$，DP refined $W_2=0.0082$（$-79.7\%$）
+- 本仓库对应格：MF $0.231$，MF+DP $0.192$（$-17.0\%$）。**绝对误差高 5.7 倍、相对改善弱 4.7 倍**，原因：参数取最角落 $(\sigma{=}120,\mu{=}10)$、度量口径为 16 箱直方图而非粒子级、单网络覆盖 200 格而非逐 $\sigma$ 训练
+- **论文全文未说明 3D 图的分箱与色条单位**（搜索 `histogram`/`bins`/`colorbar`/`viridis` 无 3D 相关匹配），只有 KPP 的 2D 图明确写「72×72 histogram」。故 3D 图规格只能从上游代码反推
+
+### 变更
+
+- `docs/PROJECTION_FIGURES.md` §4 重写为「与原论文 Figure 3 逐项对照」，含原图嵌入、九项规格对照表、量级差异说明
+- `docs/PROJECTION_FIGURES.md` §1 加入实测的上游规格（158×140 箱、密度 0.27–0.30 vs 计数 68–76）
+
+---
+
 ## [v1.8.0] — 2026-11-12
+
 
 **新增双参数分布对比图，仿原论文 3D 投影图画法。**
 
