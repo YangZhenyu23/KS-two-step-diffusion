@@ -336,6 +336,7 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 | [`docs/BUDGET_SWEEP.md`](docs/BUDGET_SWEEP.md) | **训练预算扫描**：最优每格 32,000，−27.9%，128000 回弹源于学习率震荡 |
 | [`docs/CONTINUITY_EVIDENCE.md`](docs/CONTINUITY_EVIDENCE.md) | **连续依赖性五项检验**（注：其中 μ 的 1/2 阶 Hölder 结论已被 `THEORY.md` 修正为 Lipschitz）|
 | [`docs/THEORY.md`](docs/THEORY.md) | **数学理论全文**：8 部分 + 3 附录，含定理与证明、位移律、DP 收敛到 Brenier 映射 |
+| [`docs/ONE_VS_TWO_PARAM.md`](docs/ONE_VS_TWO_PARAM.md) | **单参数 vs 双参数的对比协议**：三组对照、143/144 的来源、信息论下界、净结论 |
 | [`docs/PROJECTION_FIGURES.md`](docs/PROJECTION_FIGURES.md) | **分布对比图**：仿原论文 3D 投影图的画法、双参数扫掠、图形解读 |
 | [`docs/DESIGN_CRITERION.md`](docs/DESIGN_CRITERION.md) | **三条改进路径的否定实验**：W2 覆盖准则（负相关）、更大网络、Fourier 编码 |
 | [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) | 样本效率三实验：冻结测试集、学习曲线、LHS vs 随机多种子判定 |
