@@ -1,0 +1,1255 @@
+﻿\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------------------
+% Packages
+% ---------------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,
+            citecolor=blue!50!black]{hyperref}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{siunitx}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+\graphicspath{{../results/report_figures/}{../results/figures/}}
+
+% ---------------------------------------------------------------------------
+% Formatting
+% ---------------------------------------------------------------------------
+\captionsetup{font=small,labelfont=bf,width=0.92\textwidth}
+\setlist[itemize]{leftmargin=1.4em,itemsep=1pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=1pt,topsep=3pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\renewcommand{\arraystretch}{1.18}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize Learned Local Correction for Fast Transport}
+\fancyhead[R]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+\newcommand{\Wtwo}{W_2}
+\newcommand{\mf}{\textsc{MeanFlow}}
+\newcommand{\DP}{\textsc{DP}}
+\newcommand{\TODO}[1]{\textcolor{red!70!black}{\textbf{[#1]}}}
+
+% Status markers used throughout: a claim is tagged by how strong its evidence is.
+\newcommand{\strong}{\textcolor{green!35!black}{\textbullet\!\textbullet\!\textbullet}}
+\newcommand{\medium}{\textcolor{orange!80!black}{\textbullet\!\textbullet$\circ$}}
+\newcommand{\weak}{\textcolor{red!65!black}{\textbullet$\circ\circ$}}
+
+\title{\vspace{-1.2cm}\bfseries When Does a Learned Local Correction\\ Pay for Itself?\\[0.35em]
+\large A bounded study on a two-parameter Keller--Segel system}
+\author{Zhenyu Yang}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+We study one question: when does a learned local correction improve a fast transport model
+enough to justify its additional training and inference cost? The setting is a 3D
+Keller--Segel particle system with two physical parameters, and the object generated is the
+terminal cloud at a fixed horizon, not a trajectory.
+
+The pipeline has two stages. Stage~1 is a parametric \mf{} network, used unmodified from the
+upstream implementation, which carries an initial cloud to the terminal distribution in one
+forward pass. Stage~2 is a near-identity corrector, trained against a minibatch
+optimal-transport matching between the stage-1 output and the reference cloud.
+
+Four configurations are compared on one held-out set, at matched training data, matched
+optimisation budget and matched measured cost: the global map alone; the map plus the
+corrector; a capacity-matched single network; and the same stage-1 weights applied in two
+steps. All four are two-parameter networks with a seven-dimensional input, verified from the
+checkpoints rather than assumed.
+
+Within the training range the corrector reduces the held-out distributional error by
+\SI{14.4}{\percent}~$\pm$~\SI{4.2}{\percent} over three seeds and 415 of 429 cell-level
+comparisons, at $2.97\times$ inference FLOPs. Two negative results bound that gain. A second
+stage-1 step, at the same two forward passes, does not help at all (\SI{-1.1}{\percent}); and
+a single network with the same parameter count reaches only \SI{4.9}{\percent}, so neither
+compute nor capacity explains the result. Outside the training parameter box the corrector's
+benefit collapses from \SI{14.2}{\percent} to \SI{1.8}{\percent}, a factor of eight, while the
+first-stage error itself grows by $2.32\times$. We read this as evidence that the corrector
+compensates for the training distribution rather than repairing an error that is identifiable
+off-distribution. A one-parameter control shows the opposite behaviour, retaining
+\SI{13.3}{\percent} under mild extrapolation, which locates the boundary at the dimensionality
+of the parameter family.
+
+The model is not a time integrator. Applying it repeatedly diverges by four orders of
+magnitude, and a direct test of the intermediate state shows why: the learned field encodes a
+direction, not a process. Cost is reported as FLOPs and memory rather than wall clock, and
+optimal transport is accounted for in all three roles it plays---training targets,
+deployment, and evaluation---only the second of which is free.
+\end{abstract}
+
+\vspace{0.2cm}
+\noindent\textbf{How to read the strength markers.}
+\strong{}~well powered (multiple seeds, many cells);
+\medium{}~consistent but modestly powered;
+\weak{}~single seed or few cells, direction only.
+No claim in this note rests on a \weak{} result alone.
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{Positioning}
+% ===========================================================================
+
+Two bodies of work already occupy the space this note operates in, and the contribution has
+to be stated relative to both.
+
+\paragraph{\mf{} (arXiv:2505.13447).}
+\mf{} introduces the average velocity
+\begin{equation}
+u(z,r,t)\;\triangleq\;\frac{1}{t-r}\int_{r}^{t}v(z_\tau,\tau)\,d\tau
+\end{equation}
+and the identity that makes it trainable,
+\begin{equation}
+u(z,r,t)=v(z,t)-(t-r)\frac{d}{dt}u(z,r,t),
+\label{eq:mf-identity}
+\end{equation}
+where the total derivative is a Jacobian--vector product and therefore costs one extra pass.
+This solves one-step generation: a single evaluation of $u_\theta(\epsilon,0,1)$ carries a
+sample across the whole interval. We use this stage exactly as published and claim nothing
+about it.
+
+Two properties of \mf{} matter for what follows, and one corrects a misreading that is easy to
+make. First, it is \emph{one-step capable, not one-step only}: the field is learned over the
+whole $(r,t)$ domain, the consistency relation
+\begin{equation}
+(t-r)\,u(z_t,r,t)=(s-r)\,u(z_s,r,s)+(t-s)\,u(z_t,s,t)
+\label{eq:consistency}
+\end{equation}
+holds for the ground-truth field at any intermediate $s$, and the authors report 2-NFE
+generation improving FID from 3.43 to 2.20 on ImageNet $256^2$. Multi-step application is
+therefore a legitimate baseline using the \emph{same weights}, and that is what we use it for
+in \S\ref{sec:fourway}. Second, \mf{}'s training is \emph{not} cheaper per step than ordinary
+flow matching---the JVP adds roughly \SI{20}{\percent}. Its advantage over OT-based training is
+that the objective contains no transport solve at all, which is the subject of
+\S\ref{sec:problem}.
+
+\paragraph{OT-CFM (arXiv:2302.00482).}
+OT-CFM studies the coupling used to pair source and target samples, and shows that a
+minibatch optimal-transport coupling yields straighter flows, faster training and fewer
+function evaluations at inference. It targets a different operating point: on CIFAR-10 it
+reports roughly 134~NFE under an adaptive solver, against 1000-step Euler as the alternative.
+\emph{It is not a one-step method.} Our setting is the other end of that trade-off---one or two
+forward passes, with the question being accuracy at fixed cost rather than step count---so
+OT-CFM is not a cost competitor here and we do not present it as one.
+
+What we take from OT-CFM is a tool, not a claim. The minibatch OT coupling it analyses is the
+same mechanism we use to construct the corrector's regression target. We do not claim that
+mechanism; we claim to have tested what it buys in a parametric PDE setting.
+
+\subsection{The problem, and why an OT loss was not used}
+\label{sec:problem}
+
+Computing the terminal distribution of the Keller--Segel particle system costs
+\SI{83}{\second} per parameter setting at $10^5$ particles, because the interaction term is
+$O(N^2)$ per time step. Worse for a parameter study, it is \emph{not reusable}: every new
+$(\sigma,\mu)$ requires a fresh simulation. A sweep over a $20\times10$ grid therefore costs
+\SI{191}{\minute} of simulation before any learning begins.
+
+The natural alternative is to learn the transport by minimising $\Wtwo$ directly. This fails
+on cost rather than on principle. \emph{Evaluating $\Wtwo$ is itself an optimal-transport
+problem}, $O(n^3)$ in the particle count, with a cost matrix of \SI{6.9}{\giga\byte} at
+$n=30{,}000$. An objective that requires solving OT at every optimisation step cannot be run at
+this scale, and a global solve on the full $10^5$-particle cloud would need
+\SI{74.5}{\giga\byte}.
+
+The move that makes the study feasible is to replace the \emph{objective}, not the optimiser.
+Flow-matching objectives are pointwise regressions costing $O(n)$ per step and containing no OT
+at all. Two consequences follow, and they should not be conflated:
+\begin{itemize}
+  \item \textbf{Training} becomes affordable because the objective no longer contains a
+        transport solve.
+  \item \textbf{Inference} becomes affordable because one evaluation of an average velocity
+        replaces the ODE integration that an instantaneous-velocity field would require.
+\end{itemize}
+This is the reason the present work can train on a 200-cell parameter grid at all.
+
+\subsection{What the second stage contributes}
+
+\DP{}---a near-identity corrector on top of a fast transport map---was the starting point of
+this project, and the note is a test of it rather than a defence. With stage~1 frozen, a
+residual MLP with a zero-initialised head is trained so that
+\begin{equation}
+T_{\text{dp}}(y)=y+\alpha\,\mathrm{MLP}_\phi(y,\log\sigma,\log\mu)
+\label{eq:dp-map}
+\end{equation}
+matches a reference under the minibatch OT coupling. At the population limit with exact OT, the
+minimiser of that regression is the gradient of the Brenier potential transporting the stage-1
+law onto the target law, whereas the stage-1 minimiser is the conditional mean
+$\mathbb{E}[X_T\mid X_0]$. These are different mathematical objects, and only the former pushes
+forward exactly onto the target. That is the structural reason a second stage can help at all;
+it is not a capacity argument, and \S\ref{sec:capacity} tests it rather than assuming it.
+
+\subsection{Scope}
+
+This note addresses one question in the Keller--Segel literature---\emph{given $(\sigma,\mu)$,
+what is the terminal distribution?}---and not the trajectory that leads there. The scope is
+inherited rather than chosen: the upstream work evaluates terminal clouds and invariant
+measures, and the parameter-sweep use case is inherently a terminal-state question. The
+limitation is real and is quantified in \S\ref{sec:rollout} and \S\ref{sec:intermediate} rather
+than left implicit. We stay inside the PDE setting and do not extrapolate the conclusions to
+image generation, robotics, or 3D reconstruction.
+
+% ===========================================================================
+\section{Setting and equations}
+% ===========================================================================
+
+\subsection{The physical system}
+
+For $j=1,\dots,N$ particles, with $\chi=16\pi$, $\delta=0.1$, $T=0.02$ and $dt=0.005$ (four
+Euler--Maruyama steps):
+\begin{equation}
+dX_j^{N,\theta}
+=-\frac{\chi}{N}\sum_{i\neq j}\nabla K_\delta\big(X_j-X_i\big)\,dt
++\sigma\,g(X_j)\,dt+\sqrt{2\mu}\,dW_j,
+\label{eq:sde}
+\end{equation}
+with
+\begin{equation}
+g(x)=\big(e^{-y^2-z^2},\,0,\,0\big),
+\qquad
+K_\delta(z)=\frac{|z|}{4\pi\big(|z|^2+\delta^2\big)} .
+\end{equation}
+
+The initial cloud is uniform in the unit ball and is \emph{shared by every parameter cell}, so
+differences between cells come from the parameters alone. This is a design requirement, not a
+convenience: with independently drawn initial clouds, $\Wtwo$ would converge to the
+reproducibility floor rather than to zero as the parameters approach each other.
+
+The two parameters enter through two displacement scales accumulated over $[0,T]$:
+\begin{equation}
+S=\sigma T\in[0.2,\,4.0],
+\qquad
+G=\sqrt{2\mu T}\in[0.063,\,0.632].
+\label{eq:displacements}
+\end{equation}
+These are lengths, so they can be compared with $\Wtwo$, which is also a length. This turns out
+to be the natural coordinate system (\S\ref{sec:law}).
+
+\subsection{Stage 1: parametric \mf{}}
+
+The network takes $(z,t,r,\log_{10}\sigma,\log_{10}\mu)$ and outputs a velocity. Training
+minimises the \mf{} identity, evaluated with a JVP:
+\begin{equation}
+\mathcal{L}_{\text{MF}}
+=\mathbb{E}\Big\|u_\theta(z,r,t)-\mathrm{sg}\big[v-(t-r)\partial_t u_\theta\big]\Big\|^2,
+\qquad
+v=x_T-x_0,\quad z=(1-t)x_T+t\,x_0 .
+\label{eq:mf-loss}
+\end{equation}
+Generation is one evaluation, $x_T=x_0-u_\theta(x_0,0,1)$. The architecture is
+$\mathrm{Linear}(7\to64)$, two $\mathrm{Linear}(64\to64)$ layers and $\mathrm{Linear}(64\to3)$
+with SELU: \num{9027} parameters.
+
+\subsection{Stage 2: the corrector}
+
+A residual MLP with two blocks, each
+$\mathrm{LayerNorm}\to\mathrm{Linear}(64\to64)\to\mathrm{SiLU}\to\mathrm{Linear}(64\to64)$ with a
+$0.2$ residual scale, and a \emph{zero-initialised output head} so that the map starts as the
+identity. With stage~1 frozen, the loss is
+\begin{equation}
+\mathcal{L}_{\text{DP}}
+=\mathbb{E}_{(x,y)\sim\pi}\Big\|x+\alpha\,\mathrm{MLP}_\phi(x,\log\sigma,\log\mu)-y\Big\|^2,
+\label{eq:dp-loss}
+\end{equation}
+where $\pi$ is the minibatch exact-OT assignment between the stage-1 output cloud and the
+reference cloud, and $\alpha$ is a correction strength. The corrector has \num{17475}
+parameters, so the two stages total \num{26502}.
+
+\subsection{What the model does and does not learn}
+
+Training uses \emph{only endpoint pairs}: the initial cloud and the cloud at $T$. No
+intermediate time slice is ever simulated and the network is never supervised on a trajectory.
+It learns the average velocity that carries $\mu_0$ to $\nu_T$ in one step.
+
+This is deliberate, and it is the reason the method needs one forward pass where an ODE-based
+flow model needs many. An instantaneous-velocity field must be accurate at every intermediate
+time because the sampler integrates through them; an average velocity only has to be right in
+the integral sense. The consistency identity \eqref{eq:consistency} is what makes the single
+evaluation legitimate.
+
+The cost of that choice is explicit and is the subject of \S\ref{sec:intermediate}: \emph{the
+map is not a time stepper.} It is defined from $\mu_0$, and its output is not a valid input to
+itself.
+
+% ===========================================================================
+\section{Evaluation protocol}
+% ===========================================================================
+
+Every comparison in this note is matched on the axes that matter, and the matching was verified
+from the artifacts rather than assumed.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}p{0.26\textwidth}p{0.66\textwidth}@{}}
+\toprule
+Axis & Setting \\
+\midrule
+Training cells & 40, stratified maximin LHS over $20\sigma\times10\mu$ \\
+Updates per cell & 32{,}000 for stage~1 (1{,}280{,}000 total); 2{,}000 for the corrector \\
+Training particles & $10^5$ per cell \\
+Held-out cells & 143, derived as full grid minus stage-1 training cells minus the $\mu{=}1$ row \\
+Initial cloud & one shared cloud for every cell \\
+Metric & exact histogram $\Wtwo$, POT network simplex, dual certificate checked \\
+Seeds & 88, 89, 90 for the headline table \\
+\bottomrule
+\end{tabular}
+\caption{Evaluation protocol.}
+\end{table}
+
+\paragraph{A defect found and fixed.}
+Several auxiliary scripts recomputed the 40-cell design at run time instead of reading it from
+the checkpoint. Because the design function changed during development, the recomputed design
+overlapped the checkpoint's actual training cells on only 6 of 40 cells, and 32 of the 144
+``held-out'' cells were in fact training cells of the model being scored. Every number in this
+note uses a held-out set derived from the checkpoint itself. The repair moved the values by
+\SI{0.5}{\percent} and changed no conclusion, but the protocol error is recorded here because a
+\SI{22}{\percent} contamination would have been material had it landed on harder cells.
+
+\paragraph{A structural property of the held-out set.}
+The $\mu=1$ row is training data for the single-parameter model, so it is excluded entirely and
+the single-parameter model is scored only on $\mu$ values it never saw.
+\S\ref{sec:compensator} gives a control that removes that confound.
+
+% ===========================================================================
+\section{Results}
+% ===========================================================================
+
+\subsection{Headline: the corrector at matched training budget}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+seed & stage~1 & stage~1 + corrector & relative & cell wins \\
+\midrule
+88 & 0.12277 & 0.10429 & \SI{15.0}{\percent} & 141 / 143 \\
+89 & 0.12975 & 0.10607 & \SI{18.2}{\percent} & 143 / 143 \\
+90 & 0.11203 & 0.10082 & \SI{10.0}{\percent} & 131 / 143 \\
+\midrule
+\textbf{mean $\pm$ sd} & \textbf{0.12152 $\pm$ 0.00892} & \textbf{0.10373 $\pm$ 0.00267}
+  & \textbf{\SI{14.4}{\percent} $\pm$ \SI{4.2}{\percent}} & \textbf{415 / 429} \\
+\bottomrule
+\end{tabular}
+\caption{Three-seed headline result on 143 held-out cells.}
+\end{table}
+
+The paired statistic across seeds is $t=6.0$ with $df=2$; the per-cell sign test gives
+$z\approx19.4$~\strong. The corrector also reduces across-seed variance from 0.00892 to 0.00267,
+a \SI{70}{\percent} reduction in standard deviation (\SI{91}{\percent} in variance), which is a
+separate benefit from accuracy and is discussed in \S\ref{sec:repro}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.82\textwidth]{fig_four_way.png}
+\caption{All configurations on the same 112 held-out cells. The second stage-1 step (d) buys
+nothing at matched cost; the capacity-matched network (c) does not reproduce the two-stage
+result.}
+\label{fig:fourway}
+\end{figure}
+
+\subsection{The four configurations}
+\label{sec:fourway}
+
+The comparison requested was: the global map alone, the map plus the corrector, a
+capacity-matched predictor, and a few-step flow baseline, all at comparable measured inference
+cost. Two things had to be verified before those four numbers could sit in one table, and both
+were checked from the checkpoint files.
+
+\paragraph{Same model family.} All four are two-parameter networks with a seven-dimensional
+input $(z,t,r,\log\sigma,\log\mu)$; the input width and parameter count were read out of each
+checkpoint. \emph{No single-parameter network appears in this table.} That matters because a
+wider single-parameter network cannot see $\mu$ at all, and using one here would be a category
+error rather than a capacity control.
+
+\paragraph{Same evaluation cells.} All four numbers are computed on the \emph{same 112 cells},
+namely those held out by \emph{both} the headline checkpoint and the width-112 checkpoint. This
+mattered in practice: the two checkpoints were trained on different 40-cell designs sharing only
+6 cells, so comparing each on its own held-out set would have mixed cell-set differences into
+the result.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lccccr@{}}
+\toprule
+configuration & model family & passes & parameters & held-out $\Wtwo$ & vs (a) \\
+\midrule
+(a) global map alone & 2-param, 7 in & 1 & \num{9027} & 0.12271 & --- \\
+(d) few-step baseline (2 passes) & 2-param, 7 in & 2 & \num{9027} & 0.12435 &
+  \textbf{\SI{-1.3}{\percent}} \\
+(c) capacity-matched predictor & 2-param, 7 in & 1 & \textbf{\num{26547}} & 0.11667 &
+  \textbf{\SI{4.9}{\percent}} \\
+(b) map + corrector & 2-param + corr. & 2 & \textbf{\num{26502}} & \textbf{0.10422} &
+  \textbf{\SI{15.1}{\percent}} \\
+\bottomrule
+\end{tabular}
+\caption{Four configurations on the 112 common held-out cells.}
+\label{tab:fourway}
+\end{table}
+
+Three rows carry the argument.
+
+\textbf{(d) rules out more computation.}\hspace{0.4em}Spending the second forward pass on the
+same stage-1 weights makes the result \SI{1.3}{\percent} \emph{worse}. Extra compute is not what
+produces the gain.
+
+\textbf{(c) rules out more capacity.}\hspace{0.4em}Its parameter count differs from the
+two-stage total by 45, or \SI{0.17}{\percent}, yet it captures only a third of the improvement.
+
+\textbf{(b) therefore wins on the axis it claims to win on}, and does so at the same two passes
+as (d).
+
+\subsection{Why the gain is not a larger network}
+\label{sec:capacity}
+
+Because the capacity objection deserves more than one table, it is answered twice.
+
+\paragraph{Test 1 --- matched parameter count.} As in Table~\ref{tab:fourway}: \num{26547}
+against \num{26502} parameters, with the two-stage model \SI{10.7}{\percent} lower in error
+\weak.
+
+\paragraph{Test 2 --- does capacity help this problem at all?} Three seeds per configuration,
+single-parameter setting, identical training:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrrll@{}}
+\toprule
+configuration & parameters & mean $\Wtwo$ & sd & verdict vs width 64 \\
+\midrule
+width 64 & \num{9027} & 0.1486 & 0.0109 & --- \\
+width 128 & \num{34435} & 0.1561 & 0.0096 & not resolvable ($+0.9$ SE) \\
+width 256 & \textbf{\num{134403}} & 0.1456 & --- & \textbf{no improvement at $15\times$} \\
+Fourier features, width 128 & \num{71559} & 0.1581 & 0.0275 & not resolvable ($+0.6$ SE) \\
+\bottomrule
+\end{tabular}
+\caption{Capacity sweep, three seeds per configuration.}
+\end{table}
+
+A 15-fold increase in parameters produces no improvement; the wider model is if anything
+slightly worse, and the error sits at $2.2$--$2.5\times$ the reproducibility floor regardless of
+width~\strong. \emph{The premise behind the capacity objection does not hold for this task},
+which is exactly why the corrector's gain cannot be a capacity effect.
+
+\paragraph{Caveat.} Test~1 is a single seed; the gap is 0.0085 on the common cells, about one
+across-seed standard deviation of stage~1, so it carries no error bar. Test~2 is three seeds per
+configuration across a $15\times$ span, so the statement \emph{capacity does not help here} is
+well supported even though the exact size of the matched-capacity gap is not yet pinned down.
+
+\subsection{Why multi-step application degrades}
+
+The few-step baseline in \S\ref{sec:fourway} is one point on a curve. Completing it with
+$N\in\{1,2,4,8\}$ sub-intervals of $[0,1]$---same weights, same horizon $T$---gives:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+$N$ (NFE) & stage~1 & vs $N{=}1$ & stage~1 + corrector \\
+\midrule
+\textbf{1} & \textbf{0.12277} & --- & \textbf{0.10429} \\
+2 & 0.12418 & \SI{-1.1}{\percent} & 0.10883 \\
+4 & 0.12707 & \SI{-3.5}{\percent} & 0.11243 \\
+8 & 0.12736 & \SI{-3.7}{\percent} & 0.11183 \\
+\bottomrule
+\end{tabular}
+\caption{Sub-interval decomposition at fixed horizon.}
+\end{table}
+
+More sub-intervals make the result monotonically worse. \emph{This is the opposite of what the
+\mf{} authors report on ImageNet, where 2-NFE improves FID from 3.43 to 2.20}, and the
+discrepancy is worth explaining rather than glossing.
+
+A \mf{} step replaces an integral by one chord of the flow,
+\begin{equation}
+x_{t_{\text{lo}}}=x_{t_{\text{hi}}}-(t_{\text{hi}}-t_{\text{lo}})\,
+u\big(x_{t_{\text{hi}}},t_{\text{lo}},t_{\text{hi}}\big),
+\end{equation}
+which is exact only if the average velocity is constant along the segment. Subdividing shrinks
+the error per interval, but the two errors are evaluated at different points of a \emph{curved}
+transport, so they need not cancel, and the second evaluation lands where the first one assumed
+it would not.
+
+In the single-parameter setting the family is one-dimensional and the transport is close to a
+rigid shear, so the curvature is small and the decomposition happens to help: two steps improve
+18 of 20 $\sigma$ values. In the two-parameter setting the family of distributions is a
+\emph{two-dimensional surface}. Moving to a neighbouring cell changes both the shape and the
+scale of the cloud, so the transport map is genuinely curved and the chord approximation does
+not commute with subdivision.
+
+This is consistent with the parameter law measured independently in \S\ref{sec:law}: the
+response to the two parameters is anisotropic and spans a surface rather than a line. A
+one-dimensional family can be reparameterised into an approximately straight path by a suitable
+scalar coordinate; a two-dimensional family cannot, because no single coordinate straightens the
+flow.
+
+\paragraph{Status of this explanation.} It is a mechanistic argument supported by the anisotropy
+measurement and by the fact that the same weights do help in the one-parameter case. It is not a
+proof, and the curvature of the transport has not been measured directly. What it does explain
+is why the corrector, which regresses onto the Brenier map rather than integrating a field, does
+not suffer the same failure: it never approximates an integral.
+
+\subsection{Is the corrector a distribution compensator?}
+\label{sec:compensator}
+
+This is the ablation the note was asked to perform: does the corrector repair an identifiable
+error in the first-stage map, or merely compensate for its training distribution? The
+operational distinction is simple. If the benefit is identifiable, it should survive a modest
+departure from the training parameters; if it is distribution compensation, it should not.
+
+\paragraph{Three regions, not two.} The 45 training cells are scored separately because they
+measure memorisation. The remaining 90 interior cells are the honest interpolation number. The
+65 cells outside the training box are extrapolation.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+region & $n$ & stage~1 & stage~1 + corrector & gain & stage~1 / floor \\
+\midrule
+training cells (memorisation) & 45 & 0.09388 & 0.08014 & \SI{14.6}{\percent} & $1.46\times$ \\
+\textbf{interpolation (held out)} & \textbf{90} & \textbf{0.09404} & \textbf{0.08070} &
+  \textbf{\SI{14.2}{\percent}} & $\mathbf{1.46\times}$ \\
+\textbf{extrapolation} & \textbf{65} & \textbf{0.21805} & 0.21407 & \textbf{\SI{1.8}{\percent}}
+  & $\mathbf{3.38\times}$ \\
+\bottomrule
+\end{tabular}
+\caption{Interpolation versus extrapolation. Training cells are listed only to show they do not
+flatter the model.}
+\label{tab:regions}
+\end{table}
+
+Two readings follow. First, the training cells and the held-out interior cells agree to
+\SI{0.2}{\percent}, so \emph{the model interpolates rather than memorises}~\strong; this is also
+why the \SI{33}{\percent} contamination noted in \S3 moved the interior number by only
+\SI{0.1}{}--\SI{0.2}{\percent}. Second, outside the box the first-stage error more than doubles
+($2.32\times$) and \emph{the corrector's gain collapses by a factor of eight}~\weak.
+
+The degradation is strongly anisotropic:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+extrapolation direction & $n$ & stage~1 & gain & stage~1 / floor \\
+\midrule
+$\sigma$ leaves the box & 45 & 0.15463 & \SI{1.2}{\percent} & $2.40\times$ \\
+$\mu$ leaves the box & 15 & 0.35296 & \SI{2.4}{\percent} & $\mathbf{5.48\times}$ \\
+corner (both leave) & 5 & 0.38412 & \SI{2.7}{\percent} & $\mathbf{5.96\times}$ \\
+\bottomrule
+\end{tabular}
+\caption{Extrapolation decomposed by direction.}
+\end{table}
+
+Leaving in $\mu$ is far worse than leaving in $\sigma$, consistent with $\mu$'s response being a
+factor of two smaller and therefore much less constrained by the same number of samples.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{fig_extrapolation.png}
+\caption{Left: error in each region. Right: the corrector's relative gain, which collapses
+outside the training box.}
+\end{figure}
+
+\paragraph{Mechanism.} The corrector's smallness depends on
+$\partial_\theta T_{\text{mf}}\approx\partial_\theta T^*$: it works when the stage-1 map and the
+target move \emph{together} as the parameter varies. In one dimension that remains true outside
+the sampled range, because the response is a single curve whose shape is preserved. In two
+dimensions, leaving the box means the stage-1 cloud deforms in a way the corrector never
+saw---and the corrector's input \emph{is} that deformed cloud, so it faces a double distribution
+shift.
+
+\subsection{The parameter law, and why the natural coordinates are displacements}
+\label{sec:law}
+
+Over all 370 adjacent cell pairs the distribution distance follows
+\begin{equation}
+\Wtwo\;\approx\;0.90\,\big|\Delta(\sigma T)\big|
++1.98\,\big|\Delta\sqrt{2\mu T}\big| .
+\label{eq:law}
+\end{equation}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}p{0.30\textwidth}p{0.62\textwidth}@{}}
+\toprule
+test & result \\
+\midrule
+Is the first constant stable? &
+$\log$--$\log$ slope of $c_S$ against $\sigma$ is $\mathbf{+0.095}$; total spread
+$\mathbf{1.29\times}$ across a $20\times$ range of $\sigma$ (a constant-\emph{logarithmic}
+Lipschitz model would require $20\times$) \\
+Is the second constant $\sqrt{3}$? &
+measured $\mathbf{1.981\pm0.026}$, against $\sqrt3=1.732$ for free Brownian motion; the
+\SI{14}{\percent} excess is the interaction--shear coupling \\
+Is the sum an upper bound on diagonals? &
+observed/predicted $\mathbf{0.679}$ on 171 diagonal pairs, below the orthogonal value
+$1/\sqrt2=0.707$, so the two directions partially cancel \\
+\bottomrule
+\end{tabular}
+\caption{Three tests of the displacement law.}
+\end{table}
+
+The consequence for experimental design is direct: the natural metric on this parameter space is
+in displacement coordinates, not in log-parameter coordinates, so uniformly spaced designs in
+$\log\sigma\times\log\mu$ optimise the wrong measure. This explains an earlier negative result
+in this repository, where an $I$-optimal design built on the same $\log$-coordinate metric
+correlated \emph{negatively} with final error ($\mathrm{corr}=-0.715$).
+
+\subsection{Cross-seed reproducibility}
+\label{sec:repro}
+
+Two independent estimates, both favourable and both larger than the accuracy gain:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+setting & stage~1 sd & stage~1 + corrector sd & reduction \\
+\midrule
+single-parameter, 3 seeds $\times$ 20 $\sigma$ & 0.08109 & \textbf{0.01627} &
+  \textbf{\SI{80}{\percent}} \\
+two-parameter, 3 seeds $\times$ 143 cells & 0.00892 & \textbf{0.00267} &
+  \textbf{\SI{70}{\percent}} \\
+\bottomrule
+\end{tabular}
+\caption{Cross-seed reproducibility in both settings.}
+\end{table}
+
+\paragraph{A structural observation.} In the single-parameter setting, the corrector
+\emph{alone}---applied without a preceding stage-1 transport---also has a small cross-seed
+standard deviation ($0.01159$) while the stage-1 map's is $0.08109$. A near-identity residual
+whose target is defined by matching \emph{distributions} rather than particle identities is
+intrinsically less seed-sensitive than an end-to-end non-linear transport. The stability
+therefore comes from the structure of the second stage, not merely from its accuracy.
+
+This is a separate benefit from the \SI{14.4}{\percent} error reduction and should be reported
+as such: two runs of the pipeline with different seeds now agree to within \SI{2.6}{\percent} of
+the mean, against \SI{7.3}{\percent} without the corrector~\strong.
+
+\subsection{Repeated application: a characterisation, not a requirement}
+\label{sec:rollout}
+
+The map is defined from $\mu_0$ to $\nu_T$ and is trained on endpoint pairs, so applying it to
+its own output is outside its domain. We measure this rather than assume it, for two reasons: it
+costs only forward passes, and it pins down what the object is.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}rlrrr@{}}
+\toprule
+applications $k$ & physical time & $\Wtwo$ vs truth & relative to floor & rms radius \\
+\midrule
+1 & $T$ & $0.092$--$0.241$ & $\mathbf{0.6}$--$\mathbf{1.5\times}$ & $0.84$--$1.57$ \\
+2 & $2T$ & $0.201$--$4.623$ & $1.3$--$29.6\times$ & $0.99$--$5.40$ \\
+4 & $4T$ & $4.533$--$82.497$ & $29$--$529\times$ & $5.3$--$60.7$ \\
+8 & $8T$ & $\mathbf{1{,}968}$--$\mathbf{41{,}678}$ &
+  $\mathbf{12{,}610}$--$\mathbf{267{,}049\times}$ & up to $27{,}262$ \\
+\bottomrule
+\end{tabular}
+\caption{Repeated application of the one-step map, six cells.}
+\end{table}
+
+Three conclusions.
+
+\textbf{$k=1$ is the only operating point}, sitting at $0.6$--$1.5\times$ the reproducibility
+floor---the difference between two independent physical simulations. This is the setting the
+method was designed for.
+
+\textbf{The divergence is expected, not a defect.} One application moves the centroid by
+$1.3$--$2.3$ and the rms radius by $0.84$--$1.57$, so the second application receives a cloud
+that no training sample resembles. The failure therefore \emph{confirms} that the map is a
+fixed-horizon transport rather than a flow, which is what it was designed to be.
+
+\textbf{Cost is not the reason this is out of scope.} Eight applications take about
+\SI{36}{\milli\second} against \SI{83}{\second} for one simulation, so iterating is cheap. The
+reason is that the map has no dynamical semantics to iterate.
+
+\paragraph{Does the corrector make this worse?} No. At matched cost---every row is two forward
+passes---the corrector \emph{reduces} the divergence slightly, and spending the same second pass
+on another \mf{} step is an order of magnitude worse:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}llrr@{}}
+\toprule
+cell & map & $k{=}1$ & $k{=}4$ \\
+\midrule
+s03\_m04 & stage~1 $\times2$ & 0.1167 & 16.92 \\
+ & \textbf{stage~1 + corrector} & \textbf{0.1119} & \textbf{15.68} \\
+ & stage~1, two-step schedule & 0.1168 & \textbf{44.66} \\
+\midrule
+s19\_m09 & stage~1 $\times2$ & 0.2480 & 82.52 \\
+ & \textbf{stage~1 + corrector} & \textbf{0.2439} & \textbf{77.21} \\
+ & stage~1, two-step schedule & 0.2380 & \textbf{317.69} \\
+\bottomrule
+\end{tabular}
+\caption{Three maps at matched inference cost.}
+\end{table}
+
+\textbf{One must not overstate this.} The corrector reduces the severity by about
+\SI{5}{\percent} on average (6 of 6 cell-horizon pairs below 1, $t=-5.9$), but at $k=4$ the
+error remains $268\times$ the reproducibility floor against $287\times$ without it. A
+\SI{6.8}{\percent} reduction of a two-order-of-magnitude failure is not improved stability; it is
+equally catastrophic failure~\weak. What it does establish is the narrower claim that the
+corrector \emph{does not introduce} instability---which is one of the two negative outcomes
+proposed as acceptable.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.78\textwidth]{fig_rollout_method.png}
+\caption{Error after four applications at matched inference cost. The corrector is not the
+source of the instability; the second \mf{} step is.}
+\end{figure}
+
+\subsection{Does the model encode the intermediate state?}
+\label{sec:intermediate}
+
+\mf{} learns $u(z,r,t)$ over the whole $(r,t)$ domain, so in principle the trained network can
+be asked for the state at $T/2$ even though no intermediate slice was ever simulated. Since the
+simulator integrates $T=0.02$ in exactly four Euler steps of $dt=0.005$, the $T/2$ cloud is a
+\emph{genuine reference} obtainable at no extra cost. Two routes, using disjoint parts of the
+$(r,t)$ domain:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}llr@{}}
+\toprule
+route & field evaluated & $\Wtwo$ vs true $T/2$ \\
+\midrule
+prior $\to T/2$ & $u(x,\,r{=}0,\,t{=}0.5)$ & \textbf{0.2599} \\
+$\hat x_T\to T/2$ & $u(x,\,r{=}0.5,\,t{=}1)$ & \textbf{2.8485} \\
+baseline: prior vs true $T/2$ & --- & 0.7414 \\
+reference quality: $\hat x_T$ vs true $T$ & --- & 0.1079 \\
+\bottomrule
+\end{tabular}
+\caption{Intermediate-state probe, 40 cells.}
+\end{table}
+
+The forward route recovers \SI{65}{\percent} of the distance from the prior to the true
+half-time cloud, but its error ($0.26$) is \textbf{$2.4\times$ the error at the terminal time}
+($0.11$). The backward route fails outright: $2.85$, i.e. $3.8\times$ worse than doing nothing.
+
+\textbf{The disagreement between the two routes is the informative part.} If the network
+represented an actual flow, the average velocity would satisfy the additivity relation
+\eqref{eq:consistency}, and the forward and backward reconstructions of $T/2$ would coincide.
+They differ by a factor of eleven, so the field is a regression artefact of the endpoint pairs
+rather than a dynamical object.
+
+\textbf{Conclusion: the model encodes a direction, not a process.} It can produce a coarse
+intermediate snapshot---useful for visualisation or as an initialiser---but it does not represent
+how the distribution evolves, and no post-hoc evaluation could change that, because the
+information is absent from the training data by construction.
+
+\subsection{Physical quantities}
+
+$\Wtwo$ is an aggregate scalar: two clouds can share it while differing in shape. The quantities
+the shear parameter physically controls are therefore reported directly. Mean absolute relative
+error over six cells spanning the box:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+quantity & stage~1 & stage~1 + corrector \\
+\midrule
+centroid drift along the shear, $x$ & \SI{3.94}{\percent} & \textbf{\SI{3.02}{\percent}} \\
+rms radius & \SI{0.82}{\percent} & \SI{0.87}{\percent} \\
+\textbf{anisotropy $\lambda_1/\lambda_2$} & \SI{1.04}{\percent} & \textbf{\SI{0.88}{\percent}} \\
+principal standard deviation $\lambda_1$ & \SI{1.15}{\percent} & \textbf{\SI{1.04}{\percent}} \\
+principal standard deviation $\lambda_2$ & \SI{0.94}{\percent} & \textbf{\SI{0.65}{\percent}} \\
+\bottomrule
+\end{tabular}
+\caption{Physical invariants.}
+\end{table}
+
+Two readings. The anisotropy---the quantity $\sigma$ controls---is reproduced to
+\textbf{below \SI{1}{\percent}}~\strong, which is a stronger statement than $\Wtwo$ alone: the
+model has the shear--diffusion balance right, not merely the mass in roughly the right place.
+And there is one honest regression: at the worst corner $(\sigma,\mu)=(200,10)$ the anisotropy
+error goes from \SI{-2.5}{\percent} to \SI{-4.2}{\percent} when the corrector is applied.
+
+The $y$ and $z$ centroids are near zero by symmetry, so relative errors there are meaningless;
+the absolute deviations are $6.4\times10^{-3}$ and $1.7\times10^{-2}$ for stage~1, and
+$5.8\times10^{-3}$ and $1.2\times10^{-2}$ with the corrector, around \SI{1}{\percent} of the
+cloud scale.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_physics.png}
+\caption{Left: model anisotropy against the reference value. Right: mean absolute relative
+error per physical quantity.}
+\end{figure}
+
+\subsection{Correction strength chosen on a development split}
+
+Any correction-strength or stopping setting was selected on development cases, never on the
+evaluation set. The split is derived from the checkpoint's own training cells under a fixed seed
+and saved to disk: 40 train / \textbf{50 dev} / \textbf{93 test}.
+
+\begin{table}[h]
+\centering
+\begin{minipage}{0.44\textwidth}
+\centering\small
+\begin{tabular}{@{}rr@{}}
+\toprule
+$\alpha$ & dev mean $\Wtwo$ \\
+\midrule
+0 (stage~1 alone) & 0.12134 \\
+0.5 & 0.11181 \\
+1.0 (upstream default) & 0.10340 \\
+1.5 & 0.09736 \\
+\textbf{2.0 (selected)} & \textbf{0.09580} \\
+2.5 & 0.09988 \\
+4.0 & 0.12837 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}{0.50\textwidth}
+\centering\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+test split & mean $\Wtwo$ & vs stage~1 \\
+\midrule
+stage~1 alone & 0.12353 & --- \\
+$\alpha=1$ & 0.10477 & \SI{15.2}{\percent} \\
+\textbf{$\alpha=2$} & \textbf{0.09558} & \textbf{\SI{22.6}{\percent}} \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{Correction strength: selection on the development split (left) and reporting on the
+untouched test split (right).}
+\end{table}
+
+The upstream default is therefore conservative: doubling the correction strength raises the gain
+from \SI{15.2}{\percent} to \SI{22.6}{\percent}~\medium. Two caveats are stated plainly. The
+sweep scales $\alpha$ at inference rather than retraining per value, which is the deployment
+knob for this architecture but is not the same as retraining. And the dev curve is flat between
+1.5 and 2.0, so the claim is \emph{the default is conservative}, not \emph{2 is optimal}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.68\textwidth]{fig_alpha.png}
+\caption{Correction strength on the development split, with the selected operating point and the
+untouched test measurements.}
+\end{figure}
+
+\subsection{Qualitative comparison}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.92\textwidth]{projection_hero.png}
+\caption{$\sigma=120$, $\mu=10$, the held-out cell with the largest corrector gain. Rows are
+reference / stage~1 / stage~1 + corrector; columns are the three coordinate projections, with
+the density scale shared down each column as in the upstream figure.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.92\textwidth]{projection_sweep_xz.png}
+\caption{Five held-out parameter settings, three methods, $x$--$z$ projection. The shape morphs
+smoothly from a compact ellipsoid to an open V, and $\Wtwo$ is printed in each panel.}
+\end{figure}
+
+\paragraph{One reading instruction.} The \SI{17}{\percent} $\Wtwo$ improvement between the middle
+and bottom rows is \emph{not visible} in these density maps. The relative displacement is about
+\SI{1.2}{\percent} of the cloud scale, below the eye's threshold, and the residual is
+high-frequency sampling noise rather than a shape error. The figures should be read for shape
+correctness; the tables for accuracy.
+
+% ===========================================================================
+\section{Cost}
+% ===========================================================================
+
+Cost is reported as computational complexity rather than wall clock, because wall clock does not
+transfer across hardware and because complexity exposes the term that dominates at scale: the OT
+solve, which is cubic in the minibatch size.
+
+\subsection{Per-particle forward cost}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}llrr@{}}
+\toprule
+stage & architecture & MACs / particle & FLOPs / particle \\
+\midrule
+stage~1 & $\mathrm{Linear}(7\to64)$, $2\times\mathrm{Linear}(64\to64)$,
+  $\mathrm{Linear}(64\to3)$ & \num{8832} & \num{17664} \\
+corrector & $\mathrm{Linear}(5\to64)$, 2 blocks (LN, $2\times\mathrm{Linear}(64\to64)$),
+  $\mathrm{Linear}(64\to3)$ & \num{16896} & \textbf{\num{34816}} \\
+\bottomrule
+\end{tabular}
+\caption{Forward cost counted from the actual architectures.}
+\end{table}
+
+\textbf{The corrector costs $1.97\times$ the FLOPs of stage~1 per pass}, despite having fewer
+trainable parameters, because each residual block contains two $64\times64$ projections and a
+LayerNorm. This matters: \emph{counting forward passes understates the corrector's cost by
+roughly a factor of two.}
+
+\subsection{Inference}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+configuration & passes & GFLOP & relative FLOPs & held-out $\Wtwo$ \\
+\midrule
+stage~1 only & 1 & 1.77 & $1.00\times$ & 0.12277 \\
+stage~1, two passes & 2 & 3.53 & $2.00\times$ & 0.12418 \\
+\textbf{stage~1 + corrector, $\alpha{=}1$} & 2 & \textbf{5.25} & $\mathbf{2.97\times}$ &
+  \textbf{0.10429} \\
+stage~1 + corrector, $\alpha{=}2$ & 2 & 5.25 & $2.97\times$ & \textbf{0.09566} \\
+\bottomrule
+\end{tabular}
+\caption{Inference cost and accuracy at $10^5$ particles.}
+\end{table}
+
+The honest headline for inference cost is therefore \textbf{$\approx3\times$ FLOPs, not
+$2\times$ passes}. Even at that price the trade is favourable: $2.97\times$ FLOPs buys a
+\SI{15}{}--\SI{23}{\percent} lower error, whereas the same or more compute spent on stage-1
+passes buys nothing.
+
+\subsection{OT cost, by role}
+
+OT appears in three distinct roles here, and they must not be conflated. Only one is free.
+
+\paragraph{Role 1 --- constructing transport targets during training (not free).}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+property & value \\
+\midrule
+solver & \texttt{ot.emd}, POT network simplex, exact \\
+Sinkhorn & not used \\
+warm start & not used \\
+minibatch & 2{,}000 of 100{,}000 particles (\SI{2.0}{\percent}) \\
+refresh interval & every 10 updates \\
+total solves & 8{,}000 \\
+memory per solve & \SI{31}{\mega\byte} ($O(n^2)$, $8n^2$ bytes) \\
+time complexity & $O(n^3)$ \\
+\bottomrule
+\end{tabular}
+\caption{Training-time transport-target construction.}
+\end{table}
+
+This is the minibatch $\Wtwo$ that the requirement names explicitly. A 2{,}000-particle
+minibatch is an \emph{approximation} to the global OT it stands in for, not the same object;
+OT-CFM reports that minibatch OT ``requires surprisingly small batches to approximate the OT map
+well'', which is consistent with using \SI{2}{\percent} of the cloud, but it remains an
+approximation and is labelled as such.
+
+At leading order these 8{,}000 exact solves contribute 0.064 PFLOP against
+0.011 PFLOP of network arithmetic, so \textbf{\SI{85}{\percent} of the corrector's
+training compute goes into solving transport problems rather than into training the network}.
+Measured as wall clock the share is far smaller, because network simplex runs on CPU while the
+network runs on GPU. Both figures are correct and answer different questions: FLOPs says where
+the arithmetic is, wall clock says what you wait for.
+
+\paragraph{Role 2 --- deployment (free).} Zero OT solves. The trained corrector is a
+feed-forward map: given a particle cloud it applies a pointwise transformation, with no matching,
+no assignment and no cost matrix. This is the only role where OT is genuinely eliminated, and the
+precise statement is that a \emph{global} OT between full clouds is avoided, not that OT plays no
+part in how the model was built.
+
+\paragraph{Role 3 --- evaluation (not free, and usually left unreported).} Every number in this
+note required an OT solve to produce, because $\Wtwo$ \emph{is} an OT problem. This cost is borne
+by the experimenter rather than by a model user, but it exists, and reporting only the first two
+roles would overstate the case.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+evaluation batch & exact OT solves \\
+\midrule
+headline protocol, 3 seeds $\times$ 143 cells & 429 \\
+corrector evaluation, 3 seeds $\times$ 143 cells & 429 \\
+$N$-step sweep, 4 configurations $\times$ 143 cells & 572 \\
+four-way on the 112 common cells & 448 \\
+correction-strength sweep, dev + test & 679 \\
+extrapolation, 200 cells & 200 \\
+rollout study & 24 \\
+physical quantities & 12 \\
+\midrule
+\textbf{total} & \textbf{2{,}793} \\
+\bottomrule
+\end{tabular}
+\caption{Evaluation-time OT solves.}
+\end{table}
+
+All of these use exact network simplex, not Sinkhorn. In the headline protocol the OT is solved
+on 16-bin histograms; in the particle-level protocol it is solved on subsampled particles. The
+largest exact solve feasible on this machine is 30{,}000 points, where the cost matrix alone
+needs \SI{6.9}{\giga\byte}.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrlr@{}}
+\toprule
+role & OT solves & who pays & avoidable \\
+\midrule
+training targets & 8{,}000 & one-time training cost & only by changing the objective \\
+\textbf{deployment} & \textbf{0} & nobody & \textbf{yes, genuinely} \\
+evaluation & 2{,}793 & the experimenter & no: $\Wtwo$ is an OT problem \\
+\bottomrule
+\end{tabular}
+\caption{The three roles of optimal transport.}
+\end{table}
+
+The accurate claim is therefore narrow: \textbf{the method is OT-free at deployment}, while OT
+remains load-bearing in training (as the source of the regression target) and in evaluation (as
+the metric).
+
+\subsection{Memory, and the real constraint}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+OT batch & cost matrix & stage-1 activations & corrector activations \\
+\midrule
+1{,}000 & \SI{7.6}{\mega\byte} & \SI{0.7}{\mega\byte} & \SI{1.2}{\mega\byte} \\
+2{,}000 & \SI{30.5}{\mega\byte} & \SI{1.5}{\mega\byte} & \SI{2.4}{\mega\byte} \\
+10{,}000 & \SI{763}{\mega\byte} & \SI{7.3}{\mega\byte} & \SI{12.2}{\mega\byte} \\
+30{,}000 & \textbf{\SI{6.9}{\giga\byte}} & \SI{22.0}{\mega\byte} & \SI{36.6}{\mega\byte} \\
+\bottomrule
+\end{tabular}
+\caption{The OT cost matrix, not the network, bounds the batch size.}
+\end{table}
+
+At $n=30{,}000$ the cost matrix alone needs \SI{6.9}{\giga\byte}, which is what caps exact OT on
+this machine (\SI{8}{\giga\byte} GPU, \SI{31}{\giga\byte} RAM). A Sinkhorn approximation would
+remove the memory wall at the price of a regularisation bias; we did not take that trade because
+the metric used throughout is exact $\Wtwo$.
+
+% ===========================================================================
+\section{Two-parameter extension}
+% ===========================================================================
+
+The single-parameter results are a reproduction of the upstream work and are used only as a
+baseline. The substantive extension is conditioning on $(\sigma,\mu)$, and the questions it
+raises are whether the parameter dependence is continuous, how much of it is learnable from a
+small sample, and where the limit lies. These are treated in
+\S\ref{sec:compensator}--\S\ref{sec:law} and summarised here.
+
+\paragraph{Why a second parameter at all.} The two parameters act on different aspects of the
+cloud: $\sigma$ controls anisotropy through the shear, $\mu$ controls overall scale through the
+diffusion. Measured orthogonality from the grid:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+variation & $x$-direction std & $yz$ radius p95 \\
+\midrule
+$\sigma$: $10\to200$ & \SI{78}{\percent} & \SI{-2}{\percent} \\
+$\mu$: $0.1\to10$ & \SI{65}{\percent} & \SI{91}{\percent} \\
+\bottomrule
+\end{tabular}
+\caption{The two parameters act on different aspects of the cloud.}
+\end{table}
+
+$\sigma$ changes the shape without changing the radius; $\mu$ changes both, but predominantly the
+radius. The two are therefore not redundant, which is why a two-parameter model can beat a
+single-parameter one at all.
+
+\paragraph{Why 40 points suffice.} The full grid is 200 cells. A stratified maximin Latin
+hypercube takes 40 of them---two per $\sigma$ level, four per $\mu$ level. Against a random
+design of the same size, LHS gives a $2\times$ larger minimum pairwise distance ($0.1053$ against
+$0.0526$) and balanced marginal coverage, but \emph{the final error is not distinguishable}
+($+0.0138$, $0.89$ SE). The benefit of the design is therefore coverage assurance, not accuracy:
+in two dimensions the covering radius of LHS and iid sampling are of the same order, and LHS
+improves only the constant. What makes 40 points enough is that 40 is enough, not that LHS is
+better than random.
+
+\paragraph{How much information the second parameter carries.} A sigma-only network trained on
+the same 40 cells, with $\mu$ varying across them but absent from its inputs, cannot represent
+ten distinct clouds: it can only produce their conditional mean. Its training-fit error is
+therefore an information floor, and at the headline budget of 32{,}000 updates per cell:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+model & training fit & ratio \\
+\midrule
+sigma-only, same 40 cells & \textbf{0.26291} & \textbf{$2.19\times$} \\
+two-parameter & \textbf{0.11995} & --- \\
+\bottomrule
+\end{tabular}
+\caption{Information floor at matched cells and matched budget.}
+\end{table}
+
+The gap is measured \emph{on the training set}, so it cannot be explained by generalisation or
+extrapolation, and it cannot be closed by more training: at 2{,}000 updates per cell the ratio
+was $1.63\times$, and giving the sigma-only network sixteen times more budget made it
+\emph{worse} ($0.2493\to0.2629$) while the two-parameter model improved ($0.1532\to0.1200$). One
+map from $\sigma$ to a cloud cannot represent ten clouds, and additional training only trades one
+conflict for another~\strong.
+
+% ===========================================================================
+\section{What is established, and what is not}
+% ===========================================================================
+
+\subsection{Established}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}p{0.34\textwidth}p{0.44\textwidth}c@{}}
+\toprule
+claim & evidence & strength \\
+\midrule
+The corrector reduces held-out error by \SI{14.4}{\percent} &
+3 seeds, 143 cells, 415/429 wins, $t=6.0$ & \strong \\
+The gain is not parameter count &
+\num{26547} vs \num{26502} params, \SI{4.9}{\percent} vs \SI{15.1}{\percent} & \weak \\
+The gain is not compute & 2 passes on stage~1 is \SI{1.3}{\percent} worse & \weak \\
+The corrector does not introduce instability & 6/6 pairs below 1 at matched cost & \weak \\
+Cross-seed variance falls \SI{70}{}--\SI{80}{\percent} & 3 seeds in both settings & \strong \\
+Physical invariants reproduced below \SI{1}{\percent} & 6 cells, two stages & \strong \\
+The benefit is confined to the training box & gain \SI{14.2}{\percent} $\to$ \SI{1.8}{\percent}
+  & \weak \\
+The map is not a time integrator &
+divergence at $k\ge2$, forward/backward disagreement $11\times$ & \strong \\
+\bottomrule
+\end{tabular}
+\caption{Summary of claims and their evidential weight.}
+\end{table}
+
+\subsection{Not established, stated plainly}
+
+\textbf{The corrector compensates rather than repairs.} Its benefit collapses by a factor of
+eight outside the training parameter box. The one-parameter control shows the opposite (gain
+retains \SI{85}{\percent} of its value under mild extrapolation), which locates the failure at
+the dimensionality of the parameter family rather than at the corrector's design.
+
+\textbf{The capacity comparison is a single seed.} Test~1 of \S\ref{sec:capacity} has no error
+bar. Test~2 does, and is decisive on the prior question---capacity does not help this task---but
+the exact size of the matched-capacity gap is not pinned down.
+
+\textbf{The model is not a time integrator}, and this is a scope statement rather than a
+shortfall. Iteration is outside the domain by construction (\S\ref{sec:rollout}), the
+intermediate state is only recovered to $2.4\times$ the terminal error
+(\S\ref{sec:intermediate}), and long-horizon questions require a model trained at that horizon.
+
+\textbf{The headline numbers use a fixed learning rate.} A learning-rate study in this
+repository found warm-up-plus-cosine to be \SI{14.2}{\percent} better at the same budget. The
+headline results use the fixed rate for consistency with pre-existing checkpoints; adopting the
+schedule would improve every number in \S4.1--4.3 by roughly that margin. The reported figures
+are therefore conservative.
+
+\textbf{The OT accounting is exact but the batch is approximate.} 2{,}000 of 100{,}000 particles
+is an approximation to the global OT it stands in for, as OT-CFM itself notes.
+
+\subsection{Proposed, not run}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}p{0.34\textwidth}p{0.44\textwidth}r@{}}
+\toprule
+experiment & what it would settle & estimated cost \\
+\midrule
+capacity-matched seeds 89/90 & an error bar on \S\ref{sec:capacity} Test~1 & \SI{4.3}{\hour} \\
+long-horizon model at $T'=4T$ & whether the approach holds when retrained for a longer horizon
+  & \SI{2.5}{\hour} \\
+single-parameter rollout & whether non-iterability is specific to the two-parameter case
+  & \SI{40}{\minute} \\
+cross-model transfer of the corrector & whether it repairs a \emph{structural} error rather than
+  a model-specific one & \SI{10}{\minute} \\
+two-level model with an intermediate slice & whether supervision at $T/2$ makes the process
+  learnable & \SI{3}{\hour} \\
+capacity ladder (widths 96/104/120) & whether the capacity response is monotone & \SI{6}{\hour} \\
+\bottomrule
+\end{tabular}
+\caption{Proposed experiments. None has been run.}
+\end{table}
+
+None of these has been run. They are listed because each would sharpen a specific sentence above,
+not because the present conclusions depend on them.
+
+\section{On the Autel work}
+
+\TODO{To be supplied: a non-confidential summary of the bottleneck, the intervention, and the
+measured latency--quality trade-off. Left blank rather than approximated.}
+
+% ===========================================================================
+\appendix
+\section{Reproducibility}
+% ===========================================================================
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+script & purpose \\
+\midrule
+\texttt{inventory\_runs.py} & enumerate all training runs and the distinct designs \\
+\texttt{verify\_eval\_leakage.py} & check evaluation sets against checkpoint training cells \\
+\texttt{repair\_eval\_sets.py} & rebuild held-out sets from checkpoints and rescore \\
+\texttt{four\_way\_common.py} & the four-way table on the common held-out cells \\
+\texttt{nstep\_sweep.py} & $N$-step stage~1 and stage~1 + corrector \\
+\texttt{complexity\_accounting.py} & FLOPs and memory per stage \\
+\texttt{ot\_cost\_audit.py} & OT solves by role \\
+\texttt{alpha\_sweep\_repaired.py} & correction strength on a clean split \\
+\texttt{rollout\_stability.py} & repeated application \\
+\texttt{rollout\_compare.py} & three maps at matched forward passes \\
+\texttt{e11\_intermediate\_state.py} & intermediate-state probe \\
+\texttt{physical\_quantities.py} & centroids, moments, anisotropy \\
+\texttt{stability\_single\_vs\_two.py} & cross-seed comparison across both settings \\
+\texttt{capacity\_matched.py} & the width-112 capacity control \\
+\texttt{collect\_report\_numbers.py} & every number quoted above, in one JSON \\
+\bottomrule
+\end{tabular}
+\caption{Scripts behind every number in this note.}
+\end{table}
+
+\paragraph{Hardware.} RTX 4060 Laptop, \SI{8}{\giga\byte}, \SI{31}{\giga\byte} RAM,
+Python 3.13, torch 2.8.0+cu129, POT 0.9.7. Exact OT is capped at 30{,}000 points by memory;
+scores above that use paired subsampling, stated per table.
+
+\section{Notation}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+symbol & meaning \\
+\midrule
+$\theta=(\sigma,\mu)$ & physical parameters \\
+$S=\sigma T$, $G=\sqrt{2\mu T}$ & shear and diffusion displacement scales \\
+$\nu_\theta$ & terminal distribution of the mean-field system \\
+$\hat\mu_{N,\theta}$ & empirical terminal measure, $N$ particles \\
+$u(z,r,t)$ & average velocity over $[r,t]$ \\
+$T^*_\theta$ & MSE-optimal deterministic map, $\mathbb{E}[X_T\mid X_0]$ \\
+$T_{\text{dp}}$ & the corrected map, $y+\alpha\,\mathrm{MLP}_\phi$ \\
+$\alpha$ & correction strength \\
+$\Wtwo$ & 2-Wasserstein distance \\
+NFE & number of function evaluations \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}
