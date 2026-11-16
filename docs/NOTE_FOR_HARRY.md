@@ -131,14 +131,24 @@ The corrector also **reduces across-seed variance by 70%** ($0.0089\to0.0027$).
 | (b) MF + DP, $\alpha{=}1$ | 0.10376 | 2 | 26,502 |
 | (b') MF + DP, $\alpha{=}2$ | **0.09515** | 2 | 26,502 |
 | (d) MF two steps, same weights | 0.12332 | 2 | 9,027 |
-| (c) capacity-matched single net, width 112 | [RUNNING] | 1 | **26,547** |
+| (c) capacity-matched single net, width 112 | 0.11604 | 1 | **26,547** |
 
-**The informative row is (d)**: at the *same* two-forward cost as (b), spending the second
-forward on another MeanFlow step does nothing ($0.12332$ vs $0.12219$ one-step). Spending
-it on the corrector gains 22%. So the gain is not "more computation".
+**The informative rows**:
 
-**(c) is the row that decides the capacity objection.** Width 112 gives 26,547 parameters,
-within 0.17% of MF+DP's 26,502. [RUNNING]
+**(c) does not reproduce the gain at matched capacity.** Width 112 is within 0.17% of
+MF+DP's parameter count (26,547 vs 26,502), on the same 40 cells with the same budget, and
+it reaches 0.11604 vs MF+DP's 0.10376 — 11.8% worse. So the gain is not explained by
+parameter count in this seed; splitting the map into a global transport plus a local
+correction appears structurally different, consistent with the Brenier argument in §2.2.
+
+**Caveat, stated plainly**: this is a **single seed**. The gap is $0.0123$, about 1.4×
+MF's across-seed sd ($0.0089$), so there is no error bar on it. The honest claim is
+"a capacity-matched network does not reproduce the gain in this run", not "the capacity
+hypothesis is refuted". A three-seed version is listed as proposed work below.
+
+**(d) removes the "more computation" explanation.** At the *same* two-forward cost as (b),
+spending the second forward on another MeanFlow step does nothing ($0.12332$ vs $0.12219$
+one-step). Spending it on the corrector gains 22%.
 
 ### 4.3 $\alpha$ chosen on a development split, reported on a disjoint test split [DONE]
 
@@ -274,7 +284,7 @@ collapses to a 1–2% effect while the one-step error itself grows 1.7–3.8×.
 | Full four-way comparison (§4.2, 144 cells) | **4.6 min** |
 | Rollout study (§5.1, 6 cells × 4 horizons) | **8 min** |
 | $\alpha$ sweep + test report | **5 min** |
-| Capacity-matched training, width 112 | **~150 min** [RUNNING] |
+| Capacity-matched training, width 112 | **~128 min** (measured) |
 
 Everything except the capacity-matched run is on disk and reproducible from
 `docs/HARRY_EXPERIMENTS.md` §8.
@@ -290,13 +300,18 @@ rollout divergence; physical quantities; OT cost accounting; the extrapolation a
 
 **Proposed, not run**:
 
-1. **(c) capacity-matched single network** — running now, ~150 min.
+1. **Capacity-matched seeds 89/90** — not run. The single-seed row (c) is in the table
+   without an error bar; two more seeds (~4.3 h) would make it a claim with one.
 2. **Long-horizon model** — retrain MeanFlow at $T'=4T$ or $8T$ and ask whether a
    corrector still helps. This is the honest way to answer the long-horizon question,
    since iteration is not available. Estimated 6–8 h.
 3. **Corrector trained with a stability penalty** — add $\|T_{\text{dp}}(T_{\text{dp}}(y))-T_{\text{dp}}(y)\|^2$
    to the loss and see whether iteration becomes possible at a small one-step cost.
 4. **$\alpha$ retrained per value** rather than scaled at inference, on the dev split.
+5. **Narrower capacity ladder** (widths 96, 104, 120) to check that the capacity response
+   is not accidentally non-monotone around 112 — the repository has already observed
+   non-monotone width behaviour in the single-parameter setting, so one width is thin
+   evidence for a capacity claim.
 
 ---
 

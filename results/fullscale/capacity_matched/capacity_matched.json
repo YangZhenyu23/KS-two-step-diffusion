@@ -1,0 +1,14 @@
+{
+  "updates_per_cell": 32000,
+  "n_held_out": 144,
+  "n_train": 40,
+  "rows": [
+    {
+      "width": 112,
+      "params": 26547,
+      "seed": 88,
+      "held_out_mean_w2": 0.11604386704734357,
+      "over_floor": 1.801084386890324
+    }
+  ]
+}
