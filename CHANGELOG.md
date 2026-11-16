@@ -13,7 +13,66 @@
 
 ---
 
-## [v1.12.0] — 2026-11-16
+## [v1.13.0] — 2026-11-16
+
+**生成给 Harry 的 Word 技术报告（含 8 张图、14 张表、3 个待填占位区块）。**
+
+### 新增
+
+- **`scripts/report_figures.py`** — 生成报告所需的 6 张定量图（此前仓库只有分布快照图）：
+  - `fig_rollout.png` — $W_2$ 随迭代次数（对数轴），发散可视化
+  - `fig_rollout_method.png` — 成本匹配下三种映射在 $k{=}4$ 的对比
+  - `fig_four_way.png` — 四项对照柱状图（含容量匹配）
+  - `fig_alpha.png` — dev 扫描曲线 + test 实测点
+  - `fig_physics.png` — 各向异性预测 vs 真值 + 各物理量误差
+  - `fig_extrapolation.png` — 内插/外推的误差与修正器增益
+- **`scripts/build_report_docx.py`** — 生成 `docs/report_for_harry.docx`
+- **`scripts/check_report_docx.py`** — 校验报告完整性（检测 NaN、缺图、空节）
+- **`docs/report_for_harry.docx`**（865 KB，2515 词，8 图，14 表）
+
+### 变更
+
+- **报告全部数字在生成时从 JSON 读取**，不手写，避免与产物脱节
+- **P0/P2 改为自动检测**：若 `p0_same_cells/p0_budget32000.json` 或 `long_horizon/long_horizon_T4.json` 存在则填真实数字，否则留可见占位横幅（`RUNNING` / `QUEUED`）
+
+### 报告结构
+
+| 节 | 内容 |
+|---|---|
+| 1 | 相对 MeanFlow / OT-CFM 的定位（明确不重复前人的部分）|
+| 2 | 方程：KS 系统、MeanFlow 恒等式、DP 损失、Brenier 论证 |
+| 3 | 评测协议（六项匹配）+ **评测集泄露的发现与修复** |
+| 4.1 | 三种子主结果 |
+| 4.2 | **四项对照**（容量匹配 + 成本匹配）|
+| 4.3 | **消融：可识别误差 vs 分布补偿**（负面结果）|
+| 4.4 | α 在 dev 选、test 报 |
+| 4.5 | 物理量（各向异性 <1%）|
+| 4.6 | **rollout 发散的完整数据**（最强失败案例）|
+| 5 | 成本核算（含 OT 占 7%）+ 位移律 |
+| 6 | 与 reference 的定性对比（图 7、图 8）|
+| 7 | **实验进行中（三个占位区块）** |
+| 8 | 已确立 / 未确立 / 下一步 + Autel 留空 |
+
+### 校验结果
+
+```
+paragraphs : 119
+tables     : 14
+images     : 8
+words      : 2515
+placeholder banners found: 3
+no NaNs, no missing figures
+```
+
+### 其他
+
+- 报告为**英文**（Harry 用英文写作），末节 Autel 部分明确留空并标注"留给作者补充，不近似"
+- P0 仍在训练（已超 3 小时，GPU 38%、持续消耗 CPU，确认在推进而非卡死）
+
+---
+
+## [v1.12.0] — 2026-11-12
+
 
 **仓库全面梳理 + 发现并修复评测集泄露 + 对照两篇论文重写任务清单。**
 
