@@ -294,25 +294,36 @@ def main() -> int:
         block = common["results"]
         rows = [
             ["(a) global map alone", f"{block['a_headline_1pass']['mean']:.5f}", "1", "9,027",
-             "headline"],
+             "2-param, 7 in"],
             ["(d) few-step flow baseline", f"{block['d_headline_2pass']['mean']:.5f}", "2",
-             "9,027", "headline"],
+             "9,027", "2-param, 7 in"],
             ["(c) capacity-matched predictor", f"{block['c_w112_1pass']['mean']:.5f}", "1",
-             "26,547", "w112"],
+             "26,547", "2-param, 7 in"],
             ["(b) map + corrector", f"{block['b_headline_dp']['mean']:.5f}", "2", "26,502",
-             "headline"],
+             "2-param + correc."],
         ]
-        table(doc, ["configuration", "held-out W_2", "passes", "parameters", "stage-1 source"],
-              rows, widths=[2.2, 1.1, 0.7, 1.0, 1.2])
+        table(doc, ["configuration", "held-out W_2", "passes", "parameters", "model family"],
+              rows, widths=[2.1, 1.0, 0.7, 1.0, 1.3])
         para(doc, "", size=4)
         para(doc,
-             f"All four numbers are computed on the same {common['n_common_held_out']} cells, "
-             f"namely those held out by **both** the headline checkpoint and the width-112 "
-             f"checkpoint. This matters: the two checkpoints were trained on different 40-cell "
-             f"designs that share only {common['overlap']} cells, so a naive comparison across "
-             f"their own held-out sets would mix cell-set differences into the result. On the "
-             f"common set the ordering is unambiguous.",
+             f"Two things had to be verified before these four numbers could be put in one "
+             f"table, and both were checked from the checkpoints rather than assumed.",
              size=10)
+        bullets(doc, [
+            "**Same model family.** All four are two-parameter networks with a 7-dimensional "
+            "input (z, t, r, log sigma, log mu); the parameter count and input width were read "
+            "out of each checkpoint file. No single-parameter network appears in this table. "
+            "That matters because a wider single-parameter network could not see mu at all, and "
+            "comparing it here would be a category error rather than a capacity control.",
+            f"**Same evaluation cells.** All four numbers are computed on the same "
+            f"{common['n_common_held_out']} cells, namely those held out by *both* the headline "
+            f"checkpoint and the width-112 checkpoint. This mattered in practice: the two "
+            f"checkpoints were trained on different 40-cell designs that share only "
+            f"{common['overlap']} cells, so comparing each on its own held-out set would have "
+            f"mixed cell-set differences into the result.",
+        ])
+        para(doc, "",
+             size=4)
     else:
         para(doc, "[common-cell four-way comparison not available]", italic=True, size=9)
 
