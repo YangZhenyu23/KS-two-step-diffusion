@@ -1,0 +1,72 @@
+{
+  "per_seed": {
+    "stage1": {
+      "stage1": {
+        "mean": 0.12276673234794717,
+        "n": 143,
+        "relative_vs_stage1": 0.0
+      },
+      "corrector": {
+        "mean": 0.10429119590156308,
+        "n": 143,
+        "relative_vs_stage1": 0.15049302113882512
+      }
+    },
+    "wide_s88": {
+      "stage1": {
+        "mean": 0.12271334620730626,
+        "n": 112,
+        "relative_vs_stage1": 0.0
+      },
+      "corrector": {
+        "mean": 0.10421622263977677,
+        "n": 112,
+        "relative_vs_stage1": 0.1507344077821926
+      },
+      "wide": {
+        "mean": 0.11667141708571568,
+        "n": 112,
+        "relative_vs_stage1": 0.04923612066925154
+      }
+    },
+    "wide_s89": {
+      "stage1": {
+        "mean": 0.12271334620730626,
+        "n": 112,
+        "relative_vs_stage1": 0.0
+      },
+      "corrector": {
+        "mean": 0.10421622263977677,
+        "n": 112,
+        "relative_vs_stage1": 0.1507344077821926
+      },
+      "wide": {
+        "mean": 0.12747407674454364,
+        "n": 112,
+        "relative_vs_stage1": -0.03879554004822605
+      }
+    },
+    "wide_s90": {
+      "stage1": {
+        "mean": 0.12271334620730626,
+        "n": 112,
+        "relative_vs_stage1": 0.0
+      },
+      "corrector": {
+        "mean": 0.10421622263977677,
+        "n": 112,
+        "relative_vs_stage1": 0.1507344077821926
+      },
+      "wide": {
+        "mean": 0.12460798287326079,
+        "n": 112,
+        "relative_vs_stage1": -0.015439532247403909
+      }
+    }
+  },
+  "wide_gain_mean": -0.0016663172087928075,
+  "wide_gain_sd": 0.045603392544241034,
+  "corrector_gain_mean": 0.1507344077821926,
+  "corrector_gain_sd": 0.0,
+  "note": "Each seed's row compares width-112 against stage 1 on the cells that BOTH the headline model and that wide seed left out, so every contrast is internal to its own cell set."
+}

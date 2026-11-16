@@ -78,6 +78,68 @@ check("C2", "0.1486", sweep["summary"]["mlp64"]["mean"], note="width 64")
 check("C3", "0.1561", sweep["summary"]["mlp128"]["mean"], note="width 128")
 check("C4", "134403", 134403, tolerance=0, note="width 256 params (reported in note)")
 
+# ---- E2: three-seed capacity on common cells
+ccommon = j("capacity_matched/capacity_common.json")
+if ccommon:
+    check("C5", "0.2", abs(100 * ccommon["wide_gain_mean"]), tolerance=0.6,
+          note="width-112 mean gain %, magnitude")
+    check("C6", "4.6", 100 * ccommon["wide_gain_sd"], tolerance=0.15, note="width-112 gain sd")
+    check("C7", "15.1", 100 * ccommon["corrector_gain_mean"], tolerance=0.02,
+          note="corrector gain %")
+    for seed, claimed in ((88, "4.9"), (89, "3.9"), (90, "1.5")):
+        block = ccommon["per_seed"][f"wide_s{seed}"]["wide"]["relative_vs_stage1"]
+        check(f"C-s{seed}", claimed, abs(100 * block), tolerance=0.25,
+              note=f"seed {seed} magnitude")
+
+# ---- E6/E8 structural tests
+struct = j("structural_tests/structural_tests.json")
+if struct:
+    by_base = {r["base_model"]: r for r in struct["e6_transfer"]}
+    check("S1", "15.0", 100 * by_base["seed88"]["gain"], tolerance=0.05, note="seed88 gain")
+    check("S2", "1.4", abs(100 * by_base["seed89"]["gain"]), tolerance=0.15,
+          note="seed89 loss magnitude")
+    check("S3", "3.2", abs(100 * by_base["seed90"]["gain"]), tolerance=0.15,
+          note="seed90 loss magnitude")
+    check("S4", "141", by_base["seed88"]["wins"], tolerance=0, note="seed88 cells improved")
+    probe = struct["e8_reference_probe"]
+    check("S5", "0.0165", probe["mean_displacement"], tolerance=0.05, note="E8 displacement")
+    check("S6", "0.0717", probe["w2_after_self_correction"], tolerance=0.02,
+          note="E8 self-correction W2")
+
+# ---- E7 few-shot
+few = j("few_shot/few_shot.json")
+if few:
+    by_cells = {r["n_cells"]: r for r in few["rows"]}
+    check("F1", "19.6", abs(100 * by_cells[4]["gain_vs_stage1"]), tolerance=0.05,
+          note="4 cells loss magnitude")
+    check("F2", "22.4", 100 * by_cells[40]["gain_vs_stage1"], tolerance=0.03,
+          note="40 cells gain")
+
+# ---- E9 Jacobian symmetry
+jac = j("jacobian/jacobian_symmetry.json")
+if jac:
+    check("J1", "0.51", jac["corrector_antisymmetry_mean"], tolerance=0.05,
+          note="corrector antisymmetry")
+    check("J2", "0.68", jac["stage1_antisymmetry_mean"], tolerance=0.05,
+          note="stage-1 antisymmetry")
+
+# ---- E1 single-param rollout and E3 long horizon
+single = j("rollout_single/rollout_single.json")
+if single:
+    k8 = [r["w2_to_physical"] for r in single["rows"] if r["k"] == 8]
+    check("R1", "4015", max(k8) / single["floor_mean"], tolerance=0.02,
+          note="single-param k=8 max, over floor")
+    check("R2", "3745", min(k8) / single["floor_mean"], tolerance=0.02,
+          note="single-param k=8 min, over floor")
+
+lh = j("long_horizon/normalised.json")
+if lh:
+    check("L1", "2.75", lh["raw_growth"], tolerance=0.02, note="raw growth T->4T")
+    check("L2", "1.35", lh["relative_growth"], tolerance=0.02, note="scale-normalised growth")
+    check("L3", "2.04", lh["scale_growth"], tolerance=0.02, note="cloud radius growth")
+    check("L4", "5.5", 100 * lh["two_step_gain_at_T4"], tolerance=0.05,
+          note="two-step gain at 4T %")
+
 # ---- extrapolation, two-parameter
 tr = j("extrapolation/three_regions.json")
 check("E1", "0.09404", tr["R2_interior_heldout"]["mf"], note="interp")

@@ -17,10 +17,18 @@ with a 7-dimensional input, verified from the checkpoints.
 The corrector reduces held-out distributional error by **14.4 % ± 4.2 %** over three seeds and
 415 of 429 cell-level comparisons, at **2.97×** inference FLOPs. Two controls rule out the
 obvious explanations: the second forward pass spent on another map step is 1.1 % *worse*, and a
-network with the same parameter count gains only 4.9 %. Outside the training parameter range
-the corrector's benefit falls from **14.2 % to 1.8 %**, a factor of eight, while the first-stage
-error itself grows by 2.32×. The corrector therefore pays for itself inside the sampled
-parameter range and not outside it.
+network with the same parameter count gains **nothing on average** (−0.2 % ± 4.6 % over three
+seeds). Outside the training parameter range the corrector's benefit falls from **14.2 % to
+1.8 %**, a factor of eight, while the first-stage error itself grows by 2.32×.
+
+Three further tests locate the dependence more precisely, and they are the substance of the
+note's negative result. Applying the trained corrector to a stage-1 model that differs **only by
+random seed** turns the 15 % gain into a 1.4–3.2 % *loss*; the corrector displaces a cloud that
+is already correct; its benefit keeps rising with the number of training cells and has not
+saturated at 40; and its Jacobian is only partially symmetric, as a Brenier gradient would be.
+The corrector is therefore a local structural fit to one model's residual, not a repair of an
+identifiable error class. It pays for itself inside the training parameter range, for the model
+it was fitted to, and not otherwise.
 
 ---
 
@@ -34,12 +42,14 @@ accuracy and matters more for reproducibility than for any single run.
 **Where it does not.** Outside the training range its gain collapses to 1.8 % while the
 first-stage error doubles. The failure is not a tuning problem: it is what happens when the
 corrector's input — the stage-1 output cloud — is both conditioned on an unseen parameter and
-itself deformed.
+itself deformed. And the dependence is narrower than the parameter range: **apply the
+seed-88 corrector to a stage-1 model that differs only by random seed and the gain becomes a
+small loss** (−1.4 % at seed 89, −3.2 % at seed 90, against +15.0 % on the model it was fitted
+to). That is the single most informative measurement in the note.
 
-**The condition.** The corrector helps when the stage-1 map and the target move *together* as
-the parameter varies, so that the residual stays small and structurally similar to what was
-seen in training. In one dimension that condition survives mild extrapolation; in two it does
-not.
+**The condition.** The corrector helps when the stage-1 residual is the one it was trained on —
+meaning the same parameter regime *and* the same base model. It is a local structural fit to one
+model's residual, not a repair of an error class.
 
 **What it is not.** The pipeline is a fixed-horizon transport, not a time integrator. Applying
 it repeatedly diverges by four orders of magnitude, and this is a property of the design rather
@@ -167,9 +177,20 @@ error reduction against the one-pass baseline.
 A second, independent capacity check over three seeds: a single-parameter network widened from
 9,027 to **134,403** parameters (15×) shows no improvement (0.1486 → 0.1456, with width 128
 slightly worse at 0.1561). Capacity is not the binding constraint on this task, which is why
-the corrector's gain cannot be a capacity effect. The matched-capacity comparison itself is a
-single seed, and the gap is about one across-seed standard deviation, so it is directional
-rather than precise.
+the corrector's gain cannot be a capacity effect.
+
+**The capacity-matched row now has an error bar, and it is worse for the capacity hypothesis
+than the single seed suggested.** Repeating width-112 at seeds 89 and 90, with each seed scored
+on the cells that both it and the headline model left out:
+
+| model | seed 88 | seed 89 | seed 90 | mean ± sd |
+|---|---:|---:|---:|---:|
+| width-112, capacity-matched | 0.11667 (+4.9 %) | 0.12747 (−3.9 %) | 0.12461 (−1.5 %) | **−0.2 % ± 4.6 %** |
+| stage 1 + corrector | 0.10422 | 0.10422 | 0.10422 | **+15.1 %** |
+
+So a network with the same parameter count as the two-stage model gains **nothing on average**;
+the +4.9 % of seed 88 was a favourable draw. Matching the parameter count does not reproduce
+the effect, and now that is a three-seed statement rather than one.
 
 ---
 
@@ -216,6 +237,80 @@ leaving the surface on which the residual was characterised.
 **This is a negative result and it bounds the method.** The corrector is a distribution
 compensator within the training range, not a general repair of the first-stage map.
 
+### 5.1 Why the corrector is not repairing an error in general
+
+Extrapolation shows the gain depends on the parameter range. Three further tests show it
+depends on something narrower still: **the particular base model it was trained against.**
+Neither test requires training; each applies the seed-88 corrector to something other than the
+stage-1 output it was fitted to.
+
+**Test A — a different seed of the same architecture.** Take the seed-88 corrector and apply it
+to stage-89's and stage-90's outputs. Architecture, training data, parameter range and metric
+are all unchanged; only the base model's random initialisation differs.
+
+| base model | cells | without corrector | with | gain | cells improved |
+|---|---:|---:|---:|---:|---:|
+| seed 88 (the one it was fitted to) | 143 | 0.12277 | 0.10429 | **+15.0 %** | 141 / 143 |
+| seed 89 | 143 | 0.12975 | 0.13162 | **−1.4 %** | 57 / 143 |
+| seed 90 | 143 | 0.11203 | 0.11560 | **−3.2 %** | 33 / 143 |
+| width-112 base | 112 | 0.11667 | 0.11407 | +2.2 % | 68 / 112 |
+
+Changing nothing but the seed turns a 15 % gain into a small loss. **This is the strongest
+single piece of evidence in the note**, because it rules out extrapolation, data mismatch and
+capacity as explanations: the corrector has learned *this* base model's residual, not a class of
+residual.
+
+**Test B — does the corrector know when no correction is needed?** Apply it to the reference
+cloud itself:
+
+| quantity | value |
+|---|---:|
+| mean per-particle displacement | 0.0165 |
+| $W_2$ to the true target afterwards | **0.0717** |
+| 16-bin reproducibility floor | 0.0644 |
+
+The displacement is small (about 1 % of the cloud scale) but the resulting $W_2$ is **1.1× the
+floor**. A mechanism that detected "already correct" would leave the cloud alone; this one
+applies a displacement unconditionally.
+
+**Test C — how much coverage does it need?** Retrain the corrector on 4, 10, 20 and 40 cells,
+scoring every configuration on the same 143 held-out cells:
+
+| training cells | held-out $W_2$ | vs stage 1 | cells improved |
+|---:|---:|---:|---:|
+| 4 | 0.14681 | **−19.6 %** | 57 / 143 |
+| 10 | 0.11423 | +7.0 % | 106 / 143 |
+| 20 | 0.10404 | +15.3 % | 127 / 143 |
+| 40 | 0.09527 | +22.4 % | 136 / 143 |
+
+The gain rises monotonically and is **still rising at 40 cells** — it does not saturate. With 4
+cells it is actively harmful. A corrector that had learned a transferable rule would work from
+few cells; this one needs coverage.
+
+*(Caveat: this sweep omits the residual-regularisation term used in the headline training, so
+the 40-cell figure is not comparable with the +15.0 % above. The trend, not the level, is the
+result.)*
+
+**Test D — is the learned field a gradient field?** The structural argument of §2.3 says the
+target is a Brenier gradient, and a gradient field has a symmetric Jacobian. Estimating the
+Jacobian by central differences at 24 probe points and measuring
+$\lVert J-J^\top\rVert_F/\lVert J\rVert_F$:
+
+| map | antisymmetry |
+|---|---:|
+| corrector | **0.51** |
+| stage-1 displacement | 0.68 |
+
+The corrector is measurably closer to a gradient field than stage 1, which is consistent with
+it partially capturing the Brenier structure — **but 0.51 is nowhere near the 0 of an actual
+gradient field**, and the sample is two cells.
+
+**What the four tests together say.** The corrector has partial structural content (Test D) that
+is nevertheless bound to one specific base model (Test A), needs broad coverage to reach it
+(Test C), and has no mechanism for declining to act (Test B). It is best described as a *local
+structural fit to one model's residual*, not a repair of an identifiable error in the
+first-stage map. This is the answer to the ablation, and it is negative.
+
 ![Corrector gain by region](../results/report_figures/fig_extrapolation.png)
 
 *Figure 1. Left: error in each region. Right: the corrector's relative gain, which collapses
@@ -247,6 +342,15 @@ simulations — and is the only operating point. The divergence is expected rath
 pathological: one application moves the centroid by 1.3–2.3 and the rms radius by 0.84–1.57,
 so the second application receives a cloud that no training sample resembles.
 
+Three seeds agree on this. Repeating the study at seeds 89 and 90, with each corrector paired to
+its own stage-1 checkpoint:
+
+| seed | $k{=}1$ (× floor) | $k{=}4$ (× floor) |
+|---:|---|---|
+| 88 | 0.85 – 1.58 | 107 – 525 |
+| 89 | 0.85 – 1.74 | 323 – 520 |
+| 90 | 0.85 – 1.70 | 269 – 484 |
+
 **Cost is not the reason this is out of scope.** Eight applications take about 36 ms against
 83 s for one simulation. The reason is that the map has no dynamical semantics to iterate.
 
@@ -267,6 +371,45 @@ The improvement is 5 % on average over six cell-horizon pairs, which is not impr
 at $k=4$ the error is 268× the floor against 287× without the corrector. What it establishes is
 the narrower claim that the corrector does not *introduce* instability — one of the two
 negative outcomes that would have been acceptable.
+
+### 6.1 Does the failure depend on the parameter count?
+
+The single-parameter model can be tested the same way, with one caveat: it was trained on the
+whole $\mu=1$ row, so no held-out $\mu=1$ cell exists and the comparison concerns stability
+rather than held-out accuracy.
+
+| setting | $k{=}8$ (× floor) |
+|---|---|
+| single parameter ($\mu{=}1$, four $\sigma$) | **3,745 – 4,015** |
+| two parameters (six cells) | **12,610 – 267,049** |
+
+Single-parameter iteration also diverges, by a factor of roughly 50–70 less. So non-iterability
+is not specific to the two-parameter family: it is a property of any fixed-horizon map. The
+two-parameter case is simply worse, which is consistent with its transport being curved in a
+higher-dimensional sense (§5).
+
+### 6.2 Retraining at a longer horizon, rather than iterating
+
+If iteration is not available, the honest long-horizon question is whether a model *trained* at
+a longer horizon works. Retraining at $T'=4T=0.08$ on the same 40 cells with the same budget:
+
+| quantity | $T=0.02$ | $T'=0.08$ | ratio |
+|---|---:|---:|---:|
+| true-cloud rms radius | 0.941 | 1.918 | 2.04× |
+| raw held-out $W_2$ | 0.12277 | 0.33766 | **2.75×** |
+| **$W_2$ / rms radius** | 0.1304 | **0.1760** | **1.35×** |
+| over floor (scaled estimate) | 1.91× | 2.57× | 1.35× |
+| two-step application | −1.1 % | **+5.5 %** | — |
+
+**Most of the raw growth is scale, not degradation.** The cloud itself is 2.04× larger, and
+normalising by its radius leaves a **1.35×** increase in relative error. A longer horizon is
+harder but not qualitatively different at this distance.
+
+**An unexpected reversal.** At $T'$ the two-step application *helps* (+5.5 %), whereas at $T$ it
+hurts (−1.1 %). The likely reason is that by $T'$ the transport has accumulated more shear
+(centroid 1.3 → 4.8), so the flow is more curved *in time* and subdividing pays. This does not
+contradict §5.1's finding that subdivision does not help across the *parameter* dimension: those
+are two different curvatures.
 
 **Physical invariants at the operating point.** Averaged over six cells spanning the box, the
 anisotropy $\lambda_1/\lambda_2$ — the quantity $\sigma$ controls — is reproduced to 1.04 %
@@ -319,23 +462,23 @@ and 2.0, so the claim is that the default is conservative, not that 2 is optimal
 
 **Completed.** Reproduction of the upstream single-parameter result (180 metrics, maximum
 deviation 0.0066 from the published values); the two-parameter extension; the three-seed
-headline; all four configurations of §4 at matched cost and matched parameters; the
-extrapolation decomposition of §5; the repeated-application study and the intermediate-horizon
-comparison of §6; physical invariants; the training and deployment cost accounting of §7; the
-correction-strength selection.
+headline; all four configurations of §4 at matched cost and matched parameters, with a
+three-seed error bar on the capacity-matched row; the extrapolation decomposition and the four
+structural tests of §5.1; the repeated-application study in both parameter settings and at a
+retrained longer horizon (§6); physical invariants; the training and deployment cost accounting
+of §7; the correction-strength selection on a development split.
 
 **Proposed, not run.**
 
 | experiment | what it would settle | estimated cost |
 |---|---|---|
-| capacity-matched seeds 89/90 | an error bar on §4 row (c) | 4.3 h |
-| long-horizon model at $T'=4T$ | whether the method holds when retrained for a longer horizon | 2.5 h |
-| single-parameter repeat-application study | whether non-iterability is specific to the two-parameter case | 40 min |
-| cross-model transfer of the corrector | whether it repairs a *structural* error rather than a model-specific one | 10 min |
-| two-level model with a $T/2$ slice | whether supervision at an intermediate time makes the process learnable | 3 h |
+| corrector trained jointly across several seeds | whether the seed-specificity of §5.1 is removable by data augmentation over base models | 6 h |
+| long-horizon model at $T'=8T$ | whether the 1.35× relative degradation grows or plateaus | 4 h |
+| corrector with a "no-op" branch | whether an explicit decline-to-act gate restores the missing behaviour of Test B | 5 h |
+| cross-model transfer with a shared trunk | whether a corrector can be made model-agnostic | 8 h |
 
-None of these has been run. Each would sharpen one sentence above; the present conclusions do
-not depend on them.
+None of these has been run. Each follows directly from a negative result above, so the note's
+conclusions do not depend on them — they are directions the negatives point to.
 
 ---
 
