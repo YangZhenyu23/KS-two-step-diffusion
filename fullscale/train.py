@@ -95,6 +95,7 @@ def train_two_param(
     seed: int = 88,
     checkpoint_every: int = 0,
     conditioning: str = "log10",
+    width: int = 64,
 ) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -107,7 +108,7 @@ def train_two_param(
         f"batch {batch_size}, N={config.n_train}, conditioning={conditioning}")
     initial, targets = load_training_tensors(cells, device)
 
-    model = TwoParamMeanflow(width=64, hidden_layers=3, dimension=3,
+    model = TwoParamMeanflow(width=int(width), hidden_layers=3, dimension=3,
                              conditioning=conditioning).to(device)
     # Encode each cell's parameters through the model's own conditioning, so the
     # training inputs and the inference inputs are guaranteed to be identical.
