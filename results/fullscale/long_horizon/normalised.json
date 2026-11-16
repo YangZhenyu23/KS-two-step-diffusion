@@ -1,0 +1,23 @@
+{
+  "w2_T": 0.12276673234794717,
+  "w2_T4": 0.33765893654676066,
+  "raw_growth": 2.7504107186771334,
+  "rms_T": 0.9412873050161739,
+  "rms_T4": 1.918288665790533,
+  "scale_growth": 2.03794171616664,
+  "relative_error_T": 0.13042429414878565,
+  "relative_error_T4": 0.17602092040074183,
+  "relative_growth": 1.3496022466484685,
+  "floor_T": 0.06443,
+  "floor_T4_estimate": 0.13130458477261664,
+  "over_floor_T": 1.905428097903883,
+  "over_floor_T4_estimate": 2.571570041758198,
+  "two_step_T4": 0.3191584597031444,
+  "two_step_gain_at_T4": 0.05479042560762859,
+  "cells_used_for_scale": [
+    "s09_m04",
+    "s00_m05",
+    "s14_m05"
+  ],
+  "note": "The floor at T' is not measured directly; it is estimated by scaling the T floor with the cloud radius, which is how quantisation error behaves. The comparison is therefore indicative, not exact."
+}

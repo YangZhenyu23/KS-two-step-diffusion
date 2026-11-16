@@ -1,0 +1,40 @@
+{
+  "updates_per_cell": 2000,
+  "batch": 2000,
+  "alpha": 1.0,
+  "ot_refresh": 10,
+  "lr": 0.0001,
+  "stage1_held_out": 0.12276673234794717,
+  "n_held_out": 143,
+  "rows": [
+    {
+      "n_cells": 4,
+      "held_out_w2": 0.14681190380271858,
+      "gain_vs_stage1": -0.19586064559104055,
+      "wins": 57,
+      "n_held_out": 143
+    },
+    {
+      "n_cells": 10,
+      "held_out_w2": 0.11423275178280393,
+      "gain_vs_stage1": 0.06951378766811289,
+      "wins": 106,
+      "n_held_out": 143
+    },
+    {
+      "n_cells": 20,
+      "held_out_w2": 0.10404406475448284,
+      "gain_vs_stage1": 0.15250603510729832,
+      "wins": 127,
+      "n_held_out": 143
+    },
+    {
+      "n_cells": 40,
+      "held_out_w2": 0.09527414639461017,
+      "gain_vs_stage1": 0.2239416609657504,
+      "wins": 136,
+      "n_held_out": 143
+    }
+  ],
+  "note": "Every configuration is scored on the same held-out cells; only the number of training cells changes."
+}

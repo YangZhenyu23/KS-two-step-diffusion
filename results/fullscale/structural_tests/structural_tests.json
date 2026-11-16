@@ -1,0 +1,47 @@
+{
+  "e6_transfer": [
+    {
+      "base_model": "seed88",
+      "design": "s1",
+      "n_cells": 143,
+      "w2_without": 0.12276673234794717,
+      "w2_with": 0.10429119590156308,
+      "gain": 0.15049302113882512,
+      "wins": 141
+    },
+    {
+      "base_model": "seed89",
+      "design": "s1",
+      "n_cells": 143,
+      "w2_without": 0.12974549815133873,
+      "w2_with": 0.13161570273290135,
+      "gain": -0.0144144082701132,
+      "wins": 57
+    },
+    {
+      "base_model": "seed90",
+      "design": "s1",
+      "n_cells": 143,
+      "w2_without": 0.11203360464056192,
+      "w2_with": 0.11559723436162977,
+      "gain": -0.03180857861800557,
+      "wins": 33
+    },
+    {
+      "base_model": "width112",
+      "design": "s6",
+      "n_cells": 112,
+      "w2_without": 0.11667141708571568,
+      "w2_with": 0.11407364085309554,
+      "gain": 0.022265746808505904,
+      "wins": 68
+    }
+  ],
+  "e8_reference_probe": {
+    "n_cells": 60,
+    "mean_displacement": 0.01647548987530172,
+    "w2_after_self_correction": 0.07168203114538076,
+    "note": "Applying the corrector to a perfect cloud should leave it almost unchanged if the corrector knows when no correction is needed."
+  },
+  "corrector": "dp_two_param/s88/dp_corrector.pt"
+}

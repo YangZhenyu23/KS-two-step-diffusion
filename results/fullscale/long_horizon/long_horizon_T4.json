@@ -1,0 +1,13 @@
+{
+  "horizon": 0.08,
+  "multiple": 4,
+  "n_particles": 20000,
+  "budget_per_cell": 32000,
+  "n_train": 40,
+  "n_held_out": 143,
+  "mf_held_out": 0.33765893654676066,
+  "mf_train_fit": 0.3093712138362249,
+  "mf_2step_held_out": 0.3191584597031444,
+  "over_floor_16": 5.2407098641434215,
+  "note": "The headline horizon is T=0.02. This run retrains at k*T so the long-horizon question is answered by a model trained for it, not by iterating the short-horizon map (which diverges)."
+}

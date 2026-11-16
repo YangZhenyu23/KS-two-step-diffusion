@@ -1,0 +1,247 @@
+{
+  "setting": "single-parameter (6-input), mu = 1",
+  "cells": [
+    "s01_m05",
+    "s06_m05",
+    "s13_m05",
+    "s19_m05"
+  ],
+  "ks": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "n": 20000,
+  "score_n": 3000,
+  "floor_mean": 0.12660689041907758,
+  "floors": [
+    {
+      "key": "s01_m05",
+      "floor": 0.12044279306161419
+    },
+    {
+      "key": "s06_m05",
+      "floor": 0.12348262697770485
+    },
+    {
+      "key": "s13_m05",
+      "floor": 0.12692961937408234
+    },
+    {
+      "key": "s19_m05",
+      "floor": 0.135572522262909
+    }
+  ],
+  "rows": [
+    {
+      "key": "s01_m05",
+      "sigma": 20.0,
+      "mu": 1.0,
+      "k": 1,
+      "w2_to_physical": 0.11847733950429568,
+      "step_w2": null,
+      "physical_step_w2": null,
+      "amplification": null,
+      "rms_radius": 0.898112275834256,
+      "centroid_x": 0.27210753864962606,
+      "finite": true
+    },
+    {
+      "key": "s01_m05",
+      "sigma": 20.0,
+      "mu": 1.0,
+      "k": 2,
+      "w2_to_physical": 0.36181903114523345,
+      "step_w2": 0.5168538672977555,
+      "physical_step_w2": 0.2915115535806632,
+      "amplification": 1.7730133195380833,
+      "rms_radius": 1.2713761820982106,
+      "centroid_x": 0.5168026549100876,
+      "finite": true
+    },
+    {
+      "key": "s01_m05",
+      "sigma": 20.0,
+      "mu": 1.0,
+      "k": 4,
+      "w2_to_physical": 6.733840655084315,
+      "step_w2": 6.4913904730521415,
+      "physical_step_w2": 0.5273160954072604,
+      "amplification": 12.310245277149498,
+      "rms_radius": 6.752053757359378,
+      "centroid_x": -2.3500474328137932,
+      "finite": true
+    },
+    {
+      "key": "s01_m05",
+      "sigma": 20.0,
+      "mu": 1.0,
+      "k": 8,
+      "w2_to_physical": 508.33030209367166,
+      "step_w2": 501.74730689431425,
+      "physical_step_w2": 0.8319048097459464,
+      "amplification": 603.1306719425529,
+      "rms_radius": 429.4098295620587,
+      "centroid_x": -278.9440902923107,
+      "finite": true
+    },
+    {
+      "key": "s06_m05",
+      "sigma": 70.0,
+      "mu": 1.0,
+      "k": 1,
+      "w2_to_physical": 0.12299964103644723,
+      "step_w2": null,
+      "physical_step_w2": null,
+      "amplification": null,
+      "rms_radius": 0.9283122702411593,
+      "centroid_x": 0.9457276353701949,
+      "finite": true
+    },
+    {
+      "key": "s06_m05",
+      "sigma": 70.0,
+      "mu": 1.0,
+      "k": 2,
+      "w2_to_physical": 0.6402564921995549,
+      "step_w2": 1.3371057973043257,
+      "physical_step_w2": 0.9030914335743186,
+      "amplification": 1.4805873996747312,
+      "rms_radius": 1.6453164379098635,
+      "centroid_x": 1.9974696888200938,
+      "finite": true
+    },
+    {
+      "key": "s06_m05",
+      "sigma": 70.0,
+      "mu": 1.0,
+      "k": 4,
+      "w2_to_physical": 6.86776366799344,
+      "step_w2": 6.392980879035049,
+      "physical_step_w2": 1.6309057296657288,
+      "amplification": 3.9198960201981494,
+      "rms_radius": 7.512454851271947,
+      "centroid_x": -0.07055989539921284,
+      "finite": true
+    },
+    {
+      "key": "s06_m05",
+      "sigma": 70.0,
+      "mu": 1.0,
+      "k": 8,
+      "w2_to_physical": 480.6088739827787,
+      "step_w2": 473.5600741350015,
+      "physical_step_w2": 2.872396642759007,
+      "amplification": 164.86583610546748,
+      "rms_radius": 377.8078429213023,
+      "centroid_x": -294.8897019575715,
+      "finite": true
+    },
+    {
+      "key": "s13_m05",
+      "sigma": 140.0,
+      "mu": 1.0,
+      "k": 1,
+      "w2_to_physical": 0.12459439231635366,
+      "step_w2": null,
+      "physical_step_w2": null,
+      "amplification": null,
+      "rms_radius": 1.0303695867326148,
+      "centroid_x": 1.8870511898264288,
+      "finite": true
+    },
+    {
+      "key": "s13_m05",
+      "sigma": 140.0,
+      "mu": 1.0,
+      "k": 2,
+      "w2_to_physical": 1.5028622920077574,
+      "step_w2": 3.13294638835654,
+      "physical_step_w2": 1.8001577777213829,
+      "amplification": 1.74037322013084,
+      "rms_radius": 2.525329728939174,
+      "centroid_x": 4.538104856278002,
+      "finite": true
+    },
+    {
+      "key": "s13_m05",
+      "sigma": 140.0,
+      "mu": 1.0,
+      "k": 4,
+      "w2_to_physical": 9.392676987959351,
+      "step_w2": 9.607926885772892,
+      "physical_step_w2": 3.3345565038059157,
+      "amplification": 2.88132076178851,
+      "rms_radius": 11.713710050224512,
+      "centroid_x": 6.474689220866561,
+      "finite": true
+    },
+    {
+      "key": "s13_m05",
+      "sigma": 140.0,
+      "mu": 1.0,
+      "k": 8,
+      "w2_to_physical": 474.197137537316,
+      "step_w2": 466.34184054822424,
+      "physical_step_w2": 5.9486621268639635,
+      "amplification": 78.39440711252362,
+      "rms_radius": 331.9288446779668,
+      "centroid_x": -333.0539132598877,
+      "finite": true
+    },
+    {
+      "key": "s19_m05",
+      "sigma": 200.0,
+      "mu": 1.0,
+      "k": 1,
+      "w2_to_physical": 0.13317605199796106,
+      "step_w2": null,
+      "physical_step_w2": null,
+      "amplification": null,
+      "rms_radius": 1.147539657349798,
+      "centroid_x": 2.684454480832815,
+      "finite": true
+    },
+    {
+      "key": "s19_m05",
+      "sigma": 200.0,
+      "mu": 1.0,
+      "k": 2,
+      "w2_to_physical": 2.2442364690813905,
+      "step_w2": 4.709505365349,
+      "physical_step_w2": 2.608102290355476,
+      "amplification": 1.8057211110025557,
+      "rms_radius": 3.164089556952837,
+      "centroid_x": 6.83230535697639,
+      "finite": true
+    },
+    {
+      "key": "s19_m05",
+      "sigma": 200.0,
+      "mu": 1.0,
+      "k": 4,
+      "w2_to_physical": 10.889802710183384,
+      "step_w2": 11.995269814212632,
+      "physical_step_w2": 4.75678206279831,
+      "amplification": 2.521719443071579,
+      "rms_radius": 13.215039636577929,
+      "centroid_x": 12.407030025446415,
+      "finite": true
+    },
+    {
+      "key": "s19_m05",
+      "sigma": 200.0,
+      "mu": 1.0,
+      "k": 8,
+      "w2_to_physical": 478.0707834352165,
+      "step_w2": 470.8079440370166,
+      "physical_step_w2": 8.575043870953971,
+      "amplification": 54.90443560665298,
+      "rms_radius": 275.42716142396813,
+      "centroid_x": -379.5873368866444,
+      "finite": true
+    }
+  ],
+  "note": "These cells are the model's own training cells: the single-parameter checkpoint was trained on the whole mu=1 row, so no held-out mu=1 cell exists. The measurement is about stability under iteration, not about held-out accuracy."
+}

@@ -96,7 +96,11 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     log = lambda text: print(f"[{time.strftime('%H:%M:%S')}] {text}", flush=True)
 
-    mf_model, _ = load_two(G.RESULTS / "optimal_budget_ablation" / "two_32000"
+    # The MeanFlow checkpoint must be paired with its own corrector: a corrector trained on
+    # seed 89's stage-1 output does not apply to seed 88's. Seed 88 uses the unsuffixed
+    # directory, the others use the _sNN suffix.
+    mf_dir = ("two_32000" if a.seed == 88 else f"two_32000_s{a.seed}")
+    mf_model, _ = load_two(G.RESULTS / "optimal_budget_ablation" / mf_dir
                            / "mf_two_param.pt", a.device)
     corrector = load_corrector(a.seed, a.device)
     initial = unit_ball(a.n, 88)
@@ -170,10 +174,11 @@ def main() -> int:
         floors.append({"key": cell.key, "floor": exact_w2(one[index], two[index])})
     floor_mean = float(np.mean([f["floor"] for f in floors]))
 
-    payload = {"cells": CELLS[: a.cells], "ks": a.ks, "n": a.n,
+    payload = {"cells": CELLS[: a.cells], "ks": a.ks, "n": a.n, "seed": a.seed,
                "score_n": int(len(index)), "floor_mean": floor_mean,
                "floors": floors, "rows": rows}
-    (OUT / "rollout_compare.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    (OUT / f"rollout_compare_s{a.seed}.json").write_text(json.dumps(payload, indent=2),
+                                                         encoding="utf-8")
 
     print(f"\nfloor = {floor_mean:.5f}   (n={len(index)}, exact OT)")
     print(f"{'cell':>8} {'method':>9} {'k':>3} {'W2/phys':>9} {'floor':>7} "

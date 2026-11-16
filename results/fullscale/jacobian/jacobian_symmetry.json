@@ -1,0 +1,28 @@
+{
+  "h": 0.001,
+  "points_per_cell": 12,
+  "n_cells": 2,
+  "corrector_antisymmetry_mean": 0.5103517817239739,
+  "stage1_antisymmetry_mean": 0.6835336718934506,
+  "note": "A gradient field has a symmetric Jacobian, so A = ||J-J^T||_F/||J||_F is 0 for the ideal corrector. Stage 1 is not a gradient field, so its A gives the scale for 'no structure'.",
+  "rows": [
+    {
+      "key": "s00_m00",
+      "sigma": 10.0,
+      "mu": 0.1,
+      "corrector_antisymmetry": 0.5436049165002921,
+      "stage1_antisymmetry": 0.8087920958330316,
+      "corrector_jacobian_norm": 0.021546015178153275,
+      "stage1_jacobian_norm": 0.9475940047859074
+    },
+    {
+      "key": "s10_m01",
+      "sigma": 110.0,
+      "mu": 0.158489319246,
+      "corrector_antisymmetry": 0.4770986469476557,
+      "stage1_antisymmetry": 0.5582752479538696,
+      "corrector_jacobian_norm": 0.025596728647998845,
+      "stage1_jacobian_norm": 5.689915972092585
+    }
+  ]
+}
