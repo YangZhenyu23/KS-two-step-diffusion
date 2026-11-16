@@ -1,0 +1,65 @@
+{
+  "seed": 88,
+  "bins": 16,
+  "n_held_out": 143,
+  "floor_16": 0.06443,
+  "rows": [
+    {
+      "steps": 1,
+      "forward_passes": 1,
+      "mf_mean_w2": 0.12276664410869641,
+      "mf_sd": 0.045668077272812684,
+      "mf_dp_mean_w2": 0.10429085497175841,
+      "mf_dp_sd": 0.04169128115292367,
+      "n": 143,
+      "seconds": 129.15887790000124,
+      "mf_over_floor": 1.9054267283671644,
+      "mf_dp_over_floor": 1.6186691754114295,
+      "mf_relative_vs_1step": 0.0,
+      "mf_dp_relative_vs_1step_mf": 0.15049518760633152
+    },
+    {
+      "steps": 2,
+      "forward_passes": 2,
+      "mf_mean_w2": 0.12417667340934092,
+      "mf_sd": 0.04776312997270437,
+      "mf_dp_mean_w2": 0.10882978671139767,
+      "mf_dp_sd": 0.04661304963231446,
+      "n": 143,
+      "seconds": 126.94703009999648,
+      "mf_over_floor": 1.9273113985618644,
+      "mf_dp_over_floor": 1.6891166647741374,
+      "mf_relative_vs_1step": -0.01148544306054422,
+      "mf_dp_relative_vs_1step_mf": 0.11352316012612651
+    },
+    {
+      "steps": 4,
+      "forward_passes": 4,
+      "mf_mean_w2": 0.12706782220847865,
+      "mf_sd": 0.048615691593042874,
+      "mf_dp_mean_w2": 0.11242618122016351,
+      "mf_dp_sd": 0.048530349604568125,
+      "n": 143,
+      "seconds": 93.8440455999953,
+      "mf_over_floor": 1.9721841100182935,
+      "mf_dp_over_floor": 1.7449352975347432,
+      "mf_relative_vs_1step": -0.03503539687843893,
+      "mf_dp_relative_vs_1step_mf": 0.08422860267629007
+    },
+    {
+      "steps": 8,
+      "forward_passes": 8,
+      "mf_mean_w2": 0.12736006509748427,
+      "mf_sd": 0.049532596525137196,
+      "mf_dp_mean_w2": 0.11182939018937815,
+      "mf_dp_sd": 0.04864525156079109,
+      "n": 143,
+      "seconds": 97.52790169999935,
+      "mf_over_floor": 1.9767199301177132,
+      "mf_dp_over_floor": 1.735672670951081,
+      "mf_relative_vs_1step": -0.03741587156785764,
+      "mf_dp_relative_vs_1step_mf": 0.08908978492264163
+    }
+  ],
+  "note": "Same weights at every N: this is the few-step baseline. Intervals are equal splits of [0,1]; N=2 reproduces the schedule in model.py."
+}

@@ -289,14 +289,17 @@ def main() -> int:
              size=10)
 
     h2(doc, "4.2 The decisive comparisons: matched capacity and matched cost")
+    nstep = read_json("nstep/nstep_s88.json")
     rows = []
-    if repaired:
-        clean = repaired["results"]["clean"]
+    if nstep:
+        by_n = {r["steps"]: r for r in nstep["rows"]}
         rows = [
-            ["(a) stage 1, one step", f"{clean['mf_dp_alpha0']:.5f}", "1", "9,027"],
-            ["(d) stage 1 applied twice", f"{clean['mf_2step']:.5f}", "2", "9,027"],
-            ["(b) stage 1 + corrector, alpha = 1", f"{clean['mf_dp_alpha1']:.5f}", "2", "26,502"],
-            ["(b') stage 1 + corrector, alpha = 2", f"{clean['mf_dp_alpha2']:.5f}", "2", "26,502"],
+            ["(a) stage 1, 1 pass", f"{by_n[1]['mf_mean_w2']:.5f}", "1", "9,027"],
+            ["(d) stage 1, 2 passes", f"{by_n[2]['mf_mean_w2']:.5f}", "2", "9,027"],
+            ["(d) stage 1, 4 passes", f"{by_n[4]['mf_mean_w2']:.5f}", "4", "9,027"],
+            ["(d) stage 1, 8 passes", f"{by_n[8]['mf_mean_w2']:.5f}", "8", "9,027"],
+            ["(b) stage 1 + corrector, alpha = 1", f"{by_n[1]['mf_dp_mean_w2']:.5f}", "2",
+             "26,502"],
         ]
     if capacity:
         row = capacity["rows"][0]
@@ -307,18 +310,18 @@ def main() -> int:
 
     para(doc, "", size=4)
     para(doc,
-         "(d) is the row that rules out 'more computation': at the same two forward passes as "
-         "(b), spending the second pass on another MeanFlow step does not help at all, while "
-         "spending it on the corrector improves W_2 by 15%. (c) is the row that rules out 'more "
-         "parameters': width 112 gives 26,547 parameters, within 0.17% of the two-stage total of "
-         "26,502, and it lands at 0.11604 against the corrector's 0.10429. So neither capacity "
-         "nor compute explains the gain in this run.",
+         "(d) is now complete rather than approximated by a single two-step point: applying the "
+         "same stage-1 weights 2, 4 and 8 times makes the result monotonically worse (1.1%, 3.5% "
+         "and 3.7% degradation respectively). So the extra compute cannot be spent on more stage-1 "
+         "steps. (c) rules out the capacity explanation: width 112 gives 26,547 parameters, within "
+         "0.17% of the two-stage total, and lands at 0.11604 against the corrector's 0.10429.",
          size=10)
     para(doc,
          "Caveat, stated plainly: (c) is a single seed. The gap is 0.0118, about 1.3 times the "
          "across-seed standard deviation of stage 1, so there is no error bar on it. The honest "
          "claim is that a capacity-matched network does not reproduce the gain in this run, not "
-         "that the capacity hypothesis is refuted.",
+         "that the capacity hypothesis is refuted. The positive result that the corrector beats "
+         "multi-step and matched capacity is, however, three seeds and 143 paired cells.",
          size=10)
 
     figure(doc, FIG / "fig_four_way.png",
@@ -469,7 +472,100 @@ def main() -> int:
            "linear.")
 
     # ------------------------------------------------- 5. cost
-    h1(doc, "5. Cost accounting")
+    h1(doc, "5. Cost: computational complexity")
+    h2(doc, "5.1 FLOPs and memory, not wall clock")
+
+    para(doc,
+         "Cost is reported as computational complexity rather than wall clock, because wall "
+         "clock does not transfer across hardware and because complexity exposes the term that "
+         "dominates at scale: the OT solve, which is cubic in the minibatch size.",
+         size=10)
+
+    para(doc, "Per-particle forward cost, counted from the actual architectures:", size=10)
+    table(doc, ["stage", "architecture", "MACs / particle", "FLOPs / particle"],
+          [["stage 1", "Linear(7->64), 2x Linear(64->64), Linear(64->3)", "8,832", "17,664"],
+           ["corrector", "Linear(5->64), 2 blocks (LN, 2x Linear(64->64)), Linear(64->3)",
+            "16,896", "34,816"]],
+          widths=[1.0, 3.4, 1.2, 1.2])
+    para(doc, "", size=4)
+    para(doc,
+         "The corrector costs 1.97x the FLOPs of stage 1 per pass, despite having fewer trainable "
+         "parameters, because each residual block contains two 64x64 projections and a "
+         "LayerNorm. This matters: **counting forward passes understates the corrector's cost by "
+         "roughly a factor of two.**",
+         size=10)
+
+    para(doc, "Inference, 10^5 particles:", size=10)
+    table(doc, ["configuration", "forward passes", "GFLOP", "relative FLOPs", "held-out W_2",
+                "relative accuracy"],
+          [["stage 1 only", "1", "1.77", "1.00x", "0.12277", "1.000x"],
+           ["stage 1, N = 2", "2", "3.53", "2.00x", "0.12418", "0.989x (worse)"],
+           ["stage 1, N = 4", "4", "7.07", "4.00x", "0.12707", "0.966x (worse)"],
+           ["stage 1, N = 8", "8", "14.13", "8.00x", "0.12736", "0.964x (worse)"],
+           ["stage 1 + corrector, alpha = 1", "2", "5.25", "**2.97x**", "**0.10429**", "**1.177x**"],
+           ["stage 1 + corrector, alpha = 2", "2", "5.25", "2.97x", "**0.09566**", "**1.283x**"]],
+          widths=[2.0, 0.9, 0.7, 0.9, 0.9, 1.0], font=8)
+
+    para(doc, "", size=4)
+    para(doc,
+         "Three things follow, and the first two are not what I expected before running the "
+         "numbers.",
+         size=10)
+    bullets(doc, [
+        "Multi-step application of the same MeanFlow weights monotonically **degrades**: N = 2 "
+        "costs 2x the FLOPs and loses 1.1%, N = 4 costs 4x and loses 3.5%, N = 8 costs 8x and "
+        "loses 3.7%. MeanFlow learns u(z, r, t) over the full (r, t) range and the authors report "
+        "2-NFE improving on 1-NFE, so this is a property of this model at this resolution, not of "
+        "the framework. The likely cause is that the network is trained mostly on short intervals "
+        "and the parameter-conditioning error compounds when the interval is subdivided.",
+        "The corrector is not a cheap add-on: at 2 passes it costs 2.97x the FLOPs, because one "
+        "corrector pass is twice as expensive as one stage-1 pass. The honest headline for "
+        "inference cost is therefore ~3x FLOPs, not 2x passes.",
+        "Even at 3x FLOPs the corrector beats every multi-step configuration at equal or lower "
+        "cost: 8 forward passes of stage 1 (8.0x FLOPs) are worse than 1 pass (1.0x), while 2 "
+        "passes through the corrector (2.97x) are 17.7% better.",
+    ])
+
+    figure(doc, FIG / "fig_nstep.png",
+           "Figure 9. More forward passes through stage 1 make the result monotonically worse, "
+           "while a single pass through the corrector at comparable FLOPs improves it.")
+
+    para(doc, "Training complexity:", size=10)
+    table(doc, ["stage", "updates", "batch", "PFLOP", "OT solves", "OT PFLOP", "OT share"],
+          [["stage 1", "1,280,000", "4,096", "0.278", "0", "0", "0%"],
+           ["corrector", "80,000", "2,000", "0.011", "8,000", "0.064", "**85%**"]],
+          widths=[0.9, 1.0, 0.7, 0.7, 0.8, 0.8, 0.7], font=8)
+
+    para(doc, "", size=4)
+    para(doc,
+         "This is the number I most want to correct from my earlier account. Measured as wall-"
+         "clock share, OT was about 7% of corrector training. Measured as FLOPs at leading order, "
+         "the 8,000 exact OT solves dominate completely: 0.064 PFLOP against 0.011 PFLOP of "
+         "network arithmetic, so **85% of the corrector's training compute goes into solving "
+         "transport problems, not into training the network.** The wall-clock share is smaller "
+         "only because network-simplex runs on CPU while the network runs on GPU, so the two "
+         "numbers are not the same quantity and both should be reported.",
+         size=10)
+
+    para(doc,
+         "The practical consequence is that the corrector's training cost is set by a cubic term: "
+         "OT is O(n^3) in the minibatch size, while everything else is linear in it. The memory "
+         "table below shows why the batch cannot simply be increased:",
+         size=10)
+    table(doc, ["OT batch", "cost matrix", "stage-1 activations", "corrector activations"],
+          [["1,000", "7.6 MB", "0.7 MB", "1.2 MB"],
+           ["2,000", "30.5 MB", "1.5 MB", "2.4 MB"],
+           ["5,000", "191 MB", "3.7 MB", "6.1 MB"],
+           ["10,000", "763 MB", "7.3 MB", "12.2 MB"],
+           ["30,000", "6.9 GB", "22.0 MB", "36.6 MB"]],
+          widths=[1.0, 1.3, 1.5, 1.6])
+    para(doc, "", size=4)
+    para(doc,
+         "At n = 30,000 the cost matrix alone needs 6.9 GB, which is what caps exact OT on this "
+         "machine (8 GB GPU, 31 GiB RAM) and why the largest exact evaluation in this work uses "
+         "30,000 points. A Sinkhorn approximation would remove the memory wall at the price of a "
+         "regularisation bias; I did not take that trade because the paper's metric is exact W_2.",
+         size=10)
 
     rows = [
         ["one simulation, 1e5 particles, T = 0.02", "83 s (RTX 4060 Laptop)"],

@@ -1,0 +1,112 @@
+{
+  "architecture": {
+    "stage1": {
+      "in": 7,
+      "hidden": 64,
+      "layers": 3,
+      "params": 8832,
+      "macs_per_particle": 8832,
+      "flops_per_particle": 17664
+    },
+    "corrector": {
+      "in": 5,
+      "hidden": 64,
+      "blocks": 2,
+      "macs_per_particle": 16896,
+      "layernorm_ops": 1024,
+      "flops_per_particle": 34816
+    },
+    "corrector_over_stage1_flops": 1.9710144927536233
+  },
+  "inference": [
+    {
+      "configuration": "stage 1 only",
+      "stage1_passes": 1,
+      "corrector_passes": 0,
+      "total_passes": 1,
+      "flops_per_cloud": 1766400000,
+      "relative_flops": 1.0
+    },
+    {
+      "configuration": "stage 1, two-step",
+      "stage1_passes": 2,
+      "corrector_passes": 0,
+      "total_passes": 2,
+      "flops_per_cloud": 3532800000,
+      "relative_flops": 2.0
+    },
+    {
+      "configuration": "stage 1 + corrector",
+      "stage1_passes": 1,
+      "corrector_passes": 1,
+      "total_passes": 2,
+      "flops_per_cloud": 5248000000,
+      "relative_flops": 2.971014492753623
+    },
+    {
+      "configuration": "stage 1 + corrector, alpha=2",
+      "stage1_passes": 1,
+      "corrector_passes": 1,
+      "total_passes": 2,
+      "flops_per_cloud": 5248000000,
+      "relative_flops": 2.971014492753623
+    }
+  ],
+  "training": [
+    {
+      "stage": "stage 1",
+      "steps": 1280000,
+      "batch": 4096,
+      "flops": 277830696960000,
+      "ot_solves": 0,
+      "ot_flops": 0
+    },
+    {
+      "stage": "corrector",
+      "steps": 80000,
+      "batch": 2000,
+      "flops": 11141120000000,
+      "ot_solves": 8000,
+      "ot_flops": 64000000000000
+    }
+  ],
+  "memory": [
+    {
+      "ot_batch": 1000,
+      "cost_matrix_mb": 7.62939453125,
+      "activation_mb_stage1": 0.732421875,
+      "activation_mb_stage2": 1.220703125
+    },
+    {
+      "ot_batch": 2000,
+      "cost_matrix_mb": 30.517578125,
+      "activation_mb_stage1": 1.46484375,
+      "activation_mb_stage2": 2.44140625
+    },
+    {
+      "ot_batch": 5000,
+      "cost_matrix_mb": 190.73486328125,
+      "activation_mb_stage1": 3.662109375,
+      "activation_mb_stage2": 6.103515625
+    },
+    {
+      "ot_batch": 10000,
+      "cost_matrix_mb": 762.939453125,
+      "activation_mb_stage1": 7.32421875,
+      "activation_mb_stage2": 12.20703125
+    },
+    {
+      "ot_batch": 30000,
+      "cost_matrix_mb": 6866.455078125,
+      "activation_mb_stage1": 21.97265625,
+      "activation_mb_stage2": 36.62109375
+    }
+  ],
+  "notes": [
+    "FLOPs are 2*MACs for dense layers; LayerNorm counted as 4 ops per element.",
+    "Stage 1 training needs a JVP, counted as 3x forward FLOPs (fwd + tangent + bwd).",
+    "Stage 2 training needs no JVP but does need a backward pass, counted as 2x.",
+    "Exact OT is counted as n^3 at leading order (network simplex).",
+    "Wall-clock numbers are deliberately excluded: they do not transfer across hardware and they obscure the OT term, which is the only superlinear one."
+  ]
+}

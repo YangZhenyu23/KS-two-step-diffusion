@@ -259,6 +259,36 @@ def fig_extrapolation() -> None:
     print("  wrote fig_extrapolation.png")
 
 
+def fig_nstep() -> None:
+    payload = load("nstep/nstep_s88.json")
+    if not payload:
+        print("  skip fig_nstep")
+        return
+    rows = payload["rows"]
+    steps = [r["steps"] for r in rows]
+    mf = [r["mf_mean_w2"] for r in rows]
+    dp = [r["mf_dp_mean_w2"] for r in rows]
+
+    fig, ax = plt.subplots(figsize=(5.2, 3.5), layout="constrained")
+    ax.plot(steps, mf, marker="o", ms=5, lw=1.6, color=COLORS["mf"],
+            label="stage 1, N steps")
+    ax.plot([1], [dp[0]], marker="s", ms=7, color=COLORS["mf_dp"],
+            label="stage 1 + corrector")
+    ax.annotate(f"{dp[0]:.4f}", xy=(1, dp[0]), xytext=(8, -12),
+                textcoords="offset points", fontsize=8, color=COLORS["mf_dp"])
+    for x, y in zip(steps, mf):
+        ax.annotate(f"{y:.4f}", xy=(x, y), xytext=(0, 7), textcoords="offset points",
+                    fontsize=7, ha="center", color=COLORS["mf"])
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(steps, [str(s) for s in steps])
+    ax.set(xlabel="forward passes of stage 1 ($N$)", ylabel="held-out $W_2$")
+    ax.grid(alpha=.23, ls="--")
+    ax.legend(frameon=False, fontsize=8)
+    fig.savefig(OUT / "fig_nstep.png", bbox_inches="tight")
+    plt.close(fig)
+    print("  wrote fig_nstep.png")
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     with plt.rc_context(STYLE):
@@ -268,6 +298,7 @@ def main() -> int:
         fig_alpha()
         fig_physics()
         fig_extrapolation()
+        fig_nstep()
     return 0
 
 
