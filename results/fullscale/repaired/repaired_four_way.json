@@ -1,0 +1,57 @@
+{
+  "checkpoint": "results\\fullscale\\optimal_budget_ablation\\two_32000\\mf_two_param.pt",
+  "n_train_cells": 40,
+  "n_held_clean": 143,
+  "n_held_old": 144,
+  "n_leaked_in_old": 32,
+  "leaked_cells": [
+    "s00_m02",
+    "s00_m04",
+    "s01_m07",
+    "s01_m09",
+    "s02_m00",
+    "s02_m01",
+    "s03_m02",
+    "s03_m09",
+    "s04_m04",
+    "s05_m02",
+    "s05_m06",
+    "s06_m08",
+    "s06_m09",
+    "s07_m01",
+    "s07_m03",
+    "s08_m07",
+    "s09_m00",
+    "s09_m09",
+    "s10_m04",
+    "s10_m06",
+    "s11_m01",
+    "s12_m03",
+    "s12_m09",
+    "s13_m02",
+    "s14_m00",
+    "s14_m03",
+    "s16_m00",
+    "s17_m02",
+    "s17_m06",
+    "s18_m03",
+    "s18_m08",
+    "s19_m04"
+  ],
+  "n_old_cells_rescored": 112,
+  "results": {
+    "clean": {
+      "mf_dp_alpha0": 0.12276673234794717,
+      "mf_dp_alpha1": 0.10429119590156308,
+      "mf_dp_alpha2": 0.09565778880806829,
+      "mf_2step": 0.12417693723449942
+    },
+    "contaminated": {
+      "mf_dp_alpha0": 0.12271334620730626,
+      "mf_dp_alpha1": 0.10421622263977677,
+      "mf_dp_alpha2": 0.09571665496488913,
+      "mf_2step": 0.12435279001409719
+    }
+  },
+  "note": "clean = pool - checkpoint['cells'] - baseline_slice; contaminated = the design recomputed today (what the earlier scripts used)"
+}

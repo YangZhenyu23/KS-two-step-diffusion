@@ -123,51 +123,59 @@ directions.
 Paired $t=6.0$ ($df=2$); the per-cell sign test gives $z\approx19.4$.
 The corrector also **reduces across-seed variance by 70%** ($0.0089\to0.0027$).
 
-### 4.2 The four-way comparison, at measured inference cost [DONE except (c)]
+### 4.2 The four-way comparison, at measured inference cost [DONE]
+
+**All numbers on the 143-cell held-out set derived from the checkpoint's own recorded
+training cells** (an earlier version of this table used a recomputed design that
+overlapped the training set on 32 cells; the repaired numbers differ by 0.5% and are used
+here — see `docs/REPO_AUDIT_AND_TASKS.md` §2.1).
 
 | configuration | $W_2$ | forwards | parameters |
 |---|---:|---:|---:|
-| (a) MF one step | 0.12219 | **1** | 9,027 |
-| (b) MF + DP, $\alpha{=}1$ | 0.10376 | 2 | 26,502 |
-| (b') MF + DP, $\alpha{=}2$ | **0.09515** | 2 | 26,502 |
-| (d) MF two steps, same weights | 0.12332 | 2 | 9,027 |
+| (a) MF one step | 0.12277 | **1** | 9,027 |
+| (b) MF + DP, $\alpha{=}1$ | 0.10429 | 2 | 26,502 |
+| (b') MF + DP, $\alpha{=}2$ | **0.09566** | 2 | 26,502 |
+| (d) MF two steps, same weights | 0.12418 | 2 | 9,027 |
 | (c) capacity-matched single net, width 112 | 0.11604 | 1 | **26,547** |
 
 **The informative rows**:
 
 **(c) does not reproduce the gain at matched capacity.** Width 112 is within 0.17% of
 MF+DP's parameter count (26,547 vs 26,502), on the same 40 cells with the same budget, and
-it reaches 0.11604 vs MF+DP's 0.10376 — 11.8% worse. So the gain is not explained by
+it reaches 0.11604 vs MF+DP's 0.10429 — 10.7% worse. So the gain is not explained by
 parameter count in this seed; splitting the map into a global transport plus a local
 correction appears structurally different, consistent with the Brenier argument in §2.2.
 
-**Caveat, stated plainly**: this is a **single seed**. The gap is $0.0123$, about 1.4×
+**Caveat, stated plainly**: this is a **single seed**. The gap is $0.0118$, about 1.3×
 MF's across-seed sd ($0.0089$), so there is no error bar on it. The honest claim is
 "a capacity-matched network does not reproduce the gain in this run", not "the capacity
 hypothesis is refuted". A three-seed version is listed as proposed work below.
 
 **(d) removes the "more computation" explanation.** At the *same* two-forward cost as (b),
-spending the second forward on another MeanFlow step does nothing ($0.12332$ vs $0.12219$
-one-step). Spending it on the corrector gains 22%.
+spending the second forward on another MeanFlow step does nothing ($0.12418$ vs $0.12277$
+one-step). Spending it on the corrector gains 15%.
 
 ### 4.3 $\alpha$ chosen on a development split, reported on a disjoint test split [DONE]
 
-Fixed split (seed 424242, saved to disk): 40 train / **50 dev** / **94 test**.
+Fixed split derived from the checkpoint's own training cells (seed 424242, saved to disk):
+40 train / **50 dev** / **93 test**.
 
 | $\alpha$ | dev mean $W_2$ |
 |---:|---:|
-| 0 (MF only) | 0.12338 |
-| 1.0 (upstream default) | 0.10505 |
-| **2.0 (selected)** | **0.09689** |
-| 4.0 | 0.12969 |
+| 0 (MF only) | 0.12134 |
+| 1.0 (upstream default) | 0.10340 |
+| 1.5 | 0.09736 |
+| **2.0 (selected)** | **0.09580** |
+| 2.5 | 0.09988 |
+| 4.0 | 0.12837 |
 
 Test split, untouched during selection:
 
 | | test mean $W_2$ | vs MF |
 |---|---:|---:|
-| MF only | 0.12156 | — |
-| $\alpha=1$ | 0.10308 | +15.2% |
-| **$\alpha=2$** | **0.09422** | **+22.5%** |
+| MF only | 0.12353 | — |
+| $\alpha=1$ | 0.10477 | +15.2% |
+| **$\alpha=2$** | **0.09558** | **+22.6%** |
 
 Caveat stated plainly: the sweep scales $\alpha$ **at inference** rather than retraining
 per $\alpha$. That is the deployment knob for this architecture (zero-initialised linear
