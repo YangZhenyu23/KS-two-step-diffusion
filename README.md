@@ -339,9 +339,9 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 | [`docs/ONE_VS_TWO_PARAM.md`](docs/ONE_VS_TWO_PARAM.md) | **单参数 vs 双参数的对比协议**：三组对照、143/144 的来源、信息论下界、净结论 |
 | [`docs/HARRY_EXPERIMENTS.md`](docs/HARRY_EXPERIMENTS.md) | **rollout 稳定性、物理量、α 在 dev 选、四项对照**（补做 Harry 清单）|
 | [`docs/REPO_AUDIT_AND_TASKS.md`](docs/REPO_AUDIT_AND_TASKS.md) | **仓库梳理 + Harry 任务清单**：30 套 LHS 设计、评测集泄露修复、23 项任务拆解 |
-| [`docs/REPORT_MAIN.md`](docs/REPORT_MAIN.md) | **正式报告（Markdown 权威源）**：8 节 + 2 附录，58 条断言已核验 |
-| [`docs/REPORT_MAIN.pdf`](docs/REPORT_MAIN.pdf) | **正式报告（PDF，21 页）**：XeLaTeX 编译，7 图 18 表 |
-| [`docs/NOTE_FOR_HARRY.md`](docs/NOTE_FOR_HARRY.md) | 早期英文笔记草稿（已被 REPORT_MAIN 取代）|
+| [`docs/TECHNICAL_NOTE.md`](docs/TECHNICAL_NOTE.md) | **给 Harry 的技术笔记（Markdown，7 页）**：答案先行、三项方程、四组对照、最强失败案例、成本 |
+| [`docs/TECHNICAL_NOTE.pdf`](docs/TECHNICAL_NOTE.pdf) | **同上 PDF 版**（XeLaTeX 编译，7 页）|
+| [`docs/HARRY_REQUIREMENTS.md`](docs/HARRY_REQUIREMENTS.md) | **需求追踪**：邮件原文、R0–R19 拆解、逐轮细化日志、实验队列 |
 | [`docs/PROJECTION_FIGURES.md`](docs/PROJECTION_FIGURES.md) | **分布对比图**：仿原论文 3D 投影图的画法、双参数扫掠、图形解读 |
 | [`docs/DESIGN_CRITERION.md`](docs/DESIGN_CRITERION.md) | **三条改进路径的否定实验**：W2 覆盖准则（负相关）、更大网络、Fourier 编码 |
 | [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) | 样本效率三实验：冻结测试集、学习曲线、LHS vs 随机多种子判定 |
