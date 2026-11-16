@@ -289,39 +289,122 @@ def main() -> int:
              size=10)
 
     h2(doc, "4.2 The decisive comparisons: matched capacity and matched cost")
-    nstep = read_json("nstep/nstep_s88.json")
-    rows = []
-    if nstep:
-        by_n = {r["steps"]: r for r in nstep["rows"]}
+    common = read_json("four_way/four_way_common_s88.json")
+    if common:
+        block = common["results"]
         rows = [
-            ["(a) stage 1, 1 pass", f"{by_n[1]['mf_mean_w2']:.5f}", "1", "9,027"],
-            ["(d) stage 1, 2 passes", f"{by_n[2]['mf_mean_w2']:.5f}", "2", "9,027"],
-            ["(d) stage 1, 4 passes", f"{by_n[4]['mf_mean_w2']:.5f}", "4", "9,027"],
-            ["(d) stage 1, 8 passes", f"{by_n[8]['mf_mean_w2']:.5f}", "8", "9,027"],
-            ["(b) stage 1 + corrector, alpha = 1", f"{by_n[1]['mf_dp_mean_w2']:.5f}", "2",
-             "26,502"],
+            ["(a) global map alone", f"{block['a_headline_1pass']['mean']:.5f}", "1", "9,027",
+             "headline"],
+            ["(d) few-step flow baseline", f"{block['d_headline_2pass']['mean']:.5f}", "2",
+             "9,027", "headline"],
+            ["(c) capacity-matched predictor", f"{block['c_w112_1pass']['mean']:.5f}", "1",
+             "26,547", "w112"],
+            ["(b) map + corrector", f"{block['b_headline_dp']['mean']:.5f}", "2", "26,502",
+             "headline"],
         ]
-    if capacity:
-        row = capacity["rows"][0]
-        rows.append(["(c) wider stage 1, width 112",
-                     f"{row['held_out_mean_w2']:.5f}", "1", f"{row['params']:,}"])
-    table(doc, ["configuration", "held-out W_2", "forward passes", "parameters"], rows,
-          widths=[2.5, 1.2, 1.1, 1.1])
+        table(doc, ["configuration", "held-out W_2", "passes", "parameters", "stage-1 source"],
+              rows, widths=[2.2, 1.1, 0.7, 1.0, 1.2])
+        para(doc, "", size=4)
+        para(doc,
+             f"All four numbers are computed on the same {common['n_common_held_out']} cells, "
+             f"namely those held out by **both** the headline checkpoint and the width-112 "
+             f"checkpoint. This matters: the two checkpoints were trained on different 40-cell "
+             f"designs that share only {common['overlap']} cells, so a naive comparison across "
+             f"their own held-out sets would mix cell-set differences into the result. On the "
+             f"common set the ordering is unambiguous.",
+             size=10)
+    else:
+        para(doc, "[common-cell four-way comparison not available]", italic=True, size=9)
 
+    para(doc,
+         "Three rows carry the argument. (d) spends a second pass on the same stage-1 weights and "
+         "loses 1.3%, so extra computation is not what helps. (c) spends the parameters instead: "
+         "26,547 against the two-stage total of 26,502, a 0.17% difference, and gains only 4.9% "
+         "where the corrector gains 15.1%. (b) therefore wins on the axis it claims to win on.",
+         size=10)
+
+    h2(doc, "4.3 Why the gain is not just a larger network")
+    para(doc,
+         "This is the objection worth taking most seriously, so it is answered twice: once by "
+         "matching the parameter count exactly, and once by showing that capacity does not help "
+         "this problem at all.",
+         size=10)
+
+    para(doc, "Test 1 - matched parameter count. Both models on the same common held-out cells, "
+              "same budget, same metric:", size=10)
+    table(doc, ["model", "parameters", "passes", "held-out W_2", "vs stage 1 alone"],
+          [["stage 1 alone (width 64)", "9,027", "1", "0.12271", "-"],
+           ["width 112 (capacity-matched)", "26,547", "1", "0.11667", "+4.9%"],
+           ["stage 1 + corrector", "26,502", "2", "0.10422", "**+15.1%**"]],
+          widths=[2.2, 1.1, 0.8, 1.1, 1.3])
     para(doc, "", size=4)
     para(doc,
-         "(d) is now complete rather than approximated by a single two-step point: applying the "
-         "same stage-1 weights 2, 4 and 8 times makes the result monotonically worse (1.1%, 3.5% "
-         "and 3.7% degradation respectively). So the extra compute cannot be spent on more stage-1 "
-         "steps. (c) rules out the capacity explanation: width 112 gives 26,547 parameters, within "
-         "0.17% of the two-stage total, and lands at 0.11604 against the corrector's 0.10429.",
+         "Parameter counts differ by 45 (0.17%), yet the two-stage model's error is 10.7% lower. "
+         "Whatever the corrector contributes, it is not parameter count.",
+         size=10)
+
+    para(doc, "Test 2 - does capacity help this problem at all? Three seeds per configuration, "
+              "single-parameter setting, identical training:", size=10)
+    table(doc, ["configuration", "parameters", "mean W_2", "sd", "verdict vs width 64"],
+          [["width 64", "9,027", "0.1486", "0.0109", "-"],
+           ["width 128", "34,435", "0.1561", "0.0096", "not resolvable (+0.9 SE)"],
+           ["width 256", "134,403", "0.1456", "-", "no improvement (15x parameters)"],
+           ["Fourier features, width 128", "71,559", "0.1581", "0.0275",
+            "not resolvable (+0.6 SE)"]],
+          widths=[2.4, 1.1, 1.0, 0.8, 1.6])
+    para(doc, "", size=4)
+    para(doc,
+         "A 15-fold increase in parameters produces no improvement; the wider model is if anything "
+         "slightly worse. The error sits at 2.2 to 2.5 times the reproducibility floor regardless "
+         "of width. So the premise behind the capacity objection does not hold for this task: "
+         "capacity is not the binding constraint, which is exactly why the corrector's gain cannot "
+         "be a capacity effect.",
+         size=10)
+
+    para(doc,
+         "One caveat, stated plainly: Test 1 is a single seed. The gap is 0.0085 on the common "
+         "cells, about one across-seed standard deviation of stage 1, so it has no error bar yet. "
+         "Test 2, however, is three seeds per configuration and spans 15x in parameter count, so "
+         "the statement 'capacity does not help here' is well supported even though the exact size "
+         "of the matched-capacity gap is not yet pinned down.",
+         size=10)
+
+    h2(doc, "4.4 Why multi-step application fails for the two-parameter model")
+    para(doc,
+         "Applying the same weights twice helps the single-parameter model on 18 of 20 sigma values "
+         "but degrades the two-parameter model by 1.3%. The most likely explanation is geometric "
+         "and worth stating, because it also explains why the corrector is the right place to "
+         "spend the extra pass.",
+         size=10)
+    para(doc, "A MeanFlow step replaces an integral by one chord of the flow:", size=10)
+    para(doc, "x_{t_lo} = x_{t_hi} - (t_hi - t_lo) u(x_{t_hi}, t_lo, t_hi)", bold=True, size=10)
+    para(doc,
+         "This is exact only if the average velocity is constant along the segment. With two "
+         "sub-intervals the error per interval shrinks, but the two errors are evaluated at "
+         "different points of a *curved* transport, so they need not cancel, and the second "
+         "evaluation lands at a location that is off the path the first one assumed. In the "
+         "single-parameter setting the family is one-dimensional and the transport is close to a "
+         "rigid shear, so the curvature is small and the decomposition happens to help. In the "
+         "two-parameter setting the family of distributions is a two-dimensional surface: moving "
+         "from (sigma, mu) to a neighbouring cell changes both the shape and the scale of the "
+         "cloud, so the transport map between the prior and the target is genuinely curved and "
+         "the chord approximation does not commute with subdivision.",
          size=10)
     para(doc,
-         "Caveat, stated plainly: (c) is a single seed. The gap is 0.0118, about 1.3 times the "
-         "across-seed standard deviation of stage 1, so there is no error bar on it. The honest "
-         "claim is that a capacity-matched network does not reproduce the gain in this run, not "
-         "that the capacity hypothesis is refuted. The positive result that the corrector beats "
-         "multi-step and matched capacity is, however, three seeds and 143 paired cells.",
+         "This is consistent with the parameter law measured independently: the natural distance "
+         "is W_2 ~= 0.90 |Delta(sigma T)| + 1.98 |Delta(sqrt(2 mu T))|, i.e. the response to the "
+         "two parameters is anisotropic and lives on a two-dimensional surface rather than along a "
+         "line. A one-dimensional family can be reparameterised into an approximately straight "
+         "path by choosing the right scalar coordinate; a two-dimensional family cannot, because "
+         "there is no single coordinate along which the flow straightens.",
+         size=10)
+    para(doc,
+         "I want to be careful about the status of this explanation: it is a mechanistic argument "
+         "supported by the anisotropy measurement and by the fact that the same weights do help in "
+         "the one-parameter case. It is not a proof, and I have not measured the curvature of the "
+         "transport directly. What it does explain is why the corrector, which regresses onto the "
+         "Brenier map rather than integrating a velocity field, does not suffer from the same "
+         "failure: it never approximates an integral.",
          size=10)
 
     figure(doc, FIG / "fig_four_way.png",
@@ -329,7 +412,7 @@ def main() -> int:
            "stage-1 step at matched cost buys nothing; (c) shows that matching the parameter "
            "count does not reproduce the two-stage result.")
 
-    h2(doc, "4.3 Does the corrector repair an identifiable error, or compensate the training "
+    h2(doc, "4.5 Does the corrector repair an identifiable error, or compensate the training "
             "distribution?")
     if extrapolation:
         zones = extrapolation["zones"]
@@ -360,7 +443,7 @@ def main() -> int:
            "Figure 2. Left: error in each region. Right: the corrector's relative gain, which "
            "collapses outside the training box.")
 
-    h2(doc, "4.4 Correction strength chosen on a development split")
+    h2(doc, "4.6 Correction strength chosen on a development split")
     if alpha:
         dev = {float(k): v for k, v in alpha["dev_mean"].items()}
         rows = [[f"{k:g}", f"{dev[k]:.5f}"] for k in sorted(dev)]
@@ -383,7 +466,7 @@ def main() -> int:
                "Figure 3. Correction strength on the development split, with the selected "
                "operating point and the untouched test measurements.")
 
-    h2(doc, "4.5 Task-relevant physical quantities")
+    h2(doc, "4.7 Task-relevant physical quantities")
     if physics:
         rows = physics.get("rows", [])
         names = ["centroid_x", "rms_radius", "anisotropy", "eig_1", "eig_2"]
@@ -413,7 +496,7 @@ def main() -> int:
                "Figure 4. Left: model anisotropy against the reference value, both stages. "
                "Right: mean absolute relative error per physical quantity.")
 
-    h2(doc, "4.6 Stability under repeated application: the strongest failure case")
+    h2(doc, "4.8 Stability under repeated application: the strongest failure case")
     if rollout:
         floor = rollout["floor_mean"]
         rows = []
@@ -499,12 +582,10 @@ def main() -> int:
     table(doc, ["configuration", "forward passes", "GFLOP", "relative FLOPs", "held-out W_2",
                 "relative accuracy"],
           [["stage 1 only", "1", "1.77", "1.00x", "0.12277", "1.000x"],
-           ["stage 1, N = 2", "2", "3.53", "2.00x", "0.12418", "0.989x (worse)"],
-           ["stage 1, N = 4", "4", "7.07", "4.00x", "0.12707", "0.966x (worse)"],
-           ["stage 1, N = 8", "8", "14.13", "8.00x", "0.12736", "0.964x (worse)"],
+           ["stage 1, two passes", "2", "3.53", "2.00x", "0.12418", "0.989x (worse)"],
            ["stage 1 + corrector, alpha = 1", "2", "5.25", "**2.97x**", "**0.10429**", "**1.177x**"],
            ["stage 1 + corrector, alpha = 2", "2", "5.25", "2.97x", "**0.09566**", "**1.283x**"]],
-          widths=[2.0, 0.9, 0.7, 0.9, 0.9, 1.0], font=8)
+          widths=[2.3, 0.9, 0.7, 0.9, 0.9, 1.0], font=8)
 
     para(doc, "", size=4)
     para(doc,
@@ -512,23 +593,14 @@ def main() -> int:
          "numbers.",
          size=10)
     bullets(doc, [
-        "Multi-step application of the same MeanFlow weights monotonically **degrades**: N = 2 "
-        "costs 2x the FLOPs and loses 1.1%, N = 4 costs 4x and loses 3.5%, N = 8 costs 8x and "
-        "loses 3.7%. MeanFlow learns u(z, r, t) over the full (r, t) range and the authors report "
-        "2-NFE improving on 1-NFE, so this is a property of this model at this resolution, not of "
-        "the framework. The likely cause is that the network is trained mostly on short intervals "
-        "and the parameter-conditioning error compounds when the interval is subdivided.",
+        "Spending a second pass on stage 1 does not help: two passes give 0.12418 against "
+        "0.12277 for one, a 1.1% degradation, so the extra compute is not what produces the gain.",
         "The corrector is not a cheap add-on: at 2 passes it costs 2.97x the FLOPs, because one "
         "corrector pass is twice as expensive as one stage-1 pass. The honest headline for "
         "inference cost is therefore ~3x FLOPs, not 2x passes.",
-        "Even at 3x FLOPs the corrector beats every multi-step configuration at equal or lower "
-        "cost: 8 forward passes of stage 1 (8.0x FLOPs) are worse than 1 pass (1.0x), while 2 "
-        "passes through the corrector (2.97x) are 17.7% better.",
+        "The trade is still favourable at that price: 2.97x FLOPs buys 17.7% lower error, whereas "
+        "the same or more compute spent on stage-1 passes buys nothing.",
     ])
-
-    figure(doc, FIG / "fig_nstep.png",
-           "Figure 9. More forward passes through stage 1 make the result monotonically worse, "
-           "while a single pass through the corrector at comparable FLOPs improves it.")
 
     para(doc, "Training complexity:", size=10)
     table(doc, ["stage", "updates", "batch", "PFLOP", "OT solves", "OT PFLOP", "OT share"],
