@@ -1,0 +1,46 @@
+{
+  "role_1_training_targets": {
+    "solver": "ot.emd (POT network simplex, exact)",
+    "sinkhorn_used": false,
+    "warm_start_used": false,
+    "minibatch_size": 2000,
+    "full_cloud_size": 100000,
+    "minibatch_fraction": 0.02,
+    "refresh_interval_updates": 10,
+    "corrector_updates_total": 80000,
+    "ot_solves_total": 8000,
+    "cost_per_solve": "O(n^3) time, O(n^2) memory with n = minibatch size",
+    "memory_per_solve_mb": 30.517578125,
+    "is_global_ot": false,
+    "note": "This is the minibatch W2 that the requirement names. It is a 2,000-of-100,000 approximation to the global OT it stands in for."
+  },
+  "role_2_deployment": {
+    "ot_solves": 0,
+    "note": "The trained corrector is a feed-forward map; no matching happens at inference. What is saved is the *global* OT between full clouds, not OT as a concept."
+  },
+  "role_3_evaluation": {
+    "solver": "ot.emd2 (POT network simplex, exact)",
+    "sinkhorn_used": false,
+    "headline_representation": "16-bin histogram",
+    "particle_level_subsample": 3000,
+    "largest_exact_feasible": 30000,
+    "per_configuration": {
+      "headline protocol (three seeds, 143 cells)": 429,
+      "DP stage evaluation (three seeds, 143 cells)": 429,
+      "n-step sweep (4 configurations, 143 cells)": 572,
+      "four-way on common cells (4 configs, 112 cells)": 448,
+      "alpha sweep (8 alphas dev + 3 test)": 679,
+      "extrapolation (200 cells)": 200,
+      "rollout study (6 cells x 4 horizons)": 24,
+      "physical quantities (6 cells x 2 methods)": 12
+    },
+    "total_solves": 2793,
+    "note": "Borne by the experimenter, not by a model user. Reported because 'OT-free' would otherwise overstate the case: the metric itself is an OT solve."
+  },
+  "summary": {
+    "training_target_solves": 8000,
+    "deployment_solves": 0,
+    "evaluation_solves": 2793,
+    "statement": "OT appears in two of three roles. Deployment is genuinely OT-free; training and evaluation are not."
+  }
+}

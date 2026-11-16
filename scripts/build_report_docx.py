@@ -567,7 +567,7 @@ def main() -> int:
 
     # ------------------------------------------------- 5. cost
     h1(doc, "5. Cost: computational complexity")
-    h2(doc, "5.1 FLOPs and memory, not wall clock")
+    h2(doc, "5.1 Why complexity rather than wall clock")
 
     para(doc,
          "Cost is reported as computational complexity rather than wall clock, because wall "
@@ -590,8 +590,7 @@ def main() -> int:
          size=10)
 
     para(doc, "Inference, 10^5 particles:", size=10)
-    table(doc, ["configuration", "forward passes", "GFLOP", "relative FLOPs", "held-out W_2",
-                "relative accuracy"],
+    table(doc, ["configuration", "forward passes", "GFLOP", "relative FLOPs", "held-out W_2",                "relative accuracy"],
           [["stage 1 only", "1", "1.77", "1.00x", "0.12277", "1.000x"],
            ["stage 1, two passes", "2", "3.53", "2.00x", "0.12418", "0.989x (worse)"],
            ["stage 1 + corrector, alpha = 1", "2", "5.25", "**2.97x**", "**0.10429**", "**1.177x**"],
@@ -603,6 +602,7 @@ def main() -> int:
          "Three things follow, and the first two are not what I expected before running the "
          "numbers.",
          size=10)
+    h2(doc, "5.2 Inference: FLOPs per configuration")
     bullets(doc, [
         "Spending a second pass on stage 1 does not help: two passes give 0.12418 against "
         "0.12277 for one, a 1.1% degradation, so the extra compute is not what produces the gain.",
@@ -613,7 +613,84 @@ def main() -> int:
         "the same or more compute spent on stage-1 passes buys nothing.",
     ])
 
-    para(doc, "Training complexity:", size=10)
+    para(doc,
+         "OT appears in three distinct roles in this project, and they must not be conflated. "
+         "Only one of them is free.",
+         size=10)
+    h2(doc, "5.3 OT cost, by role")
+
+    para(doc, "Role 1 - constructing transport targets during training (NOT free)", size=10)
+    table(doc, ["property", "value"],
+          [["solver", "ot.emd, POT network simplex, exact"],
+           ["Sinkhorn", "not used"],
+           ["warm start", "not used"],
+           ["minibatch", "2,000 of 100,000 particles (2.0%)"],
+           ["refresh interval", "every 10 updates"],
+           ["total solves", "8,000"],
+           ["memory per solve", "31 MB ($O(n^2)$, 8n^2 bytes)"],
+           ["time complexity", "$O(n^3)$"]],
+          widths=[1.8, 4.0])
+    para(doc, "", size=4)
+    para(doc,
+         "This is the minibatch W_2 that the requirement names explicitly. It is an "
+         "important honest point: a 2,000-particle minibatch OT is an *approximation* to the "
+         "global OT it stands in for, not the same object. OT-CFM reports that minibatch OT "
+         "\"requires surprisingly small batches to approximate the OT map well\", which is "
+         "consistent with using 2% of the cloud, but it remains an approximation and is "
+         "labelled as such.",
+         size=10)
+
+    para(doc, "Role 2 - deployment (free)", size=10)
+    para(doc,
+         "Zero OT solves. The trained corrector is a feed-forward map: given a particle cloud it "
+         "applies a pointwise transformation, with no matching, no assignment and no cost matrix. "
+         "This is the only role where OT is genuinely eliminated, and the precise statement is "
+         "that a **global** OT between full clouds is avoided, not that OT plays no part in how "
+         "the model was built.",
+         size=10)
+
+    para(doc, "Role 3 - evaluation (NOT free, and usually left unreported)", size=10)
+    para(doc,
+         "Every number in this note required an OT solve to produce, because W_2 *is* an OT "
+         "problem. This cost is borne by the experimenter rather than by a model user, but it "
+         "exists and reporting only the first two roles would overstate the case.",
+         size=10)
+    table(doc, ["evaluation batch", "exact OT solves"],
+          [["headline protocol, three seeds x 143 cells", "429"],
+           ["corrector evaluation, three seeds x 143 cells", "429"],
+           ["N-step sweep, 4 configurations x 143 cells", "572"],
+           ["four-way on the 112 common cells, 4 configurations", "448"],
+           ["correction-strength sweep, dev + test", "679"],
+           ["extrapolation, 200 cells", "200"],
+           ["rollout study, 6 cells x 4 horizons", "24"],
+           ["physical quantities, 6 cells x 2 methods", "12"],
+           ["**total**", "**2,793**"]],
+          widths=[4.2, 1.6])
+    para(doc, "", size=4)
+    para(doc,
+         "All of these use exact network simplex, not Sinkhorn. In the headline protocol the OT "
+         "is solved on 16-bin histograms; in the particle-level protocol it is solved on "
+         "subsampled particles. The largest exact solve feasible on this machine is 30,000 "
+         "points, where the cost matrix alone needs 6.9 GB; the paper's own metric requires "
+         "exact OT on the full cloud, which would need 74.5 GB at 10^5 points and is the reason "
+         "particle-level scores in this work use paired subsampling.",
+         size=10)
+
+    para(doc, "Summary of the three roles:", size=10)
+    table(doc, ["role", "OT solves", "who pays", "is it avoidable"],
+          [["training targets", "8,000", "one-time training cost", "only by changing the objective"],
+           ["deployment", "**0**", "nobody", "**yes, genuinely**"],
+           ["evaluation", "2,793", "the experimenter", "no: W_2 is an OT problem"]],
+          widths=[1.5, 1.0, 1.6, 1.9])
+    para(doc, "", size=4)
+    para(doc,
+         "So the accurate claim is narrow and worth stating exactly: the method is OT-free at "
+         "**deployment**, while OT remains load-bearing in **training** (as the source of the "
+         "regression target) and in **evaluation** (as the metric). Claiming the method is "
+         "\"OT-free\" without those qualifiers would be wrong.",
+         size=10)
+
+    para(doc, "Training complexity, measured as FLOPs:", size=10)
     table(doc, ["stage", "updates", "batch", "PFLOP", "OT solves", "OT PFLOP", "OT share"],
           [["stage 1", "1,280,000", "4,096", "0.278", "0", "0", "0%"],
            ["corrector", "80,000", "2,000", "0.011", "8,000", "0.064", "**85%**"]],
@@ -621,13 +698,14 @@ def main() -> int:
 
     para(doc, "", size=4)
     para(doc,
-         "This is the number I most want to correct from my earlier account. Measured as wall-"
-         "clock share, OT was about 7% of corrector training. Measured as FLOPs at leading order, "
-         "the 8,000 exact OT solves dominate completely: 0.064 PFLOP against 0.011 PFLOP of "
-         "network arithmetic, so **85% of the corrector's training compute goes into solving "
-         "transport problems, not into training the network.** The wall-clock share is smaller "
-         "only because network-simplex runs on CPU while the network runs on GPU, so the two "
-         "numbers are not the same quantity and both should be reported.",
+         "The FLOPs split is worth stating separately from the solve count, because it changes "
+         "how the training cost should be attributed. At leading order the 8,000 exact OT solves "
+         "contribute 0.064 PFLOP against 0.011 PFLOP of network arithmetic, so **85% of the "
+         "corrector's training compute goes into solving transport problems rather than into "
+         "training the network**. Measured as wall clock the share is far smaller, because "
+         "network simplex runs on CPU while the network runs on GPU. Both figures are correct and "
+         "they answer different questions: FLOPs says where the arithmetic is, wall clock says "
+         "what you wait for.",
          size=10)
 
     para(doc,
@@ -655,21 +733,28 @@ def main() -> int:
         ["full 20 x 10 grid data generation", "191 min"],
         ["stage 1 training, 40 cells x 32,000", "~147 min per seed"],
         ["corrector training, 40 cells x 2,000", "157 min per seed"],
-        ["**OT solves inside corrector training**", "8,000 solves, ~11 min, **~7% of the total**"],
-        ["inference, 1e5 particles", "4.5 ms (1 forward) / 7.7 ms (2 forwards), 1.71x"],
+        ["inference, 1e5 particles", "4.5 ms (1 forward) / 7.7 ms (2 forwards)"],
         ["four-way comparison, 143 cells", "4.6 min"],
         ["rollout study, 6 cells x 4 horizons", "8 min"],
         ["correction-strength sweep + test report", "5 min"],
     ]
-    table(doc, ["item", "measured"], rows, widths=[2.9, 3.1])
+    table(doc, ["item", "wall clock on this machine"], rows, widths=[2.9, 3.1])
     para(doc, "", size=4)
     para(doc,
-         "On the point you raised: avoiding a global OT solve is not the same as eliminating OT. "
-         "The corrector solves a minibatch exact-OT problem every ten updates during training, "
-         "8,000 solves in total, which is about 7% of its training wall clock. At deployment "
-         "there is no OT at all. I have tried to keep those three numbers separate: training "
-         "cost, deployment cost, and the amortised cost, which approaches zero because one "
-         "trained model serves unlimited queries.",
+         "The wall-clock figures are included only as a sanity check on the complexity analysis; "
+         "they are not the basis of any claim, because they do not transfer across hardware. The "
+         "one place where the two views disagree is instructive: OT is 85% of the corrector's "
+         "training FLOPs but a much smaller share of its wall clock, because network simplex runs "
+         "on CPU while the network runs on GPU. A reader who cares about hardware time should use "
+         "the wall-clock column; a reader who cares about where the work is should use the FLOPs.",
+         size=10)
+
+    para(doc,
+         "The amortised view is worth one sentence, since it is what a practitioner would ask: "
+         "training is a one-time cost and inference is not, so a corrector that costs 2.97x "
+         "inference FLOPs still wins on total cost once a trained model serves more than a "
+         "handful of queries. The break-even point depends on the deployment volume, which is a "
+         "property of the application rather than of the method.",
          size=10)
 
     para(doc,
