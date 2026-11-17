@@ -211,17 +211,18 @@ Row (d) spends a second evaluation of the same average-velocity field and the er
 
 A wider one-parameter network, 9,027 to 134,403 parameters, was tried earlier on the single-parameter task and also failed to move the error (0.1486 to 0.1456). That run is a different task. It is cited only as a second place where width was not the binding constraint.
 
-On the 143-cell headline set, the same stage-1 weights are evaluated on \(N\in\{1,2,4\}\) equal sub-intervals of \([0,1]\). The corrector, trained on one-step outputs, is then applied **once** to each of those clouds.
+On the 143-cell headline set, the same stage-1 weights are evaluated on \(N\in\{1,2,4,8\}\) equal sub-intervals of \([0,1]\). The corrector, trained on one-step outputs, is then applied **once** to each of those clouds.
 
 | stage-1 steps \(N\) | stage 1 | vs \(N=1\) | stage 1, then corrector | vs one-step stage 1 |
 |---:|---:|---:|---:|---:|
 | 1 | 0.12277 | — | **0.10429** | **+15.0%** |
 | 2 | 0.12418 | −1.1% | 0.10883 | +11.4% |
 | 4 | 0.12707 | −3.5% | 0.11243 | +8.4% |
+| 8 | 0.12736 | −3.7% | 0.11183 | +8.9% |
 
-More stage-1 steps raise the error. One corrector pass after two or four steps still lowers it relative to the one-step map, by less than the corrector does after a single step. These 143 cells are not the 112 cells of Figure 3; the one-step corrector differs by 0.00007 (0.10429 against 0.10422).
+More stage-1 steps raise the error through \(N=8\). One corrector pass after two, four, or eight steps still lowers it relative to the one-step map, by less than the corrector does after a single step. From \(N=4\) to \(N=8\) the stage-1 error is almost flat, and the corrected error moves from 0.11243 to 0.11183. These 143 cells are not the 112 cells of Figure 3; the one-step corrector differs by 0.00007 (0.10429 against 0.10422).
 
-![Held-out error for one, two, and four stage-1 steps, with and without one corrector pass.](../results/report_figures/fig_nstep.png)
+![Held-out error for one, two, four, and eight stage-1 steps, with and without one corrector pass.](../results/report_figures/fig_nstep.png)
 
 *Figure 4. Same stage-1 weights at every \(N\). The corrector is one pass after those sub-steps, still at horizon \(T\). Completed, 143 cells.*
 
@@ -259,6 +260,7 @@ One corrector evaluation is 34,816 FLOPs per particle against 17,664 for one sta
 | (a) one stage-1 pass | 1.77 | 1.00× | 0.12271 on 112 cells |
 | (d) two stage-1 passes | 3.53 | 2.00× | worse, §5.2 |
 | (d) extended to 4 passes | 7.07 | 4.00× | worse, Figure 4 |
+| (d) extended to 8 passes | 14.13 | 8.00× | worse, Figure 4 |
 | (b) stage 1 + corrector | **5.25** | **2.97×** | 0.10422 on 112 cells |
 
 The deployment cost that belongs next to the 15% reduction is 2.97× FLOPs. Calling it "two passes" understates the second pass.
@@ -426,7 +428,7 @@ Measured wall-clock on the RTX 4060 Laptop, for orientation rather than as the m
 - The single-parameter sweep of \(W_2\) against \(\sigma\), at \(\mu=1\).
 - Two-parameter stage 1 and the paired corrector, three seeds, 143 held-out cells.
 - Rows (a)–(d) on one 112-cell intersection, with three seeds on the capacity-matched row.
-- Stage 1 at 1, 2, and 4 sub-steps, with one corrector pass after each.
+- Stage 1 at 1, 2, 4, and 8 sub-steps, with one corrector pass after each.
 - \(\alpha\) chosen on 50 development cells and reported on 93 test cells.
 - Physical summaries, repeated application, and the longer-horizon retrain.
 - The interior-only retraining, the seed-transfer test, the reference-cloud probe, the few-cell sweep, and the two-cell Jacobian check.
