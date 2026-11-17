@@ -18,6 +18,7 @@
 ### 新增
 
 - **`docs/HARRY_NOTE.md`** — 可直接发给 Harry 的英文技术笔记：方程按 `fullscale/train.py` 与 `scripts/dp_two_param.py` 的实现书写（速度方向为 \(x_{\mathrm{src}}-x_{\mathrm{tgt}}\)），四路对照用 112 个共同留出格，外推实验标明为单独的 45 格内点训练，Autel 一节留空
+- **`docs/HARRY_NOTE.zh.md`** — 上述英文笔记的中文译文；数字、公式与图片路径未改
 - **`results/report_figures/fig_matched_cost.png`** — 与上述四路对照同一口径的图；左图紫色柱为宽度 112 的三种子均值，点为各种子。`scripts/report_figures.py` 增加 `fig_matched_cost`
 
 ### 变更
