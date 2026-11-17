@@ -259,6 +259,82 @@ def fig_extrapolation() -> None:
     print("  wrote fig_extrapolation.png")
 
 
+def fig_matched_cost() -> None:
+    """Four configurations on the 112 cells held out by both designs.
+
+    The older ``fig_four_way.png`` mixes the headline held-out set with a
+    width-112 run trained on a different 40-cell design, and it draws only
+    seed 88 of that wide network. This figure uses the intersection.
+    """
+    common = load("four_way/four_way_common_s88.json")
+    capacity = load("capacity_matched/capacity_common.json")
+    if not common or not capacity:
+        print("  skip fig_matched_cost")
+        return
+
+    results = common["results"]
+    order = [
+        ("a_headline_1pass", "(a) map\nalone", COLORS["mf"]),
+        ("d_headline_2pass", "(d) same map\ntwice", COLORS["mf_2step"]),
+        ("c_w112_1pass", "(c) matched\ncapacity", COLORS["capacity"]),
+        ("b_headline_dp", "(b) map +\ncorrector", COLORS["mf_dp"]),
+    ]
+    labels = [label for _, label, _ in order]
+    values = [results[key]["mean"] for key, _, _ in order]
+    colors = [color for _, _, color in order]
+    wide = [
+        capacity["per_seed"]["wide_s88"]["wide"]["mean"],
+        capacity["per_seed"]["wide_s89"]["wide"]["mean"],
+        capacity["per_seed"]["wide_s90"]["wide"]["mean"],
+    ]
+    values[2] = float(np.mean(wide))
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.5), layout="constrained")
+    positions = np.arange(len(labels))
+    bars = axes[0].bar(positions, values, color=colors, width=0.62)
+    axes[0].scatter([2, 2, 2], wide, s=36, color="#222222", zorder=5)
+    for index, (bar, value) in enumerate(zip(bars, values)):
+        if index == 2:
+            axes[0].text(bar.get_x() + bar.get_width() / 2, max(wide) + 0.003,
+                         f"mean {value:.4f}", ha="center", va="bottom", fontsize=8)
+        else:
+            axes[0].text(bar.get_x() + bar.get_width() / 2, value + 0.0018,
+                         f"{value:.4f}", ha="center", va="bottom", fontsize=8)
+    axes[0].set_xticks(positions, labels, fontsize=8)
+    axes[0].set(ylabel="held-out $W_2$ on 112 common cells",
+                ylim=(0.09, 0.150))
+    axes[0].grid(alpha=.2, ls="--", axis="y")
+
+    gain_values = [
+        100 * results["d_headline_2pass"]["relative_vs_a"],
+        100 * float(capacity["wide_gain_mean"]),
+        100 * results["b_headline_dp"]["relative_vs_a"],
+    ]
+    gain_colors = [COLORS["mf_2step"], COLORS["capacity"], COLORS["mf_dp"]]
+    gain_err = [0.0, 100 * float(capacity["wide_gain_sd"]), 0.0]
+    bars = axes[1].bar(np.arange(3), gain_values, color=gain_colors, width=0.62,
+                       yerr=gain_err, capsize=3, ecolor="#222222")
+    seed_gains = []
+    for key in ("wide_s88", "wide_s89", "wide_s90"):
+        seed_gains.append(100 * capacity["per_seed"][key]["wide"]["relative_vs_stage1"])
+    axes[1].scatter([1, 1, 1], seed_gains, s=28, color="#222222", zorder=5)
+    axes[1].axhline(0, color="#222222", lw=.8)
+    for bar, value in zip(bars, gain_values):
+        offset = 1.2 if value >= 0 else -2.4
+        axes[1].text(bar.get_x() + bar.get_width() / 2, value + offset,
+                     f"{value:+.1f}%", ha="center", va="bottom", fontsize=8)
+    axes[1].set_xticks(np.arange(3), [
+        "(d) same map,\nsecond pass",
+        "(c) matched capacity\nmean of 3 seeds",
+        "(b) map + corrector\none fitted pair",
+    ], fontsize=8)
+    axes[1].set(ylabel="error reduction vs (a), percent")
+    axes[1].grid(alpha=.2, ls="--", axis="y")
+    fig.savefig(OUT / "fig_matched_cost.png", bbox_inches="tight")
+    plt.close(fig)
+    print("  wrote fig_matched_cost.png")
+
+
 def fig_nstep() -> None:
     payload = load("nstep/nstep_s88.json")
     if not payload:
@@ -299,6 +375,7 @@ def main() -> int:
         fig_physics()
         fig_extrapolation()
         fig_nstep()
+        fig_matched_cost()
     return 0
 
 

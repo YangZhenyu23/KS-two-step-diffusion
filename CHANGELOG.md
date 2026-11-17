@@ -13,6 +13,19 @@
 
 ---
 
+## [Unreleased]
+
+### 新增
+
+- **`docs/HARRY_NOTE.md`** — 可直接发给 Harry 的英文技术笔记：方程按 `fullscale/train.py` 与 `scripts/dp_two_param.py` 的实现书写（速度方向为 \(x_{\mathrm{src}}-x_{\mathrm{tgt}}\)），四路对照用 112 个共同留出格，外推实验标明为单独的 45 格内点训练，Autel 一节留空
+- **`results/report_figures/fig_matched_cost.png`** — 与上述四路对照同一口径的图；左图紫色柱为宽度 112 的三种子均值，点为各种子。`scripts/report_figures.py` 增加 `fig_matched_cost`
+
+### 变更
+
+- 不再把旧的 `fig_four_way.png` 当作四路对照的主图：那张图混用了各模型自己的留出集，并且容量对照只画了种子 88
+
+---
+
 ## [v1.18.0] — 2026-11-17
 
 **九项补充实验全部完成（E1–E9），并把结论整合进技术笔记。E6 产生了最强的负面证据。**
