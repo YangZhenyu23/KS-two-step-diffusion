@@ -79,7 +79,7 @@ The initial cloud is uniform in the unit ball and is **shared by every parameter
 
 ### 2.2 Stage 1 — parametric MeanFlow
 
-The code follows the upstream endpoint convention. \(x_{\mathrm{src}}\) is a particle from the initial cloud and \(x_{\mathrm{tgt}}\) is a particle from the simulated terminal cloud. The regression target points from the terminal cloud back toward the initial cloud:
+\(x_{\mathrm{src}}\) is a particle from the initial cloud and \(x_{\mathrm{tgt}}\) is a particle from the simulated terminal cloud. The regression target points from the terminal cloud back toward the initial cloud:
 
 \[
 v = x_{\mathrm{src}}-x_{\mathrm{tgt}},
@@ -133,22 +133,30 @@ The headline corrector is trained at \(\alpha=1\). Section 5.3 then scales \(\al
 
 ---
 
-## 3. What I contributed
+## 3. What this note covers
 
-| piece | source |
-|---|---|
-| MeanFlow identity, JVP training, one-step and two-step samplers, KS integrator, histogram \(W_2\) | upstream snapshot, unmodified |
-| Conditioning the same architecture on \((\sigma,\mu)\), and the \(20\times 10\) grid | this project |
-| The corrector's two-parameter extension, the OT-target loop, and the batch/coupling alignment | this project |
-| The four-row comparison, the interior-only retraining, the seed-transfer test, and the cost account | this project |
+The same implementation is used throughout:
 
-The upstream single-parameter KS3D reproduction is a baseline, not the claim. On that baseline the re-run matches the upstream history to a maximum absolute deviation of 0.0066 on 180 metrics. The question in this note is asked on the two-parameter system.
+- the MeanFlow identity, Jacobian–vector-product training, one-step and multi-step sampling, the Keller–Segel integrator, and histogram \(W_2\);
+- conditioning on \((\sigma,\mu)\), and the \(20\times 10\) grid;
+- the corrector, its optimal-transport targets, and the alignment of each batch with its coupling;
+- the four-row comparison, the interior-only retraining, the seed-transfer test, and the cost account.
+
+### 3.1 One parameter, \(\mu=1\)
+
+With the diffusion coefficient fixed at \(\mu=1\), the map and the corrector are trained at each shear \(\sigma\) from 10 to 200. The metric is the same 16-bin histogram \(W_2\). Error bars are the standard deviation across three seeds.
+
+![Histogram W2 against the shear parameter for the one-parameter model.](../results/report_figures/fig_sigma_w2.png)
+
+*Figure 1. Single-parameter sweep at \(\mu=1\). The map-plus-corrector curve is below the one-step map at every \(\sigma\). The corrector used on its own is not. Completed.*
+
+The sections below ask when that second stage still pays once both \(\sigma\) and \(\mu\) are inputs.
 
 ---
 
 ## 4. What was held fixed
 
-The prespecified distributional metric is the exact Wasserstein-2 distance between 16-bin-per-axis histograms, solved by the same network simplex, with the dual certificate checked. It was fixed before the comparison. All \(W_2\) numbers in one table share that metric. Absolute values are not claimed to match the published table of Shen et al. (2026); the shape of the single-parameter curve agrees with that table and the scale does not, and this note does not rest on the absolute scale.
+The prespecified distributional metric is the exact Wasserstein-2 distance between 16-bin-per-axis histograms, solved by the same network simplex, with the dual certificate checked. It was fixed before the comparison. All \(W_2\) numbers in one table share that metric.
 
 | axis | headline comparison | where a row differs, it is named |
 |---|---|---|
@@ -181,7 +189,7 @@ Paired \(t=6.02\) on 3 seeds. The corrector also cuts the across-seed standard d
 
 ![Cross-seed standard deviation and coefficient of variation, with and without the corrector.](../results/report_figures/fig_reproducibility.png)
 
-*Figure 1. Across-seed scatter of the mean error. Left: standard deviation. Right: coefficient of variation, so the one-parameter and two-parameter systems can be compared after their different error levels. Completed.*
+*Figure 2. Across-seed scatter of the mean error. Left: standard deviation. Right: coefficient of variation, so the one-parameter and two-parameter systems can be compared after their different error levels. Completed.*
 
 ### 5.2 Four configurations at matched cost — completed
 
@@ -189,7 +197,7 @@ All four rows are two-parameter networks. They are scored on the **same 112 cell
 
 ![Held-out error and relative reduction for the four configurations.](../results/report_figures/fig_matched_cost.png)
 
-*Figure 2. Left: histogram \(W_2\) on the 112 common held-out cells. The purple bar is the mean of three width-112 seeds; the dots are those seeds. Right: error reduction relative to the one-step map. The error bar on (c) is the standard deviation of the three seeds. The green bar is one fitted pair, so it has no seed bar. Completed.*
+*Figure 3. Left: histogram \(W_2\) on the 112 common held-out cells. The purple bar is the mean of three width-112 seeds; the dots are those seeds. Right: error reduction relative to the one-step map. The error bar on (c) is the standard deviation of the three seeds. The green bar is one fitted pair, so it has no seed bar. Completed.*
 
 | configuration | parameters | stage-1 passes | corrector passes | \(W_2\) | vs (a) |
 |---|---:|---:|---:|---:|---:|
@@ -203,20 +211,19 @@ Row (d) spends a second evaluation of the same average-velocity field and the er
 
 A wider one-parameter network, 9,027 to 134,403 parameters, was tried earlier on the single-parameter task and also failed to move the error (0.1486 to 0.1456). That run is a different task. It is cited only as a second place where width was not the binding constraint.
 
-Extending row (d) from 2 steps to 8 steps, on the headline 143-cell set, keeps moving the wrong way:
+On the 143-cell headline set, the same stage-1 weights are evaluated on \(N\in\{1,2,4\}\) equal sub-intervals of \([0,1]\). The corrector, trained on one-step outputs, is then applied **once** to each of those clouds.
 
-| stage-1 steps \(N\) | stage-1 \(W_2\) | vs \(N=1\) |
-|---:|---:|---:|
-| 1 | 0.12277 | — |
-| 2 | 0.12418 | −1.1% |
-| 4 | 0.12707 | −3.5% |
-| 8 | 0.12736 | −3.7% |
+| stage-1 steps \(N\) | stage 1 | vs \(N=1\) | stage 1, then corrector | vs one-step stage 1 |
+|---:|---:|---:|---:|---:|
+| 1 | 0.12277 | — | **0.10429** | **+15.0%** |
+| 2 | 0.12418 | −1.1% | 0.10883 | +11.4% |
+| 4 | 0.12707 | −3.5% | 0.11243 | +8.4% |
 
-The corrector on this same 143-cell set, one pass after one stage-1 pass, is at 0.10429. These 143 cells are not the 112 cells of Figure 2; the two corrector numbers differ by 0.00007.
+More stage-1 steps raise the error. One corrector pass after two or four steps still lowers it relative to the one-step map, by less than the corrector does after a single step. These 143 cells are not the 112 cells of Figure 3; the one-step corrector differs by 0.00007 (0.10429 against 0.10422).
 
-![Error against the number of stage-1 evaluations.](../results/report_figures/fig_nstep.png)
+![Held-out error for one, two, and four stage-1 steps, with and without one corrector pass.](../results/report_figures/fig_nstep.png)
 
-*Figure 3. More evaluations of stage 1, still at horizon \(T\). The green square is the corrector. This is the 143-cell headline set. Completed.*
+*Figure 4. Same stage-1 weights at every \(N\). The corrector is one pass after those sub-steps, still at horizon \(T\). Completed, 143 cells.*
 
 ### 5.3 Correction strength, chosen on a development split — completed
 
@@ -239,7 +246,7 @@ The 143 held-out cells of the seed-88 checkpoint were split once, with the split
 
 ![Development curve for the correction strength, with the untouched test points.](../results/report_figures/fig_alpha.png)
 
-*Figure 4. \(\alpha\) scaled at inference. The development curve is flat between 1.5 and 2.0, so the selected value is a point on a plateau. The claim this supports is that the training value \(\alpha=1\) is conservative on this split. Completed.*
+*Figure 5. \(\alpha\) scaled at inference. The development curve is flat between 1.5 and 2.0, so the selected value is a point on a plateau. The claim this supports is that the training value \(\alpha=1\) is conservative on this split. Completed.*
 
 This sweep does not retrain the head at each \(\alpha\). A re-training sweep is listed as proposed.
 
@@ -251,7 +258,7 @@ One corrector evaluation is 34,816 FLOPs per particle against 17,664 for one sta
 |---|---:|---:|---|
 | (a) one stage-1 pass | 1.77 | 1.00× | 0.12271 on 112 cells |
 | (d) two stage-1 passes | 3.53 | 2.00× | worse, §5.2 |
-| (d) extended to 8 passes | 14.13 | 8.00× | worse, Figure 3 |
+| (d) extended to 4 passes | 7.07 | 4.00× | worse, Figure 4 |
 | (b) stage 1 + corrector | **5.25** | **2.97×** | 0.10422 on 112 cells |
 
 The deployment cost that belongs next to the 15% reduction is 2.97× FLOPs. Calling it "two passes" understates the second pass.
@@ -278,7 +285,7 @@ The rms radius is the entry the corrector makes slightly worse. It is left in th
 
 ![Anisotropy scatter and mean relative error of five physical summaries.](../results/report_figures/fig_physics.png)
 
-*Figure 5. Left: predicted against reference anisotropy on the six cells. Right: mean absolute relative error. Completed.*
+*Figure 6. Left: predicted against reference anisotropy on the six cells. Right: mean absolute relative error. Completed.*
 
 ### 6.2 Repeated application — completed, and this is a failure
 
@@ -293,7 +300,7 @@ The map is trained on pairs \((x_{\mathrm{src}}, x_{\mathrm{tgt}})\) at one hori
 
 ![Log-scale error against the number of times the one-step map is applied.](../results/report_figures/fig_rollout.png)
 
-*Figure 6. Six cells. The dashed line is the reproducibility floor of that particle count. Every cell leaves the floor by the second application. The worst cell is kept. Completed.*
+*Figure 7. Six cells. The dashed line is the reproducibility floor of that particle count. Every cell leaves the floor by the second application. The worst cell is kept. Completed.*
 
 The mechanism is visible in the state, not only in the metric. One application moves the centroid by about 1.3–2.3 and the rms radius into the range 0.84–1.57, so the second application receives a cloud outside the training input. The same divergence appears at seeds 89 and 90 (at \(k=4\), each seed is between about 100× and 500× the floor) and on the one-parameter model (at \(k=8\), 3,745×–4,015× its own floor). Non-iterability belongs to a fixed-horizon transport, and the two-parameter map diverges further.
 
@@ -303,7 +310,7 @@ Spending the second forward pass on another MeanFlow sub-step, at the same two-p
 
 ![Error after four applications, three maps, three cells.](../results/report_figures/fig_rollout_method.png)
 
-*Figure 7. After four applications. Each bar is two forward passes. The orange bars are a second stage-1 sub-step. The worst cell shown, `s19_m09`, goes from 82.5 (stage 1) to 77.2 (corrector) to 318 (two-step stage 1). Completed.*
+*Figure 8. After four applications. Each bar is two forward passes. The orange bars are a second stage-1 sub-step. The worst cell shown, `s19_m09`, goes from 82.5 (stage 1) to 77.2 (corrector) to 318 (two-step stage 1). Completed.*
 
 Eight applications cost tens of milliseconds. One physical simulation of \(10^5\) particles at this horizon costs about 83 seconds on the same laptop GPU. Cost is not why iteration is out of scope. The map has no step-to-step meaning to iterate.
 
@@ -346,7 +353,7 @@ Training cells and held-out interior cells agree to 0.2% in stage-1 error, so th
 
 ![Stage-1 and corrected error by region, and the corrector's relative gain.](../results/report_figures/fig_extrapolation.png)
 
-*Figure 8. The left-hand "interior" bar pools the 45 training cells with the 90 held-out interior cells (135 cells, gain 14.7%). The table above splits them. The three right-hand bars are the outside zones. Completed, on the 45-cell interior-only run.*
+*Figure 9. The left-hand "interior" bar pools the 45 training cells with the 90 held-out interior cells (135 cells, gain 14.7%). The table above splits them. The three right-hand bars are the outside zones. Completed, on the 45-cell interior-only run.*
 
 A one-parameter control, trained on \(\sigma\in[15,150]\) at fixed \(\mu=1\), still has a **+13.3%** corrector gain on \(\sigma\in[160,200]\), against **+15.7%** inside, while stage-1 error grows only **1.19×**. The single lower endpoint \(\sigma=10\) retains +8.4%. A one-dimensional family keeps more of the gain than the two-dimensional one. Both numbers are from their own training runs.
 
@@ -416,10 +423,10 @@ Measured wall-clock on the RTX 4060 Laptop, for orientation rather than as the m
 
 **Completed, and used above.**
 
-- Upstream single-parameter reproduction, as a baseline.
+- The single-parameter sweep of \(W_2\) against \(\sigma\), at \(\mu=1\).
 - Two-parameter stage 1 and the paired corrector, three seeds, 143 held-out cells.
 - Rows (a)–(d) on one 112-cell intersection, with three seeds on the capacity-matched row.
-- The 1-, 2-, 4-, and 8-step stage-1 sweep.
+- Stage 1 at 1, 2, and 4 sub-steps, with one corrector pass after each.
 - \(\alpha\) chosen on 50 development cells and reported on 93 test cells.
 - Physical summaries, repeated application, and the longer-horizon retrain.
 - The interior-only retraining, the seed-transfer test, the reference-cloud probe, the few-cell sweep, and the two-cell Jacobian check.
@@ -458,7 +465,7 @@ The figure is a density picture, not the metric. It is the cell \((\sigma,\mu)=(
 
 ![Three orthogonal projections of the reference, the one-step map, and the corrected map, with a signed density error.](../results/figures/projection_hero_combined.png)
 
-*Figure 9. Rows: reference, one-step map, map plus corrector. Columns: \(x\)–\(y\), \(x\)–\(z\), \(y\)–\(z\), and the signed \(x\)–\(z\) density error. Completed as a visualisation of one selected cell.*
+*Figure 10. Rows: reference, one-step map, map plus corrector. Columns: \(x\)–\(y\), \(x\)–\(z\), \(y\)–\(z\), and the signed \(x\)–\(z\) density error. Completed as a visualisation of one selected cell.*
 
 ## Appendix B. Two caveats that apply to every table
 

@@ -1,0 +1,10 @@
+---
+description: 改 Harry 技术笔记时，英文原稿与中文译文必须同一轮一起改。
+alwaysApply: true
+---
+
+# Harry 笔记双语同步
+
+`docs/HARRY_NOTE.md` 是英文原稿，`docs/HARRY_NOTE.zh.md` 是中文译文。
+
+改其中任何一处表述、数字、图或图注时，**同一轮**改另一份，使两份的数字、公式、图片路径和结论一致。不要只改用户当前打开的那一份。

@@ -336,33 +336,78 @@ def fig_matched_cost() -> None:
 
 
 def fig_nstep() -> None:
+    """Stage 1 at N=1,2,4, and the same outputs after one corrector pass."""
     payload = load("nstep/nstep_s88.json")
     if not payload:
         print("  skip fig_nstep")
         return
-    rows = payload["rows"]
+    rows = [r for r in payload["rows"] if r["steps"] in (1, 2, 4)]
     steps = [r["steps"] for r in rows]
     mf = [r["mf_mean_w2"] for r in rows]
     dp = [r["mf_dp_mean_w2"] for r in rows]
 
-    fig, ax = plt.subplots(figsize=(5.2, 3.5), layout="constrained")
-    ax.plot(steps, mf, marker="o", ms=5, lw=1.6, color=COLORS["mf"],
-            label="stage 1, N steps")
-    ax.plot([1], [dp[0]], marker="s", ms=7, color=COLORS["mf_dp"],
-            label="stage 1 + corrector")
-    ax.annotate(f"{dp[0]:.4f}", xy=(1, dp[0]), xytext=(8, -12),
-                textcoords="offset points", fontsize=8, color=COLORS["mf_dp"])
+    fig, ax = plt.subplots(figsize=(5.4, 3.6), layout="constrained")
+    ax.plot(steps, mf, marker="o", ms=6, lw=1.6, color=COLORS["mf"],
+            label="stage 1, $N$ steps")
+    ax.plot(steps, dp, marker="s", ms=6, lw=1.6, color=COLORS["mf_dp"],
+            label="stage 1, $N$ steps + corrector")
     for x, y in zip(steps, mf):
-        ax.annotate(f"{y:.4f}", xy=(x, y), xytext=(0, 7), textcoords="offset points",
-                    fontsize=7, ha="center", color=COLORS["mf"])
+        ax.annotate(f"{y:.4f}", xy=(x, y), xytext=(0, 8), textcoords="offset points",
+                    fontsize=8, ha="center", color=COLORS["mf"])
+    for x, y in zip(steps, dp):
+        ax.annotate(f"{y:.4f}", xy=(x, y), xytext=(0, -14), textcoords="offset points",
+                    fontsize=8, ha="center", color=COLORS["mf_dp"])
     ax.set_xscale("log", base=2)
     ax.set_xticks(steps, [str(s) for s in steps])
-    ax.set(xlabel="forward passes of stage 1 ($N$)", ylabel="held-out $W_2$")
+    ax.set_ylim(0.098, 0.138)
+    ax.set(xlabel="stage-1 sub-steps $N$  (corrector is one pass after them)",
+           ylabel="held-out $W_2$")
     ax.grid(alpha=.23, ls="--")
-    ax.legend(frameon=False, fontsize=8)
+    ax.legend(frameon=False, fontsize=8, loc="upper left")
     fig.savefig(OUT / "fig_nstep.png", bbox_inches="tight")
     plt.close(fig)
     print("  wrote fig_nstep.png")
+
+
+def fig_sigma_w2() -> None:
+    """Single-parameter W2 against sigma. This run only: no external overlay."""
+    import csv
+
+    path = ROOT / "results" / "ks3d" / "evaluation" / "ks" / "summary.csv"
+    if not path.exists():
+        print("  skip fig_sigma_w2")
+        return
+    by_method: dict[str, list[tuple[float, float, float]]] = {
+        "mf": [], "dp": [], "mf_dp": [],
+    }
+    with path.open(encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            method = row["method"]
+            if method not in by_method:
+                continue
+            by_method[method].append((
+                float(row["sigma"]), float(row["mean_w2"]), float(row["sd_w2"]),
+            ))
+    series = (
+        ("mf", "one-step map", COLORS["mf"], "o"),
+        ("dp", "corrector alone", COLORS["mf_2step"], "D"),
+        ("mf_dp", "map + corrector", COLORS["mf_dp"], "s"),
+    )
+    fig, ax = plt.subplots(figsize=(6.2, 3.6), layout="constrained")
+    for key, label, color, marker in series:
+        points = sorted(by_method[key])
+        xs = [p[0] for p in points]
+        ys = [p[1] for p in points]
+        yerr = [p[2] for p in points]
+        ax.errorbar(xs, ys, yerr=yerr, marker=marker, ms=4.5, lw=1.5, capsize=2,
+                    color=color, label=label)
+    ax.set(xlabel=r"shear parameter $\sigma$  ($\mu = 1$)",
+           ylabel=r"$W_2$ (16-bin histogram)")
+    ax.grid(alpha=.23, ls="--")
+    ax.legend(frameon=False, fontsize=8)
+    fig.savefig(OUT / "fig_sigma_w2.png", bbox_inches="tight")
+    plt.close(fig)
+    print("  wrote fig_sigma_w2.png")
 
 
 def main() -> int:
@@ -375,6 +420,7 @@ def main() -> int:
         fig_physics()
         fig_extrapolation()
         fig_nstep()
+        fig_sigma_w2()
         fig_matched_cost()
     return 0
 
