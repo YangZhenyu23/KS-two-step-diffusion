@@ -25,7 +25,7 @@
 ### 新增
 
 - **`HARRY_NOTE_for_Harry.zip`** — 发给老师的英文笔记压缩包：根目录 `HARRY_NOTE.md`（图片路径改为 `results/...`）及笔记引用的 10 张图，不含中文稿。重新打包后 `.md` 按普通文件写入，Windows 资源管理器可以解出该文件
-- **`docs/HARRY_NOTE.pdf`、`docs/HARRY_NOTE.zh.pdf`** — 英文原稿与中文译文的 PDF，按 Markdown 预览排版导出（标题、表、公式、图、流程图），未另做论文版式
+- **`docs/HARRY_NOTE.pdf`、`docs/HARRY_NOTE.zh.pdf`** — 英文原稿与中文译文的 PDF。重新导出为 A4，加宽页边、表格略紧、页脚页码；Markdown 原文未改
 - **`docs/_md_preview.css`、`scripts/patch_preview_html.py`** — 上述 PDF 的样式与 Mermaid 补丁
 - **`results/report_figures/fig_sigma_w2.png`** — \(\mu=1\) 时一步映射、单独修正器、映射加修正器的 \(W_2\) 对 \(\sigma\)，误差棒为三种子标准差
 - **`docs/HARRY_NOTE.md`** — 可直接发给 Harry 的英文技术笔记：方程按 `fullscale/train.py` 与 `scripts/dp_two_param.py` 的实现书写（速度方向为 \(x_{\mathrm{src}}-x_{\mathrm{tgt}}\)），四路对照用 112 个共同留出格，外推实验标明为单独的 45 格内点训练，Autel 一节留空
