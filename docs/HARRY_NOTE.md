@@ -4,7 +4,7 @@
 
 Zhenyu Yang · November 2026
 
-Numbers below are read from the JSON artifacts in this repository. Each experiment is marked **completed** or **proposed**. The Autel summary in §10 is the one section I cannot fill from this repository.
+Numbers below are read from the JSON artifacts in this repository. Each experiment is marked **completed** or **proposed**. Section 10 is a non-confidential summary of related work and does not add numbers.
 
 ---
 
@@ -449,15 +449,11 @@ A negative on any of these would be a usable result. The seed-transfer result al
 
 ## 10. The Autel work
 
-Harry asked for a non-confidential summary of three items: the bottleneck, the intervention, and the measured latency–quality trade-off for the flow-matching acceleration of action chunks.
+At Autel I helped build the robot and the data-collection system that the later experiments ran on. The research question was separate. Action chunks had to stay continuous and physically consistent with a changing scene, and a full flow-matching integration was too slow for the control cycle.
 
-I am not putting numbers into this section from memory. The paragraph below is the slot for that summary, and it should stay short.
+Current observations are used to shift the prior of the flow-matching model, which shortens inference. The next action is then generated from images predicted by a world model, rather than by replacing the executing chunk in one shot: the world model predicts the upcoming image, the next action is generated from that image and from future context not yet observed, and the new action is joined to the one being executed so that action, time, and image stay aligned.
 
-> **Bottleneck.** *[to be written: what was slow, in which part of the action-chunk pipeline, and why a full flow integration was the expensive piece.]*
->
-> **Intervention.** *[to be written: what was changed, and what was left unchanged. One paragraph, no internal model names that are confidential.]*
->
-> **Measured trade-off.** *[to be written: latency before and after, the quality metric that was held, and the setting in which it was measured.]*
+On the latency–quality trade-off, task success was unchanged. Under that condition, inference latency was shorter and action consistency improved. Numeric timings and success rates are not reported here.
 
 ---
 
