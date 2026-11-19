@@ -1,0 +1,30 @@
+{
+  "alpha": 1.0,
+  "updates_per_cell": 2000,
+  "n_groups": 120,
+  "seconds": 17498.608788399997,
+  "per_seed": {
+    "88": {
+      "n": 143,
+      "mf": 0.12276673234794717,
+      "mf_dp": 0.12058331360595342,
+      "relative_reduction": 0.017785101063091502,
+      "wins": 74
+    },
+    "89": {
+      "n": 143,
+      "mf": 0.12974549815133873,
+      "mf_dp": 0.11526688509632836,
+      "relative_reduction": 0.11159241177001855,
+      "wins": 143
+    },
+    "90": {
+      "n": 143,
+      "mf": 0.11203360464056192,
+      "mf_dp": 0.10551164246790082,
+      "relative_reduction": 0.058214338399496746,
+      "wins": 110
+    }
+  },
+  "note": "One corrector, three fixed-lr stage-1 maps, each scored on its own held-out cells."
+}
