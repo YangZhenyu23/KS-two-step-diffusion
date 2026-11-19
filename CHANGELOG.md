@@ -26,6 +26,7 @@
 
 ### 变更
 
+- **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：按 11 月 18 日笔记的口气改写。标题改为日期和实验内容，结果先给数字；去掉成套的对照句。数字、图和表未改
 - **步数对照补上 \(N=8\)**：第一阶段 \(W_2=0.12736\)（相对一步 −3.7%），再接一次修正器 \(0.11183\)（+8.9%）。中英文笔记与 `fig_nstep.png` 同步
 - **`docs/HARRY_NOTE.md` 与 `docs/HARRY_NOTE.zh.md`**：§5.2 的步数图改为第一阶段 \(N=1,2,4,8\) 与各自再接一次修正器两条曲线（数字来自已有 `nstep_s88.json`）；加入单参数 \(W_2\)–\(\sigma\) 曲线，不叠外部参照；删去“上游快照 / 本项目”的区分
 - **`scripts/report_figures.py`**：`fig_nstep` 画出两条曲线；新增 `fig_sigma_w2`

@@ -1,44 +1,55 @@
-# After a better stage 1, the corrector is no longer the step that pays
+# Follow-up, 20 November
 
-**Follow-up to the note of 18 November, on the same two-parameter Keller–Segel system**
+**Stage 1 retrained with a warm-up and a cosine, on the same two-parameter Keller–Segel system**
 
 Zhenyu Yang · 20 November 2026
 
-Numbers are read from `results/fullscale/harry_followup/`. The earlier note is [`HARRY_NOTE.md`](HARRY_NOTE.md). Its fixed-learning-rate result is left as it was: on 143 held-out cells and three seeds, a corrector paired with its own stage-1 map reduces 16-bin histogram \(W_2\) by 14.4% ± 4.2% (415 of 429 comparisons). This note asks whether that reduction is the thing that pays.
+Numbers are read from `results/fullscale/harry_followup/`. The 18 November note is [`HARRY_NOTE.md`](HARRY_NOTE.md). I did not recompute its fixed-learning-rate result: on 143 held-out cells and three seeds, a corrector paired with its own stage-1 map reduces 16-bin histogram \(W_2\) by 14.4% ± 4.2% (415 of 429 comparisons). This note is the runs that were still open: the learning-rate schedule, two budget checks, the \((r,t)\) sampler, \(\alpha=2\) on the other two seeds, and one corrector trained on three seeds.
 
-Completed runs are marked as such. The gated corrector was not run.
+The gated corrector is not in this note.
 
 ---
 
 ## The answer
 
-On the fixed-learning-rate map, the corrector reduces histogram \(W_2\) by about 15%. On a stage-1 map trained with the same cells, the same update count, and a warm-up plus cosine schedule, the reduction falls to **7.3%**. A second evaluation of that better map, with no second network, reduces \(W_2\) by **15.2%**. A width-112 network with the same schedule and the same parameter count as the two-stage model is **3.6% worse** than the narrow one-step map.
+At fixed learning rate \(10^{-3}\), the corrector removes about 15% of the histogram \(W_2\). I retrained stage 1 on the same 40 cells and the same 32,000 updates per cell, with a 2% linear warm-up and then a cosine from \(10^{-3}\) to \(10^{-5}\). On the 143 held-out cells, seed 88, the corrector now removes **7.3%** (0.09874 to 0.09153, lower on 128 of 143 cells). Stage 1 alone, 0.09874, is already under the old corrected value 0.10429. The corrected value is 0.09153.
 
-The 15% was not a binning artefact, and it was not bought by extra stage-1 updates or by putting the minibatch OT loss on the stage-1 network. It was a fit to the residual of an under-scheduled map. Once that map is trained with the schedule, the residual is smaller, and the free second evaluation of the same field is the better use of a second forward pass. The absolute error is lower than before: the seed-88 pair moves from 0.10429 to **0.09153**.
+On the 112 cells left out by the headline design and by all three width-112 runs:
 
-One corrector trained on the residuals of seeds 88, 89, and 90 together does not recover the paired result. The three seed-wise reductions are 1.8%, 11.2%, and 5.8%. The earlier seed-transfer test, which applied the seed-88 corrector unchanged, was negative. The shared corrector is positive and smaller.
+| | \(W_2\) | vs one step |
+|---|---:|---:|
+| one step, seed 88 | 0.09859 | — |
+| then the corrector | 0.09150 | lower by 7.2% |
+| same weights, two sub-steps | 0.08358 | lower by 15.2% |
+| width 112, three seeds | 0.10215 ± 0.00133 | higher by 3.6% |
+
+Two sub-steps of the scheduled map, and no second network, give a lower \(W_2\) than the corrector. The width-112 seeds are 0.10287, 0.10062, and 0.10297, all above the one-step map.
+
+In the 18 November note, two sub-steps of the fixed-learning-rate map raised the error by 1.3% on that note's 112 cells. Here the same kind of evaluation lowers it. The corrector is still a reduction against one step of the map it was fitted to. Section 2 puts the corrector's update budget on the stage-1 network. Section 5 is one corrector trained on three seeds: the reductions are 1.8%, 11.2%, and 5.8%.
 
 ---
 
-## What was held fixed
+## Setup
 
-Cells are read from the checkpoint that was trained, not recomputed with `stratified_subset`. The warm-up run uses the 40 cells stored in the seed-88 headline checkpoint. Held-out cells are the \(20\times 10\) grid minus those cells minus the remaining \(\mu=1\) row: 143 cells. The four-row table uses the 112 cells held out by the headline design and by all three width-112 designs. The metric is the exact 16-bin histogram \(W_2\), \(10^5\) particles. The corrector protocol is unchanged: \(\alpha=1\), 2,000 updates per cell, batch 2,000, an exact assignment refreshed every 10 steps, residual penalty \(\lambda=1\). The assignment used for the new fine-tune and for the shared corrector is SciPy's Hungarian algorithm. On a 2,000-point batch it matches the optimal cost of the network simplex used in the earlier corrector.
+The cells are the ones stored in the checkpoint. I did not redraw them with `stratified_subset`. The warm-up run uses the 40 cells in the seed-88 headline checkpoint. Held-out cells are the \(20\times 10\) grid minus those 40, minus the rest of the \(\mu=1\) row: 143 cells. The four-row table uses the 112 cells that the headline design and the three width-112 designs all leave out.
 
-The schedule is a 2% linear warm-up and then a cosine from \(10^{-3}\) to \(10^{-5}\). Stage 1 is 32,000 updates per cell. The stage-1 step is replayed from a CUDA graph. The batch stays 4,096.
+The metric is the exact 16-bin histogram \(W_2\), with \(10^5\) particles. The corrector protocol is unchanged: \(\alpha=1\), 2,000 updates per cell, batch 2,000, an exact assignment every 10 steps, residual penalty \(\lambda=1\). The new fine-tune and the shared corrector build that assignment with SciPy's Hungarian algorithm. On a batch of 2,000 points the optimal cost matches the network simplex used for the earlier corrector.
+
+The schedule is a 2% linear warm-up, then a cosine from \(10^{-3}\) to \(10^{-5}\). Stage 1 is 32,000 updates per cell, replayed from a CUDA graph. The batch is 4,096.
 
 ---
 
-## 1. The schedule, on the headline cells and on the four-row table
+## 1. Warm-up schedule — completed
 
-**Completed.** Seed 88 only for the paired corrector. Three seeds for the width-112 row.
+The paired corrector is seed 88. The width-112 row is seeds 88, 89, and 90.
 
-On the 143 held-out cells the warm-up stage 1 has \(W_2=0.09874\). The corrector brings it to \(0.09153\), a reduction of 7.3%, on 128 of 143 cells. The earlier seed-88 pair, at fixed learning rate \(10^{-3}\), was 0.12277 then 0.10429, a reduction of 15.0%, on 141 of 143 cells. The new stage 1 is already below the old corrected value. The new corrected value is lower still. The fraction removed by the corrector is about half of what it was.
+On the 143 held-out cells the warm-up stage 1 has \(W_2=0.09874\). With the corrector it is 0.09153, a 7.3% drop, on 128 of 143 cells. The seed-88 pair from the fixed learning rate was 0.12277, then 0.10429, a 15.0% drop, on 141 of 143 cells. The reduction is about half of what it was.
 
-![Fixed learning rate against the warm-up schedule, on the same 143 cells.](../results/report_figures/fig_followup_schedule.png)
+![Fixed learning rate and the warm-up schedule, seed 88, 143 held-out cells.](../results/report_figures/fig_followup_schedule.png)
 
-*Figure 1. Histogram \(W_2\) on the 143 held-out cells, seed 88. The dashed line is the corrected value of the fixed-learning-rate pair. The scheduled stage 1 is already below that line. The corrector removes 15.0% on the left and 7.3% on the right. Completed.*
+*Figure 1. Histogram \(W_2\) on the 143 held-out cells, seed 88. The dashed line is the fixed-learning-rate pair after its corrector, 0.10429. Completed.*
 
-The four-row table, 112 cells, same schedule:
+Same schedule, 112 common cells:
 
 | row | what is evaluated | \(W_2\) | vs row (a) |
 |---|---|---:|---:|
@@ -47,68 +58,66 @@ The four-row table, 112 cells, same schedule:
 | (c) | width 112, three seeds, same schedule | 0.10215 ± 0.00133 | higher by 3.6% |
 | (d) | (a), two sub-steps of the same weights | 0.08358 | lower by 15.2% |
 
-The three width-112 seeds are 0.10287, 0.10062, and 0.10297. All three are above row (a).
+![Four rows on the 112 common cells, warm-up schedule.](../results/report_figures/fig_followup_four_row.png)
 
-![Four rows under the warm-up schedule, on the 112 common cells.](../results/report_figures/fig_followup_four_row.png)
+*Figure 2. Left: histogram \(W_2\) on the 112 common held-out cells. The purple bar is the mean of three width-112 seeds; the dots are the seeds. Right: reduction relative to row (a). A negative bar is a higher error. Completed.*
 
-*Figure 2. Left: histogram \(W_2\) on the 112 common held-out cells. The purple bar is the mean of the three width-112 seeds; the dots are those seeds. Right: error reduction relative to row (a). A positive number is a lower error. The two-step evaluation is the largest reduction. Every width-112 seed is negative. Completed.*
+Row (d) is the one that comes out differently from the earlier note. There, a second pass over the same field raised the error. Here (d) is the lowest of the four, below the corrector. Row (b) is still below one step. Every width-112 seed in row (c) is above (a).
 
-Row (d) is the result that changes the earlier conclusion. In the fixed-learning-rate note, a second evaluation of the same field raised the error. Here it lowers the error by more than the corrector does. The corrector is still a reduction against one step of its own map. It is not the best use of the second forward pass, and a matched parameter count does not reproduce it.
-
-The reason is the size of the residual. The corrector is initialised at the identity and penalised for leaving the stage-1 cloud. It can remove a residual that is large and systematic. The fixed-learning-rate map stops at 0.12277, and 15% of that is available. The scheduled map stops at 0.09874, and 7% of that is available. Extra updates at the fixed learning rate do not produce this drop. Section 2 is that control.
+The corrector is initialised at the identity and penalised for moving off the stage-1 cloud, so the drop it can make depends on how large that residual is. The fixed-learning-rate map stops at 0.12277. The scheduled map stops at 0.09874. Section 2 keeps the learning rate at \(10^{-3}\) and adds the corrector's update budget on the same network. That does not produce the drop from 0.12277 to 0.09874.
 
 ---
 
-## 2. Two budget controls, same network, no second stage
+## 2. Budget on the same network — completed
 
-**Completed.** Seed 88, fixed learning rate, 143 held-out cells. Both controls add 80,000 updates, which is 2,000 per training cell, the corrector's update count.
+Seed 88, fixed learning rate, 143 held-out cells. Each row below adds 80,000 updates, 2,000 per training cell. That is the corrector's update count. No second network.
 
-| control | \(W_2\) | vs the headline stage 1 (0.12277) |
+| control | \(W_2\) | vs stage 1 (0.12277) |
 |---|---:|---:|
-| headline stage 1 | 0.12277 | — |
+| stage 1 | 0.12277 | — |
 | 80,000 further MeanFlow updates | 0.12465 | higher by 1.5% |
-| 80,000 updates against the same minibatch OT targets, no second network | 0.11911 | lower by 3.0% |
+| 80,000 updates on the same minibatch OT targets | 0.11911 | lower by 3.0% |
 
-![Budget controls on the fixed-learning-rate map, with the paired corrector as the reference.](../results/report_figures/fig_followup_budget.png)
+![Stage 1, extra MeanFlow updates, OT updates on the same network, and the paired corrector.](../results/report_figures/fig_followup_budget.png)
 
-*Figure 3. Seed 88, fixed learning rate, 143 held-out cells. The first three bars use no second network. The green bar is the paired corrector from the earlier note, on this same map. It is the reference the two controls do not reach. Completed.*
+*Figure 3. Seed 88, fixed learning rate, 143 held-out cells. Green is the paired corrector from the 18 November note, 0.10429. The other bars are the stage-1 network only. Completed.*
 
-Further MeanFlow updates at \(10^{-3}\) do not help. Putting the corrector's coupling on the stage-1 network removes about 3%, against the 15% removed by the second network on this same map. The coupling matters, and it does not account for the corrector. On the scheduled map the corrector itself is only a 7% reduction, so most of what the second network was buying was a stage 1 that had not been trained with a decaying step size.
-
----
-
-## 3. Where \((r,t)\) is sampled, and whether one step equals two
-
-**Completed.** The sampler is unchanged. Two sigmoid samples of \(\mathcal N(-0.4,1)\) are ordered so that \(t\) is the larger and \(r\) the smaller. Half the batch is set to \(r=t\). One million draws give a fraction 0.9575 with \(t-r<0.5\), and a fraction 0.5000 on the diagonal.
-
-![Where the training sampler puts \((r,t)\), and where the two evaluations sit.](../results/report_figures/fig_followup_intervals.png)
-
-*Figure 4. One million draws from the training sampler. Left: density of \((r,t)\). The bright diagonal is the half of the batch set to \(r=t\). The dashed line is every interval of length 0.5. The one-step evaluation and the two sub-steps are marked, both where the sampler is thin. Right: the cumulative fraction of interval lengths. 95.75% are shorter than 0.5. Completed.*
-
-One-step evaluation is \(x-u(x,0,1)\). Two-step evaluation is \([1,0.5]\) then \([0.5,0]\), each scaled by the interval length. On the 143 held-out cells of the fixed-learning-rate seed-88 map, the two procedures do not return the same cloud. The mean histogram \(W_2\) between them is **0.0814**. The mean particle distance is **0.0303**. This is the gap between the two outputs. It is not either output's distance to the reference.
-
-The sampling fact matches the training code: most intervals are short, and half the batch never leaves the diagonal. The two-step schedule uses two intervals of length 0.5, which the sampler rarely exceeds and does not concentrate on. That is consistent with a composed evaluation disagreeing with the one-step evaluation. It does not by itself say that sub-steps must increase the error. On the fixed-learning-rate map they did. On the scheduled map, section 1, they decrease it. The degradation was a property of that checkpoint, not of the two-parameter family.
+Further MeanFlow updates at \(10^{-3}\) go from 0.12277 to 0.12465. The same budget against the minibatch OT targets, still on this network, reaches 0.11911, about 3% under stage 1. The second network on this map reaches 0.10429, about 15% under stage 1. With the schedule, stage 1 itself moves from 0.12277 to 0.09874, and the corrector on that map removes a further 7.3%.
 
 ---
 
-## 4. \(\alpha=2\) on the other two seeds, and a particle-level check
+## 3. The \((r,t)\) sampler — completed
 
-**Completed.** \(\alpha=2\) stays the value chosen on the seed-88 development split. It was not chosen again.
+The sampler is unchanged. Two draws from \(\mathcal N(-0.4,1)\) pass through a sigmoid; \(t\) is the larger and \(r\) the smaller. Half the batch is set to \(r=t\). In one million draws the fraction with \(t-r<0.5\) is 0.9575, and the fraction on the diagonal is 0.5000.
 
-On the 93 test cells of each held-out split:
+![Density of sampled \((r,t)\), with the one-step pair and the two sub-steps marked.](../results/report_figures/fig_followup_intervals.png)
+
+*Figure 4. One million draws from the training sampler. Left: density of \((r,t)\). The dashed line is interval length 0.5. The star is one step, \((r,t)=(0,1)\); the squares are the two sub-steps. Right: cumulative fraction of \(t-r\). Completed.*
+
+One step is \(x-u(x,0,1)\). Two steps are \([1,0.5]\) and then \([0.5,0]\), each multiplied by its interval length. On the 143 held-out cells of the fixed-learning-rate seed-88 map, the two clouds differ. The mean histogram \(W_2\) between them is **0.0814**, and the mean particle distance is **0.0303**. Both numbers compare the two outputs with each other.
+
+The training intervals are mostly short, and half of each batch sits on \(r=t\). The two-step evaluation uses two intervals of length 0.5, which this sampler seldom draws. On the fixed-learning-rate checkpoint the sub-steps raised the error. On the scheduled checkpoint in section 1 they lower it. The earlier increase belongs to that checkpoint.
+
+---
+
+## 4. \(\alpha=2\) on seeds 89 and 90 — completed
+
+\(\alpha=2\) is the value chosen on the seed-88 development split. I did not run the selection again.
+
+Each row is the 93 test cells of that seed's held-out split.
 
 | seed | \(\alpha=0\) | \(\alpha=1\) | \(\alpha=2\) | \(\alpha=2\) vs \(\alpha=0\) |
 |---|---:|---:|---:|---:|
 | 89 | 0.12967 | 0.10619 | 0.10301 | lower by 20.6% |
 | 90 | 0.11294 | 0.10180 | 0.10417 | lower by 7.8% |
 
-![Test error at three values of alpha, seeds 89 and 90.](../results/report_figures/fig_followup_alpha.png)
+![Seeds 89 and 90 on their 93 test cells, at three values of alpha.](../results/report_figures/fig_followup_alpha.png)
 
-*Figure 5. Mean histogram \(W_2\) on the 93 test cells of each held-out split. \(\alpha=2\) was selected on seed 88 and was not selected again. On seed 90 it is higher than \(\alpha=1\). Completed.*
+*Figure 5. Mean histogram \(W_2\) on 93 test cells. \(\alpha=2\) was chosen on seed 88. Completed.*
 
-On seed 90, \(\alpha=2\) is higher than \(\alpha=1\). The selected strength transfers as a reduction against no corrector. It is not the best of the two positive values on every seed.
+On seed 90, \(\alpha=1\) is 0.10180 and \(\alpha=2\) is 0.10417, so \(\alpha=1\) is lower. On both seeds \(\alpha=2\) is below stage 1. The value chosen on seed 88 is the lower of \(\alpha=1\) and \(\alpha=2\) on seed 89, and the higher of the two on seed 90.
 
-Sliced \(W_2\), 64 projections, seed 88, all 143 held-out cells, fixed learning rate, \(\alpha=1\): stage 1 is 0.02226, stage 1 plus the corrector is 0.01545. This estimator is a lower bound on \(W_2\) from one-dimensional projections. It is not the histogram number, and the reduction on it is larger. The direction agrees with the histogram. Energy distance was not computed. It is quadratic in the particle count.
+Sliced \(W_2\), 64 projections, seed 88, all 143 held-out cells, fixed learning rate, \(\alpha=1\): stage 1 is 0.02226, and stage 1 plus the corrector is 0.01545. This is a lower bound from one-dimensional projections. The histogram \(W_2\) is a different number, and the drop here is larger. The sign is the same. I skipped the energy distance; it scales with the square of the particle count.
 
 Mean absolute relative error of three summaries, same 143 cells:
 
@@ -118,17 +127,17 @@ Mean absolute relative error of three summaries, same 143 cells:
 | rms radius | 0.00756 | 0.00590 |
 | anisotropy | 0.0115 | 0.00735 |
 
-![Relative error of three physical summaries, with and without the corrector.](../results/report_figures/fig_followup_physics.png)
+![Centroid, rms radius, and anisotropy, with and without the corrector.](../results/report_figures/fig_followup_physics.png)
 
-*Figure 6. Mean absolute relative error of three summaries on the same 143 held-out cells. Seed 88, fixed learning rate, \(\alpha=1\). Completed.*
+*Figure 6. Mean absolute relative error on the same 143 cells. Seed 88, fixed learning rate, \(\alpha=1\). Completed.*
 
-The histogram reduction is not an artefact of the 16-bin grid, and it appears in the physical summaries as well.
+The centroid, the rms radius, and the anisotropy all move down with the corrector, in the same direction as the histogram.
 
 ---
 
-## 5. One corrector for three stage-1 seeds
+## 5. One corrector on three seeds — completed
 
-**Completed.** This is the run that was deferred until the four items above had an answer. One corrector, \(\alpha=1\), is trained on the stage-1 residuals of seeds 88, 89, and 90. Each seed keeps its own 40 training cells. The budget is 2,000 updates per seed per cell, 120 groups, 240,000 steps. Each seed is then scored on its own 143 held-out cells. The stage-1 maps are the fixed-learning-rate checkpoints. The scheduled map of section 1 is a different experiment and is not an input here.
+This run waited on the four above. One corrector, \(\alpha=1\), is trained on the stage-1 residuals of seeds 88, 89, and 90. Each seed keeps its own 40 training cells. The budget is 2,000 updates per seed per cell, so 120 groups and 240,000 steps. Scoring is on each seed's own 143 held-out cells. The stage-1 maps are the fixed-learning-rate checkpoints. The scheduled map from section 1 is a separate run and is not an input here.
 
 | seed | stage 1 | shared corrector | reduction | cells lower |
 |---|---:|---:|---:|---:|
@@ -136,16 +145,16 @@ The histogram reduction is not an artefact of the 16-bin grid, and it appears in
 | 89 | 0.12975 | 0.11527 | 11.2% | 143 / 143 |
 | 90 | 0.11203 | 0.10551 | 5.8% | 110 / 143 |
 
-![A corrector paired to each seed, against one corrector shared by all three.](../results/report_figures/fig_followup_multiseed.png)
+![Stage 1, the shared corrector, and the corrector fitted to each seed.](../results/report_figures/fig_followup_multiseed.png)
 
-*Figure 7. Left: histogram \(W_2\) on each seed's own 143 held-out cells. The paired corrector is the one fitted to that seed in the earlier note. The shared corrector is the single network trained in this section. Right: error reduction relative to that seed's stage 1. The shared corrector is positive on every seed and smaller than the paired one, most clearly on seed 88. Completed.*
+*Figure 7. Left: histogram \(W_2\) on each seed's 143 held-out cells. Green is the corrector fitted to that seed in the earlier note. Orange is the one corrector trained on all three seeds. Right: reduction against that seed's stage 1. Completed.*
 
-The mean of the three reductions is 6.3%. The paired correctors in the earlier note, each fitted to its own map, reduce the same three stage-1 means by 14.4% and win 415 of 429 comparisons. Wins here are 327 of 429. Applying the seed-88 corrector unchanged to seeds 89 and 90 was a change of −1.4% and −3.2%. The shared corrector does not repeat that negative result.
+The mean of the three reductions is 6.3%. The paired correctors in the earlier note, each fitted to its own map, reduce these three stage-1 means by 14.4% and win 415 of 429 comparisons. This corrector wins 327 of 429. Putting the seed-88 corrector, unchanged, on seeds 89 and 90 gave −1.4% and −3.2%. The shared corrector is a reduction on all three seeds.
 
-The pattern inside the table is the reason. Seed 89 has the worst stage 1 and receives the largest reduction, on every cell. Seed 88, the map whose own corrector removed 15.0%, receives 1.8%, and loses almost half the cells. The residual fields of the three checkpoints are not the same direction. A corrector that is trained on all three learns a compromise. It no longer moves another seed's cloud the wrong way. It also no longer matches the residual of any one of them as closely as a paired corrector does.
+Seed 89 starts highest, and every one of its 143 cells is lower. Seed 88 drops 1.8%, on 74 of 143 cells; the corrector fitted to seed 88 alone had removed 15.0%. The three residuals differ. On seeds 89 and 90 the shared corrector lowers \(W_2\). The seed-88 corrector, applied to those two seeds unchanged, had raised it.
 
 ---
 
-## 6. Not run
+## 6. Left out
 
-Harry asked that iteration not be pursued. It was not. The gated corrector was left for later. The warm-up schedule was not repeated for the paired corrector on seeds 89 and 90. Row (c) of section 1 is the only warm-up result with three seeds.
+Harry asked me to leave iteration alone, so I did not run it. The gated corrector is still open. I did not retrain the paired corrector under the warm-up schedule for seeds 89 and 90. The only warm-up result with three seeds is row (c) in section 1.
