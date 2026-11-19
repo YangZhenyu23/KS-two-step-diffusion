@@ -30,6 +30,7 @@
 
 ### 变更
 
+- **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：正文保持 DeepSeek 那一稿的说法，七张图换回纵轴从 0 起的 `fig_reply_*.png`。图注按这套图重写：四行图不再画推理代价，预算图不再用竖线，\((r,t)\) 的右图是累积比例，\(\alpha\) 图只画种子 89 和 90 并带上三个物理量，粒子图不再画 7.3% 的外推菱形
 - **`results/ks3d/dp_particle/gain_comparison.json`**：改由 `scripts/report_to_harry_figures.py` 重新生成。补上直方图降幅低于 25% 的五个剪切汇总，字段名与报告一致
 - **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：按 Harry 回信的四项来组织。删去文件路径开头。第 4 节写明 16 箱直方图把格子内的位移抹平，同一对上切片 \(W_2\) 下降 30.6%、直方图下降 15.0%。预算图纵轴改从 0 起，\((r,t)\) 的标记放回坐标内，四行图右侧百分比不再压在种子点上
 - **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：按 11 月 18 日笔记的口气改写。标题改为日期和实验内容，结果先给数字；去掉成套的对照句。数字、图和表未改

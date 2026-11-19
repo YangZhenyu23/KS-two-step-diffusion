@@ -24,9 +24,9 @@ That result sets the tone for the rest. The extra updates are not the explanatio
 
 You asked for the headline and the four-row table to be re-run with scheduled stage 1. The 40 cells are the same ones, and so is the budget of 32,000 updates per cell. Only the learning rate changed: a linear warm-up over the first 2% of the updates to \(10^{-3}\), then cosine down to \(10^{-5}\). The corrector is unchanged, \(\alpha=1\), 2,000 updates per cell.
 
-![Stage 1 and its corrector, at a fixed learning rate and with the schedule.](../results/report_figures/fig_report_ladder.png)
+![Stage 1 and its corrector, at a fixed learning rate and with the schedule.](../results/report_figures/fig_reply_schedule.png)
 
-*Figure 1. Histogram \(W_2\) on the 143 held-out cells, seed 88. The two upper points are the pair from the 18 November note. The two lower points repeat it with the warm-up and cosine. Arrows are the corrector applied to its own stage 1.*
+*Figure 1. Histogram \(W_2\) on the 143 held-out cells, seed 88. Left: stage 1, and the same map after its corrector, once at a fixed learning rate and once with the warm-up. Right: the corrector's own reduction. The axis starts at zero.*
 
 Two numbers matter here. The scheduled stage 1 reaches **0.09874**, which is 19.6% below the fixed-rate stage 1 and, more to the point, 5.3% below **0.10429**, the value the old corrector stopped at. So the schedule bought, for nothing at inference, a slightly larger drop than the second network had bought: 0.0240 against 0.0185. The corrector still helps on top of it, taking 0.09874 to **0.09153**, lower on 128 of the 143 cells, but the reduction is **7.3%** rather than 15.0%.
 
@@ -39,9 +39,9 @@ The four-row table on the 112 cells that both the headline design and all three 
 | (c) | width 112, same schedule, seeds 88/89/90 | 0.10215 ± 0.00133 | +3.6% |
 | (d) | the weights of (a), two sub-steps | 0.08358 | −15.2% |
 
-![The four rows against inference cost.](../results/report_figures/fig_report_cost.png)
+![The four rows on the 112 common cells.](../results/report_figures/fig_reply_four.png)
 
-*Figure 2. The 112 common held-out cells, plotted against inference cost in units of one stage-1 pass. Open circles at 1.0× are the three width-112 seeds; the filled point is their mean.*
+*Figure 2. The 112 common held-out cells. Left: the four rows. The open circles on (c) are the three width-112 seeds. Right: change against one step. A negative bar is a higher error.*
 
 Row (d) is the one I did not expect. On the fixed-rate map, two sub-steps raised the error by 1.3%, and I reported that as a limitation. On the scheduled map the same two sub-steps are the best row in the table, at 2.0× cost against the corrector's 2.97×. If the question is what to buy with a second pass, a second pass of stage 1 buys more than the corrector does on this map. Row (c) also repeats the earlier finding with the schedule in place: a wider single network is worse than the narrow one, so the corrector's gain is still not a capacity effect.
 
@@ -60,9 +60,9 @@ Row (c) in the old table matched parameters and per-pass FLOPs, but the two-stag
 | further updates on the minibatch OT targets | 0.11911 | −3.0% |
 | a separate corrector | 0.10429 | −15.0% |
 
-![The same 80,000 updates spent three ways.](../results/report_figures/fig_report_budget.png)
+![The same 80,000 updates spent three ways.](../results/report_figures/fig_reply_budget.png)
 
-*Figure 3. Seed 88, fixed learning rate, 143 held-out cells. The vertical line is stage 1. Signs are read against it, so a point to the right is a higher error.*
+*Figure 3. Seed 88, fixed learning rate, 143 held-out cells. The signed percentages are against stage 1. A positive sign is a higher error. The axis starts at zero.*
 
 Continuing the MeanFlow loss at \(10^{-3}\) makes it slightly worse, which is consistent with a model that had already flattened out. Aiming the same updates at the transport targets recovers 3.0% of the 15.0%, about a fifth. Your reading was that if control (ii) recovered most of the gain, the contribution would be the coupling rather than the second stage. It does not. Roughly four fifths of the drop needs the correction to be its own map, starting from the identity and penalised for leaving the cloud it is correcting. The coupling contributes, and it is the smaller part.
 
@@ -72,9 +72,9 @@ I did not repeat these two controls under the cosine schedule. On that map the c
 
 The sampler is the one used in training and was not changed for the test: two draws from a normal with mean \(-0.4\) and unit variance, squashed through a sigmoid, larger becomes \(t\), smaller becomes \(r\), and then half of each batch is set to \(r=t\).
 
-![Where the sampler puts (r, t), and how long the intervals are.](../results/report_figures/fig_report_sampling.png)
+![Where the sampler puts (r, t), and how long the intervals are.](../results/report_figures/fig_reply_intervals.png)
 
-*Figure 4. One million draws from the training sampler. Left: the joint density. The star is the one-step evaluation \((0,1)\); the squares are the two sub-steps of length 0.5. Right: interval length, with the half that sits exactly on \(r=t\) left out of the histogram.*
+*Figure 4. One million draws from the training sampler. Left: density of \((r,t)\). The dashed line is length 0.5; the star is one step and the squares are the two sub-steps. Right: the cumulative share of interval length. Half the draws sit on \(r=t\).*
 
 In one million draws, 50.0% sit exactly on the diagonal and 95.8% of the intervals are shorter than 0.5, which leaves 4.2% of the draws as long as each sub-step. The one-step evaluation at \((0,1)\) is also in a low-density corner, but at least it is a single interval the network sees the endpoints of. The sub-steps are not.
 
@@ -92,10 +92,6 @@ That is a large disagreement, and it is measured on the map where the sub-steps 
 | 89 | 0.12967 | 0.10619 | 0.10301 | −20.6% |
 | 90 | 0.11294 | 0.10180 | 0.10417 | −7.8% |
 
-![alpha on each seed's own test cells.](../results/report_figures/fig_report_alpha.png)
-
-*Figure 5. Mean histogram \(W_2\) on 93 test cells per seed. Percentages at the base of each group are \(\alpha=2\) against \(\alpha=0\). \(\alpha=2\) was chosen on seed 88 only.*
-
 The selected value still beats stage 1 on both held-out seeds, so it is not a seed-88 curiosity in sign. In size it is. On seed 89 most of the drop is already there at \(\alpha=1\), and on seed 90 \(\alpha=1\) is the better of the two. I would describe \(\alpha=2\) as selected on one seed and mildly optimistic on the others, not as a transferred setting.
 
 The physical summaries, on the 143 held-out cells of the fixed-rate pair rather than six cells:
@@ -108,6 +104,10 @@ The physical summaries, on the 143 held-out cells of the fixed-rate pair rather 
 
 All three move the same way, and the centroid improves most, which is what a residual correction that transports particles towards the reference should do.
 
+![Alpha on seeds 89 and 90, and the three physical summaries.](../results/report_figures/fig_reply_scope.png)
+
+*Figure 5. Left: mean histogram \(W_2\) on the 93 test cells of seeds 89 and 90. \(\alpha=2\) was chosen on seed 88 and was not chosen again. Right: mean absolute relative error of the three summaries, on the 143 held-out cells of the fixed-rate pair.*
+
 On the metric itself, I have three pieces of evidence and they agree in direction. On this same fixed-rate pair, sliced \(W_2\) along 64 directions over all 143 cells falls from 0.02226 to 0.01545, a **30.6%** reduction against the histogram's 15.0%. Sliced \(W_2\) is a different estimator, so only the relative reduction is comparable.
 
 The exact particle-level coupling in the original dimension I have at \(m=30{,}000\) for one cell of the earlier single-parameter run at \(\sigma=100\), seed 88, with the same 30,000 particles used for both methods.
@@ -118,9 +118,9 @@ The exact particle-level coupling in the original dimension I have at \(m=30{,}0
 | exact OT, \(m=10{,}000\) | 0.15849 | 0.12470 | 21.3% |
 | exact OT, \(m=30{,}000\) | 0.14503 | 0.11164 | 23.0% |
 
-![One cloud scored three ways, and the same comparison across twenty shears.](../results/report_figures/fig_report_binning.png)
+![One cloud scored three ways, and the same comparison across twenty shears.](../results/report_figures/fig_reply_metric.png)
 
-*Figure 6. Left: \(\sigma=100\), seed 88, one cell of the earlier single-parameter clouds, scored as a histogram and as exact couplings at two subsample sizes. Right: twenty shears at \(m=10{,}000\). A point above the dashed line has a larger reduction on the particles than on the histogram. The diamond is where the scheduled 7.3% would land under the fitted line.*
+*Figure 6. Left: \(\sigma=100\), seed 88, one cell of the earlier single-parameter clouds. MeanFlow and the refinement, scored as a 16-bin histogram and as exact couplings at two subsample sizes. Right: twenty shears at \(m=10{,}000\). A point above the dashed line has a larger reduction on the particles than on the histogram. \(\sigma=100\) is marked.*
 
 Leaving the bins raises the reduction from 16.0% to 23.0%, and most of that is already present at 10,000 particles. From 10,000 to 30,000 adds 1.7 points. So the bins hide roughly seven points here, and the subsample size is not the binding constraint.
 
@@ -138,9 +138,9 @@ This was the run you put first. One corrector, \(\alpha=1\), trained on the resi
 | 89 | 0.12975 | 0.11527 | 0.10607 | 11.2% / 18.2% |
 | 90 | 0.11203 | 0.10551 | 0.10082 | 5.8% / 10.0% |
 
-![A corrector fitted to each seed against one corrector for all three.](../results/report_figures/fig_report_multiseed.png)
+![A corrector fitted to each seed against one corrector for all three.](../results/report_figures/fig_reply_multiseed.png)
 
-*Figure 7. Fixed learning rate, each seed scored on its own 143 held-out cells. Percentages on the right are the reduction against that seed's own stage 1.*
+*Figure 7. Fixed learning rate. Left: histogram \(W_2\) on each seed's 143 held-out cells. Right: the reduction against that seed's own stage 1.*
 
 The shared corrector lowers all three, on 327 of 429 cell-level comparisons, and the average reduction is 6.3% against 14.4% for the three fitted correctors. The failure you called the sharpest one is repaired in the direction that matters: the seed-88 corrector applied unchanged to seeds 89 and 90 made them worse by −1.4% and −3.2%, and the shared one improves both, all 143 cells on seed 89.
 
