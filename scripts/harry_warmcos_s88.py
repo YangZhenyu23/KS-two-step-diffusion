@@ -58,16 +58,20 @@ def sample_times_cuda(batch: int, device: torch.device, mean: float = -0.4, std:
     return r[:, None], t[:, None]
 
 
-def train_warmcos(cells: list[G.Cell], config: G.Config, steps: int, seed: int = 88):
+def train_warmcos(cells: list[G.Cell], config: G.Config, steps: int, seed: int = 88,
+                  width: int = 64):
     """Headline update, with the step captured in a CUDA graph.
 
-    The network is only 9,027 parameters, so a plain Python step spends most of
-    its time launching kernels. Replaying one captured step is about four times
-    faster and does not change the batch, the loss, or the schedule.
+    At width 64 the network has 9,027 parameters, so a plain Python step spends
+    most of its time launching kernels. Replaying one captured step is about
+    four times faster and does not change the batch, the loss, or the schedule.
+    ``width`` is 112 only for the capacity-matched row of the same schedule.
     """
     device = torch.device("cuda")
     torch.manual_seed(seed)
-    model = TwoParamMeanflow(width=64, hidden_layers=3, dimension=3, conditioning="log10").to(device)
+    model = TwoParamMeanflow(width=width, hidden_layers=3, dimension=3, conditioning="log10").to(device)
+    n_params = sum(p.numel() for p in model.parameters())
+    log(f"warmcos width {width}, {n_params} parameters, seed {seed}")
     initial, targets = load_training_tensors(cells, device)
     log_sigma, log_mu = model.condition(
         torch.tensor([cell.sigma for cell in cells], device=device),
