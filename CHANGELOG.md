@@ -24,8 +24,13 @@
 
 - **`scripts/harry_followup_queue.py`**：切片 W2 在 NumPy 线性代数初始化第二份 OpenMP 时退出（种子 89/90 的 α 结果已写入）。进程启动时允许该重复运行时，并可用 `--particle` 只续跑种子 88 的切片 W2 与物理量
 
+### 移除
+
+- **`docs/REPLY_TO_HARRY.md`、`docs/REPLY_TO_HARRY.zh.md` 与 `scripts/reply_figures.py` 及 `fig_reply_*.png`**：由 `docs/REPORT_TO_HARRY.*` 取代。旧稿按节复述仓库做过什么，图也把不同格子数的结果画在同一条轴上
+
 ### 变更
 
+- **`results/ks3d/dp_particle/gain_comparison.json`**：改由 `scripts/report_to_harry_figures.py` 重新生成。补上直方图降幅低于 25% 的五个剪切汇总，字段名与报告一致
 - **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：按 Harry 回信的四项来组织。删去文件路径开头。第 4 节写明 16 箱直方图把格子内的位移抹平，同一对上切片 \(W_2\) 下降 30.6%、直方图下降 15.0%。预算图纵轴改从 0 起，\((r,t)\) 的标记放回坐标内，四行图右侧百分比不再压在种子点上
 - **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：按 11 月 18 日笔记的口气改写。标题改为日期和实验内容，结果先给数字；去掉成套的对照句。数字、图和表未改
 - **步数对照补上 \(N=8\)**：第一阶段 \(W_2=0.12736\)（相对一步 −3.7%），再接一次修正器 \(0.11183\)（+8.9%）。中英文笔记与 `fig_nstep.png` 同步
@@ -35,9 +40,10 @@
 
 ### 新增
 
-- **`docs/REPLY_TO_HARRY.md` 与 `docs/REPLY_TO_HARRY.zh.md`**：给 Harry 的回信。同一 40 格、每格 32,000 次更新，热身加余弦后种子 88 的 143 格上，第一步从 0.12277 到 0.09874，修正器再到 0.09153，降幅 7.3%（固定学习率时为 15.0%）。同一张网络上的 OT 更新只收回约五分之一。σ=100 的精确 OT：16 箱直方图降幅 16.0%，m=10,000 为 21.3%，m=30,000 为 23.0%
-- **`scripts/reply_figures.py` 与 `results/report_figures/fig_reply_*.png`**：回信的七张图。纵轴从 0 起，降幅单独成面板
-- **`results/ks3d/dp_particle/gain_comparison.json`**：二十个剪切上，直方图降幅与 m=10,000 粒子级降幅的汇总，以及 σ=100 的 m=30,000
+- **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：重写给 Harry 的报告。按"他问什么—我做了什么—结果如何"组织，开头一张五行对照表，此后每节先给结论。数字未改：调度后修正器降幅 7.3%（固定学习率时 15.0%），同映射两步 15.2% 且只需 2.0×；同一张网络上的 OT 更新只收回约五分之一；子步只有 4.2% 的抽取那么长，一次与两段相差 0.0814；σ=100 上 16 箱 16.0%、m=10,000 为 21.3%、m=30,000 为 23.0%，按二十个剪切拟合后调度那对约 9.6%（90% 区间 7.1–11.9）；三种子共用一个修正器平均降 6.3%，种子 88 从 15.0% 落到 1.8%
+- **`docs/REPORT_TO_HARRY.docx`、`.pdf` 与中文对应两份**：Pandoc 导出，七张图内嵌，公式为 Word 公式对象
+- **`scripts/report_to_harry_figures.py` 与 `results/report_figures/fig_report_*.png`**：七张一图一事的图。阶梯图只画同 143 格的两对；代价-误差图把四行放到同一坐标系；预算图用哑铃图；抽样图省掉对角线上那一半；alpha 图并上被选中的种子 88；装箱图加一条二十剪切的拟合线；多种子图只画降幅
+- **`results/report_figures/report_fit.json`**：装箱拟合的斜率、截距、残差与自助区间
 - **`results/report_figures/fig_followup_metric.png`**：固定学习率种子 88 上，16 箱直方图的相对下降 15.0%，64 个投影的切片 \(W_2\) 为 30.6%。只画下降比例
 - **`scripts/followup_figures.py` 与七张 `results/report_figures/fig_followup_*.png`**：补充笔记的图。143 格上固定学习率与 warmcos 的对照、112 格四行表、预算对照、\((r,t)\) 抽样密度、种子 89/90 的 \(\alpha\)、物理量相对误差、三种子共享修正器对配对修正器。中英文笔记同步插入
 - **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：Harry 四项补实验与多种子残差修正器的中英笔记。在 warm-up + cosine 的第一步上，修正器只降 7.3%，同映射两步降 15.2%，宽度 112 高 3.6%；共享修正器三种子平均降 6.3%

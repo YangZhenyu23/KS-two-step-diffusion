@@ -1,0 +1,13 @@
+{
+  "binning_fit": {
+    "slope": 1.0323506282083657,
+    "intercept": 2.0742519795944836,
+    "residual_sd": 2.495397807048485,
+    "predicted_at_7_3": 9.610411565515554,
+    "bootstrap_5": 7.103122921728536,
+    "bootstrap_95": 11.942196134315404
+  },
+  "shears_above_line": 18,
+  "mean_histogram_gain_20": 39.11404634411896,
+  "mean_particle_gain_20": 42.453662294716814
+}
