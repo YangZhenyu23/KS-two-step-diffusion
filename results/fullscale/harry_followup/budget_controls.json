@@ -1,0 +1,8 @@
+{
+  "n_held_out": 143,
+  "extra_updates": 80000,
+  "headline_mf": 0.12276673234794717,
+  "extra_mf_updates": 0.1246544193496638,
+  "ot_finetune_same_network": 0.11910603363559288,
+  "note": "OT uses SciPy linear_sum_assignment. On a 2000-point batch it matched POT emd's optimal cost and took 0.38 s instead of 1.89 s."
+}

@@ -11,6 +11,12 @@ Timing choice, measured on this machine:
 """
 from __future__ import annotations
 
+import os
+
+# Torch 与 NumPy/MKL 各带一份 libiomp5md。切片 W2 第一次进到线性代数时会因此直接退出。
+# 必须在 import numpy 之前设置。
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 import json
 import math
 import subprocess
@@ -320,7 +326,11 @@ def alpha_metrics_physics() -> None:
         alpha_rows[str(seed)] = means
         log(f"  seed {seed} test n={len(chosen)} alpha2 gain {means['gain_alpha2']:+.1%}")
     write_json(OUT / "alpha_seeds.json", alpha_rows)
+    particle_and_physics()
 
+
+def particle_and_physics() -> None:
+    device = "cuda"
     mf, _ = load_two(MF[88], device)
     corrector = load_dp(88, 1.0, device)
     held = held_out(cells_from_checkpoint(MF[88]))
@@ -368,4 +378,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if "--particle" in sys.argv:
+        OUT.mkdir(parents=True, exist_ok=True)
+        timed("particle_and_physics", particle_and_physics)
+        log("QUEUE DONE")
+        raise SystemExit(0)
     raise SystemExit(main())

@@ -1,0 +1,12 @@
+{
+  "schedule": "warmcos",
+  "seed": 88,
+  "n_train": 40,
+  "n_held_out": 143,
+  "stage1_seconds": 879.2134133999998,
+  "corrector_seconds": 4795.2534109,
+  "mf_mean_w2": 0.09873952703702839,
+  "mf_dp_mean_w2": 0.09153228233670548,
+  "relative_reduction": 0.07299249770175742,
+  "dp_wins": 128
+}
