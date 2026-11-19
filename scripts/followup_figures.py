@@ -89,9 +89,9 @@ def fig_schedule() -> None:
         label_bar(ax, bar, value, 0.0016)
     ax.axhline(paired["mf_dp_mean_w2"], color=INK, ls="--", lw=0.9, zorder=0)
     ax.text(
-        1.48, paired["mf_dp_mean_w2"] + 0.0012,
-        "fixed-lr corrected",
-        ha="right", va="bottom", fontsize=7.5, color=INK,
+        0.52, paired["mf_dp_mean_w2"] + 0.0016,
+        "fixed-lr corrected\n0.1043",
+        ha="left", va="bottom", fontsize=7.5, color=INK,
     )
     ax.set_xticks(xs, [row[0] for row in groups])
     ax.set(ylabel="held-out $W_2$, 143 cells, seed 88", ylim=(0.082, 0.142))
@@ -149,11 +149,10 @@ def fig_four_row() -> None:
         if value >= 0:
             text_y, valign = value + 0.55, "bottom"
         else:
-            lowest = min([value, *row[3]]) if row[3] is not None else value
-            text_y, valign = lowest - 1.6, "top"
+            text_y, valign = 1.1, "bottom"
         axes[1].text(center, text_y, f"{value:+.1f}%", ha="center", va=valign, fontsize=8, color=INK)
     axes[1].set_xticks(gain_x, [row[0] for row in gain_keys], fontsize=8)
-    axes[1].set(ylabel="error reduction vs (a), percent", ylim=(-11, 20))
+    axes[1].set(ylabel="error reduction vs (a), percent", ylim=(-7.5, 19))
     axes[1].grid(alpha=0.2, ls="--", axis="y")
     fig.savefig(OUT / "fig_followup_four_row.png", bbox_inches="tight")
     plt.close(fig)
@@ -181,7 +180,7 @@ def fig_budget() -> None:
     for bar, value in zip(bars, values):
         label_bar(ax, bar, value, 0.0012)
     ax.set_xticks(np.arange(4), labels, fontsize=8)
-    ax.set(ylabel="held-out $W_2$, 143 cells, seed 88", ylim=(0.096, 0.140))
+    ax.set(ylabel="held-out $W_2$, 143 cells, seed 88", ylim=(0, 0.155))
     ax.grid(alpha=0.2, ls="--", axis="y")
     fig.savefig(OUT / "fig_followup_budget.png", bbox_inches="tight")
     plt.close(fig)
@@ -216,12 +215,14 @@ def fig_intervals() -> None:
     )
     axes[0].plot([0, 1], [0, 1], color="white", lw=0.8, alpha=0.85)
     axes[0].plot([0, 0.5], [0.5, 1.0], color="white", ls="--", lw=1.1)
-    axes[0].scatter([0.0], [1.0], s=64, marker="*", color="white", edgecolor=INK, linewidths=0.7,
-                    zorder=5, clip_on=False, label="one step, $(r,t)=(0,1)$")
-    axes[0].scatter([0.0, 0.5], [0.5, 1.0], s=32, marker="s", color=ORANGE, edgecolor="white",
-                    linewidths=0.7, zorder=5, clip_on=False, label="two sub-steps, length 0.5")
-    axes[0].set(xlabel="$r$", ylabel="$t$", xlim=(-0.04, 1.04), ylim=(-0.04, 1.04), aspect="equal")
-    axes[0].legend(frameon=True, framealpha=0.92, fontsize=7, loc="lower right")
+    axes[0].scatter([0.0], [1.0], s=70, marker="*", color="white", edgecolor=INK, linewidths=0.8,
+                    zorder=6, label="one step, $(r,t)=(0,1)$")
+    axes[0].scatter([0.0, 0.5], [0.5, 1.0], s=36, marker="s", color=ORANGE, edgecolor="white",
+                    linewidths=0.8, zorder=6, label="two sub-steps, length 0.5")
+    axes[0].annotate("one step", xy=(0.0, 1.0), xytext=(0.10, 0.86),
+                     fontsize=7.5, color=INK, arrowprops={"arrowstyle": "->", "color": INK, "lw": 0.7})
+    axes[0].set(xlabel="$r$", ylabel="$t$", xlim=(-0.08, 1.08), ylim=(-0.08, 1.08), aspect="equal")
+    axes[0].legend(frameon=True, framealpha=0.94, fontsize=7, loc="lower right")
     fig.colorbar(hexbin, ax=axes[0], fraction=0.046, pad=0.04).set_label("draws per bin")
 
     quantiles = np.linspace(0, 1, 400)
@@ -297,6 +298,27 @@ def fig_physics() -> None:
     print("  wrote fig_followup_physics.png")
 
 
+def fig_metric() -> None:
+    """Relative drop on one pair: histogram against sliced W2. Absolute levels differ."""
+    paired = load(PAIRED / "s88" / "summary.json")
+    particle = load(FOLLOW / "particle_and_physics.json")
+    hist = 100 * (paired["mf_mean_w2"] - paired["mf_dp_mean_w2"]) / paired["mf_mean_w2"]
+    sliced = 100 * (particle["sliced_w2_mf"] - particle["sliced_w2_mf_dp"]) / particle["sliced_w2_mf"]
+    labels = ["16-bin\nhistogram", "sliced $W_2$\n64 projections"]
+    values = [hist, sliced]
+    fig, ax = plt.subplots(figsize=(4.6, 3.4), layout="constrained")
+    bars = ax.bar(np.arange(2), values, color=[BLUE, GREEN], width=0.62)
+    for bar, value in zip(bars, values):
+        ax.text(bar.get_x() + bar.get_width() / 2, value + 0.6, f"{value:.1f}%",
+                ha="center", va="bottom", fontsize=9, color=INK)
+    ax.set_xticks(np.arange(2), labels)
+    ax.set(ylabel="reduction on the fixed-lr pair, percent", ylim=(0, 40))
+    ax.grid(alpha=0.2, ls="--", axis="y")
+    fig.savefig(OUT / "fig_followup_metric.png", bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote fig_followup_metric.png  hist={hist:.2f} sliced={sliced:.2f}")
+
+
 def fig_multiseed() -> None:
     shared = load(FOLLOW / "multiseed_corrector" / "summary.json")
     seeds = ("88", "89", "90")
@@ -351,6 +373,7 @@ def main() -> None:
     fig_intervals()
     fig_alpha()
     fig_physics()
+    fig_metric()
     fig_multiseed()
 
 
