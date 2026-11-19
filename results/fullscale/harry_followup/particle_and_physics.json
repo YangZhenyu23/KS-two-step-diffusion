@@ -1,0 +1,19 @@
+{
+  "n_held_out": 143,
+  "sliced_w2_projections": 64,
+  "sliced_w2_mf": 0.022256067078890534,
+  "sliced_w2_mf_dp": 0.015447569020777848,
+  "mean_abs_relative_error": {
+    "mf": {
+      "centroid_x": 0.02752616514191676,
+      "rms_radius": 0.007557128469133729,
+      "anisotropy": 0.01151753090558539
+    },
+    "mf_dp": {
+      "centroid_x": 0.018576160493735016,
+      "rms_radius": 0.005898763003369382,
+      "anisotropy": 0.007351832812766392
+    }
+  },
+  "note": "64 projections, not 256: each projection sorts 1e5 particles, and 64 already compares the two clouds on the same directions. Energy distance was not used; it is quadratic in the particle count."
+}
