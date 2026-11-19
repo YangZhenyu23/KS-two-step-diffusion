@@ -13,6 +13,7 @@ import time
 
 import numpy as np
 import torch
+from torch.func import jvp
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -20,9 +21,9 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from fullscale import grid as G  # noqa: E402
 from fullscale.evaluate import score_many, write_csv, write_json  # noqa: E402
-from fullscale.model import TwoParamMeanflow, sample_two_param  # noqa: E402
-from fullscale.train import _save, load_cell  # noqa: E402
-from lr_schedule import train as train_scheduled  # noqa: E402
+from fullscale.model import TwoParamMeanflow, meanflow_loss, sample_two_param  # noqa: E402
+from fullscale.train import _save, load_cell, load_training_tensors  # noqa: E402
+from lr_schedule import schedule_value  # noqa: E402
 from dp_two_param import apply_corrector, train_corrector  # noqa: E402
 
 HEADLINE = G.RESULTS / "optimal_budget_ablation" / "two_32000" / "mf_two_param.pt"
@@ -43,6 +44,85 @@ def cells_from_checkpoint(path: Path) -> list[G.Cell]:
     if missing:
         raise SystemExit(f"unknown cell keys: {missing[:5]}")
     return [by_key[key] for key in keys]
+
+
+def sample_times_cuda(batch: int, device: torch.device, mean: float = -0.4, std: float = 1.0):
+    """Same rule as sample_times, executed on the GPU."""
+    samples = torch.sigmoid(torch.randn(batch, 2, device=device) * std + mean)
+    left, right = samples[:, 0], samples[:, 1]
+    t = torch.maximum(left, right)
+    r = torch.minimum(left, right)
+    chosen = torch.randperm(batch, device=device)[: batch // 2]
+    r = r.clone()
+    r[chosen] = t[chosen]
+    return r[:, None], t[:, None]
+
+
+def train_warmcos(cells: list[G.Cell], config: G.Config, steps: int, seed: int = 88):
+    """Headline update, with the step captured in a CUDA graph.
+
+    The network is only 9,027 parameters, so a plain Python step spends most of
+    its time launching kernels. Replaying one captured step is about four times
+    faster and does not change the batch, the loss, or the schedule.
+    """
+    device = torch.device("cuda")
+    torch.manual_seed(seed)
+    model = TwoParamMeanflow(width=64, hidden_layers=3, dimension=3, conditioning="log10").to(device)
+    initial, targets = load_training_tensors(cells, device)
+    log_sigma, log_mu = model.condition(
+        torch.tensor([cell.sigma for cell in cells], device=device),
+        torch.tensor([cell.mu for cell in cells], device=device),
+        dtype=torch.float32, device=device)
+    lr = torch.tensor(1e-3, device=device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, capturable=True)
+    batch = 4096
+    loss_box: dict[str, torch.Tensor] = {}
+
+    def step() -> None:
+        env = torch.randint(len(cells), (1,), device=device).expand(batch)
+        idx = torch.randint(config.n_train, (batch,), device=device)
+        x_target = targets[env, idx]
+        x_source = initial[idx]
+        r, t = sample_times_cuda(batch, device)
+        velocity = x_source - x_target
+        z = (1 - t) * x_target + t * x_source
+        u, derivative = jvp(
+            lambda zz, rr, tt: model(zz, rr, tt, log_sigma[env, None], log_mu[env, None]),
+            (z, r, t), (velocity, torch.zeros_like(r), torch.ones_like(t)))
+        loss, _ = meanflow_loss(u - (velocity - (t - r) * derivative).detach())
+        loss_box["loss"] = loss
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
+
+    def learning_rate(index: int) -> float:
+        return schedule_value("warmcos", index, steps, 1e-3, 1e-5, 0.02)
+
+    stream = torch.cuda.Stream()
+    stream.wait_stream(torch.cuda.current_stream())
+    with torch.cuda.stream(stream):
+        for index in range(3):
+            lr.fill_(learning_rate(index))
+            step()
+    torch.cuda.current_stream().wait_stream(stream)
+    graph = torch.cuda.CUDAGraph()
+    lr.fill_(learning_rate(3))
+    with torch.cuda.graph(graph):
+        step()
+
+    records = []
+    started = time.perf_counter()
+    for index in range(4, steps):
+        lr.fill_(learning_rate(index))
+        graph.replay()
+        done = index + 1
+        if done % 20000 == 0 or done == steps:
+            torch.cuda.synchronize()
+            loss_value = float(loss_box["loss"])
+            records.append({"step": done, "loss": loss_value, "lr": learning_rate(index)})
+            log(f"  step {done}/{steps} loss={loss_value:.6g} lr={learning_rate(index):.3g}")
+    seconds = time.perf_counter() - started
+    return model.eval().requires_grad_(False), records, seconds
 
 
 def held_out(train: list[G.Cell]) -> list[G.Cell]:
@@ -68,14 +148,8 @@ def main() -> int:
 
     steps = 32_000 * len(cells)
     config = G.Config(n_train=G.N_PARTICLES, device="cuda")
-    model = TwoParamMeanflow(width=64, hidden_layers=3, dimension=3, conditioning="log10")
-    log(f"warmcos stage 1: {steps} steps, lr 1e-3 -> 1e-5, warmup 2%")
-    started = time.perf_counter()
-    model, records = train_scheduled(
-        model, cells, config, steps=steps, schedule="warmcos",
-        lr0=1e-3, eta_min=1e-5, batch_size=4096, warmup_frac=0.02, seed=88,
-    )
-    stage1_seconds = time.perf_counter() - started
+    log(f"warmcos stage 1: {steps} steps, lr 1e-3 -> 1e-5, warmup 2%, CUDA graph")
+    model, records, stage1_seconds = train_warmcos(cells, config, steps, seed=88)
     _save(OUT / "mf_two_param.pt", model, cells, config, steps, 88)
     (OUT / "stage1_log.json").write_text(json.dumps({
         "schedule": "warmcos", "seed": 88, "steps": steps,
