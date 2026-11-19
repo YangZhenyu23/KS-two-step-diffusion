@@ -35,6 +35,9 @@
 
 ### 新增
 
+- **`docs/REPLY_TO_HARRY.md` 与 `docs/REPLY_TO_HARRY.zh.md`**：给 Harry 的回信。同一 40 格、每格 32,000 次更新，热身加余弦后种子 88 的 143 格上，第一步从 0.12277 到 0.09874，修正器再到 0.09153，降幅 7.3%（固定学习率时为 15.0%）。同一张网络上的 OT 更新只收回约五分之一。σ=100 的精确 OT：16 箱直方图降幅 16.0%，m=10,000 为 21.3%，m=30,000 为 23.0%
+- **`scripts/reply_figures.py` 与 `results/report_figures/fig_reply_*.png`**：回信的七张图。纵轴从 0 起，降幅单独成面板
+- **`results/ks3d/dp_particle/gain_comparison.json`**：二十个剪切上，直方图降幅与 m=10,000 粒子级降幅的汇总，以及 σ=100 的 m=30,000
 - **`results/report_figures/fig_followup_metric.png`**：固定学习率种子 88 上，16 箱直方图的相对下降 15.0%，64 个投影的切片 \(W_2\) 为 30.6%。只画下降比例
 - **`scripts/followup_figures.py` 与七张 `results/report_figures/fig_followup_*.png`**：补充笔记的图。143 格上固定学习率与 warmcos 的对照、112 格四行表、预算对照、\((r,t)\) 抽样密度、种子 89/90 的 \(\alpha\)、物理量相对误差、三种子共享修正器对配对修正器。中英文笔记同步插入
 - **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：Harry 四项补实验与多种子残差修正器的中英笔记。在 warm-up + cosine 的第一步上，修正器只降 7.3%，同映射两步降 15.2%，宽度 112 高 3.6%；共享修正器三种子平均降 6.3%

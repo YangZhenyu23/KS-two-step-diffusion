@@ -1,0 +1,25 @@
+{
+  "n_shears_m10000": 20,
+  "mean_histogram_gain_m10000": 0.3911404634411896,
+  "mean_particle_gain_m10000": 0.42453662294716815,
+  "median_histogram_gain_m10000": 0.3968695371214205,
+  "median_particle_gain_m10000": 0.41416097706528143,
+  "sigma100": {
+    "histogram_mf": 0.18310698639285874,
+    "histogram_mf_dp": 0.15374054861326497,
+    "histogram_gain": 0.16037857625261576,
+    "m10000_gain": 0.21316782120755998,
+    "m30000_mf": 0.1450312534146517,
+    "m30000_mf_dp": 0.1116440173801952,
+    "m30000_gain": 0.23020718119977004,
+    "seconds": {
+      "mf": 437.45,
+      "mf_dp": 330.54
+    }
+  },
+  "shears_with_histogram_gain_below_25pct": {
+    "n": 5,
+    "mean_histogram_gain": 0.13723582336176623,
+    "mean_particle_gain": 0.16951558183890952
+  }
+}
