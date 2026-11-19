@@ -27,6 +27,7 @@
 - **`HARRY_NOTE_for_Harry.zip`** — 发给老师的英文笔记压缩包：根目录 `HARRY_NOTE.md`（图片路径改为 `results/...`）及笔记引用的 10 张图，不含中文稿。重新打包后 `.md` 按普通文件写入，Windows 资源管理器可以解出该文件
 - **`scripts/harry_warmcos_s88.py`** — 用主 checkpoint 记下的 40 格，以 warm-up + cosine 重训种子 88 的第一步，再按原协议训修正器。第一步的更新用 CUDA graph 重放：批量仍是 4096，每步从 3.6 ms 降到 0.8 ms
 - **`.cursor/rules/gpu-training.mdc`** — 之后的训练先量单步时间；启动开销卡住时用 CUDA graph，不靠加大批量刷占用率；精确 OT 仍在 CPU
+- **`scripts/harry_followup_queue.py`** — warmcos 结束后自动跑预算对照、一致性、α 的另两个种子、切片 W2 和全部留出格的物理量。OT 指派改用同样最优的 Hungarian（2000 点上 0.38 秒对 1.89 秒）
 - **`docs/HARRY_NOTE.md` 与 `docs/HARRY_NOTE.zh.md` 第 10 节** — 写入道通实习的非保密摘要：硬件与采集系统、用当前观测移动 flow matching 先验以缩短推理、用 world model 预测画面生成并衔接下一段动作；任务成功率不变，延迟缩短、动作一致性改进，不报告具体数字
 - **`docs/HARRY_NOTE.pdf`、`docs/HARRY_NOTE.zh.pdf`** 已按道通摘要重新导出。临时文件 `HARRY_NOTE.new.pdf` 已并入 `HARRY_NOTE.pdf` 后删除
 - **`HARRY_NOTE_for_Harry.zip`** — 按更新后的英文稿重新打包，`.md` 以普通文件写入
