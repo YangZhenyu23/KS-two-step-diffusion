@@ -33,6 +33,7 @@
 
 ### 新增
 
+- **`scripts/followup_figures.py` 与七张 `results/report_figures/fig_followup_*.png`**：补充笔记的图。143 格上固定学习率与 warmcos 的对照、112 格四行表、预算对照、\((r,t)\) 抽样密度、种子 89/90 的 \(\alpha\)、物理量相对误差、三种子共享修正器对配对修正器。中英文笔记同步插入
 - **`docs/HARRY_FOLLOWUP.md` 与 `docs/HARRY_FOLLOWUP.zh.md`**：Harry 四项补实验与多种子残差修正器的中英笔记。在 warm-up + cosine 的第一步上，修正器只降 7.3%，同映射两步降 15.2%，宽度 112 高 3.6%；共享修正器三种子平均降 6.3%
 - **四行表的 (a)(b)(d) 已在 112 个共同留出格上重算**（warmcos 种子 88）：一步 0.09859，两步 0.08358（相对一步 −15.2%），加修正器 0.09150（−7.2%，99/112）。宽度 112 的三种子结果见下面的复现条
 - **`scripts/harry_remaining.py`**：用已训好的 warmcos 种子 88 在共同留出格上重算四行表的 (a)(b)(d)；宽度 112 按各 checkpoint 自己的 40 格、同一套 warmcos 重训三种子，作为 (c)。随后用种子 88/89/90 的固定学习率第一步，训一个共享修正器。指派用 Hungarian，和 POT 的最优代价相同
