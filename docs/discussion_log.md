@@ -275,14 +275,14 @@ Geng、Deng、Bai、Kolter、He，arXiv:2505.13447。表 1(a) 只比较了 \(r\n
 
 单参数那 18/20 和双参数用的是同一套时间。训练都是 \(\mathcal N(-0.4,1)\) 过 sigmoid，\(t\) 取大、\(r\) 取小，再把一半样本改成 \(r=t\)。两步推理都是固定切成 \([1,0.5]\) 和 \([0.5,0]\)，每段长度 0.5，没有搜过这个长度。所以单参数大多变好、双参数固定学习率变差，不是因为时间抽样或步长选得不一样。物理模拟的 \(dt=0.005\) 是造参考云用的，不参与这一对比。
 
-### 可寄出的问题 3
+### 问题 3 的最终版本
 
-保留的：单参数 18/20 变好、固定学习率双参数变差、两边抽样相同；论文里 \(r\neq t\) 的比例会改变一步 FID；多步不是当前重点，改抽样或改积分器都还没做。删掉的：「改了双参数的时间抽样，多步一定更好。」同一套抽样下符号已经能翻，论文也没有在两步上测过这个比例。
+已写入 `docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md` 第 3 节。中文是下面这一稿，英文与它对齐。最后一句是后续方向：参数在二维曲面上，能否用别的数值方法代替欧拉前馈，不是这次实验的重点。
 
-Two-step intervals of length 0.5 are rarely drawn. Both the one-parameter and the two-parameter models use the same sampler: two draws from a normal with mean \(-0.4\) and unit variance, passed through a sigmoid, with \(t\) the larger and \(r\) the smaller, and half of each batch set to \(r=t\). In one million draws, 50.0% lie on \(r=t\) and 95.8% are shorter than 0.5, so 4.2% are at least as long as a sub-step. Two-step inference is the same fixed split in both models, \([1,0.5]\) then \([0.5,0]\). The step length was not chosen by a search.
+两步用的长度 0.5 的区间，训练时很少抽到。单参数模型和双参数模型用的是同一个抽样器：从均值 \(-0.4\)、标准差 \(1\) 的正态里抽两个数，过 sigmoid，大的作为 \(t\)，小的作为 \(r\)，每一批再把一半改成 \(r=t\)。一百万次抽取里，50.0% 落在 \(r=t\) 上，95.8% 短于 0.5，所以只有 4.2% 至少达到一个子步的长度。两个模型的两步推理都是同一种固定切分，先 \([1,0.5]\)，再 \([0.5,0]\)。这个步长不是搜出来的。
 
-On the fixed-rate two-parameter map the two procedures disagree. Over 143 held-out cells the histogram \(W_2\) between the one-step cloud and the two-step cloud is 0.0814, and particles that share a source end 0.0303 apart. Against the reference, on the 112 common cells, the error rises from 0.12271 to 0.12435, by 1.3%. The same split on the one-parameter KS3D runs lowers the error at 18 of 20 values of \(\sigma\), by about 2% to 9%, and raises it at \(\sigma=10\) and \(\sigma=20\). The sampler and the split are the same, so that difference in sign is not a difference in how time was sampled.
+在固定学习率的双参数映射上，这两种算法给出的云并不相同。143 个留出格上，一步的云和两步的云之间，直方图 \(W_2\) 是 0.0814；来自同一颗源粒子的点，平均分开 0.0303。相对参考云，在 112 个共同格子上，误差从 0.12271 升到 0.12435，高 1.3%。同一种切分用在单参数的 KS3D 上，20 个 \(\sigma\) 里有 18 个误差下降，大约低 2% 到 9%；\(\sigma=10\) 和 \(\sigma=20\) 上升。抽样器和切分是同一套，所以符号不同并不是时间抽样不同。
 
-MeanFlow reports that the fraction of training pairs with \(r\neq t\) changes one-step FID: 0% gives 328.91, 25% gives 61.06, 50% gives 63.14, and 100% gives 67.32. Both of our models use 50%. That comparison is one-step ImageNet FID. It does not measure two-step error, so I would not claim that changing the fraction is sure to improve two-step evaluation. On the scheduled two-parameter model the sampler is unchanged, and two steps fall from 0.09859 to 0.08358, 15.2% below one step. The fixed-rate rise is what rare intervals lead one to expect from an under-trained field. It is not a property of the two-parameter family.
+MeanFlow 报告，训练样本里 \(r\neq t\) 的比例会改变一步生成的 FID：0% 是 328.91，25% 是 61.06，50% 是 63.14，100% 是 67.32。我们的两个模型都用 50%。这张比较是 ImageNet 上的一步 FID，没有测两步误差，所以我不能说改这个比例就一定能改善两步求值。在带学习率日程的双参数模型上，抽样器没有改，两步从 0.09859 降到 0.08358，比一步低 15.2%。固定学习率上的升高，是这些很少出现的区间在一个没训稳的速度场上会有的结果。它不属于双参数这个模型族。
 
-I have not changed the sampler or the Euler update, and I am not pursuing that here. The project is the one-step map. Whether a different \((r,t)\) distribution, or an integrator other than this Euler step, would improve two-step evaluation is open.
+因为双参数模型的参数分布在二维曲面上，是否可以选取适当的数值方法替代欧拉前馈，从而改进效果，是后续可以研究的方向。目前不是这次实验所考虑的重点。

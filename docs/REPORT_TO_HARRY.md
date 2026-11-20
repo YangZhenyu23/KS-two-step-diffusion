@@ -51,15 +51,17 @@ These two controls are on the fixed-rate network, which is the network whose 15%
 
 ## 3. Sub-steps are evaluated off the training measure
 
-The sub-step degradation on the fixed-rate map is a property of where the sampler looks, not of the parametric family. Two draws from a normal with mean \(-0.4\) and unit variance pass through a sigmoid. The larger is \(t\) and the smaller is \(r\). Half of each batch is then set to \(r=t\).
+Intervals of length 0.5, the ones used by two steps, are rarely drawn in training. The one-parameter model and the two-parameter model share one sampler: two draws from a normal with mean \(-0.4\) and unit variance pass through a sigmoid, the larger becomes \(t\) and the smaller \(r\), and half of each batch is then set to \(r=t\). In one million draws, 50.0% lie on \(r=t\) and 95.8% are shorter than 0.5, so 4.2% are at least as long as one sub-step. Two-step inference uses the same fixed split in both models, \([1,0.5]\) and then \([0.5,0]\). That step length was not chosen by a search.
 
 ![Where training samples \((r,t)\), and how long the intervals are.](../results/report_figures/fig_reply_intervals.png)
 
 *Figure 4. One million draws. Left: density of \((r,t)\). The dashed line has length 0.5. The star is one step, \((0,1)\); the squares are the two sub-steps. Right: the cumulative share of interval length.*
 
-In that million draws, 50.0% lie on the diagonal and 95.8% are shorter than 0.5, so 4.2% are as long as one of the sub-steps used at evaluation. One step, at \((0,1)\), is also rare, but it is a single interval. The sub-steps are two intervals of a length the sampler almost never draws.
+On the fixed-rate two-parameter map the two procedures do not produce the same cloud. Over 143 held-out cells the histogram \(W_2\) between the one-step cloud and the two-step cloud is 0.0814, and particles that share a source end 0.0303 apart. Against the reference, on the 112 common cells, the error rises from 0.12271 to 0.12435, by 1.3%. The same split on the one-parameter KS3D runs lowers the error at 18 of 20 values of \(\sigma\), by about 2% to 9%, and raises it at \(\sigma=10\) and \(\sigma=20\). The sampler and the split are the same, so the difference in sign is not a difference in how time was sampled.
 
-On the fixed-rate map, over all 143 held-out cells, one evaluation from 1 to 0 and the composition \([1,0.5]\) then \([0.5,0]\) produce clouds that differ by a histogram \(W_2\) of **0.0814**. Particles that share a source end **0.0303** apart. Both numbers compare the two procedures with each other. On that same map the composition is also farther from the reference than the single evaluation, which is the 1.3% rise above. The scheduled map reverses the comparison with the reference: there the composition is the best of the four rows in Section 1. The disagreement can be measured on both maps. Why its sign flips is not determined by the sampling frequencies alone.
+MeanFlow reports that the fraction of training pairs with \(r\neq t\) changes one-step FID: 0% gives 328.91, 25% gives 61.06, 50% gives 63.14, and 100% gives 67.32. Both of our models use 50%. That comparison is one-step ImageNet FID and does not measure two-step error, so I would not say that changing the fraction is sure to improve two-step evaluation. On the scheduled two-parameter model the sampler is unchanged, and two steps fall from 0.09859 to 0.08358, 15.2% below one step. The rise at the fixed learning rate is what these rarely drawn intervals produce on a velocity field that has not been trained firmly. It is not a property of the two-parameter family.
+
+The parameters of the two-parameter model lie on a two-dimensional surface. Whether a numerical method other than the Euler feedforward step can improve the result is a direction for later work. It is not the focus of the present experiments.
 
 ## 4. The chosen \(\alpha\) keeps its sign, and the bins hide a few points
 
