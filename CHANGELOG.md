@@ -42,6 +42,8 @@
 
 ### 新增
 
+- **`scripts/warmcos_direction_sliced.py`、`scripts/warmcos_lambda0.py`**：143 格上切片 \(W_2\) 0.01302→0.01175（+9.8%），两段与修正器位移的平均余弦 0.275。\(\lambda=0\) 的修正器 0.09874→0.09147（+7.4%，78/143）。结果在 `direction_and_sliced.json` 与 `warmcos_s88_lambda0/summary.json`
+- **`docs/discussion_log.md`**：第 2、3、5 项的结果。切片 \(W_2\) 降 9.8%（直方图 7.3%）；两段位移和修正器位移的平均余弦 0.275。\(\lambda=0\) 再训后平均仍是 7.4%，但只赢 78/143，低 \(\mu\) 变差、高 \(\mu\) 从约 12% 升到约 16%
 - **`docs/discussion_log.md`**：warmcos 修正器的 7.3% 按 \(\mu\) 拆开。\(\mu\le 0.631\) 约 1.9%，\(\mu\ge 2.51\) 约 9% 到 12%。列出五项还没跑的实验，用来区分「终端耦合」和「一步求值没切够」
 - **`scripts/warmcos_residual_heatmap.py` 与三张 `fig_corrector_*.png`**：warmcos 种子 88 的 \(x\)–\(z\) 投影。密度三行几乎看不出差别；\(\Delta x\) 是一块左右相反的平滑场，\(\mu=10\) 上剪切越强越深。讨论记在 `docs/discussion_log.md`，未写入给 Harry 的笔记
 - **`docs/discussion_log.md`**：和 Harry 四问的讨论记录，不并进给老师的笔记。先记下学习率这一问。补了一条核对：种子 88 的修正器是在新的 warmcos 第一步上从头训的，权重和旧修正器不同
