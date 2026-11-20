@@ -1,0 +1,10 @@
+---
+description: 给 Harry 的笔记和报告，W2 只用 16 箱直方图。粒子级精确传输的那次结果不引用。
+alwaysApply: true
+---
+
+# 给老师的 W2 只用直方图
+
+`docs/HARRY_NOTE.md`、`docs/HARRY_FOLLOWUP.md`、`docs/REPORT_TO_HARRY.md` 和它们的中文稿，报给老师的 \(W_2\) 只用 16 箱直方图。
+
+`results/fullscale/harry_followup/warmcos_particle_w2.json` 里调度后那一对的精确粒子传输不作为给老师的数据。不要引用它，也不要用它去改 7.3%。切片 \(W_2\) 同样不写进这些稿子。

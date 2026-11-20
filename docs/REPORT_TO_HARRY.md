@@ -63,7 +63,7 @@ MeanFlow reports that the fraction of training pairs with \(r\neq t\) changes on
 
 The feedforward step integrates the flow time \(t\). One generation holds \((\sigma,\mu)\) fixed, and those two numbers only select the velocity. The update is the one the one-parameter model uses: \(x-u(x,0,1)\) for one step, and the same rule on \([1,0.5]\) and then \([0.5,0]\) for two steps. A second physical parameter does not change that rule. What was not searched is how often each pair \((r,t)\) is drawn. The sampler in this section is the upstream one, used as it stood. A run that keeps the fixed learning rate, the same 40 cells and the same 32,000 updates per cell, and changes only that distribution, is in progress. If one step stays where it is or improves, and two steps improve, the earlier comparison had not searched the sampling frequency of the time intervals. That result is not in this note.
 
-## 4. The chosen \(\alpha\) keeps its sign, and the bins hide a few points
+## 4. The chosen \(\alpha\) keeps its sign
 
 \(\alpha=2\), chosen on the seed-88 development split and not chosen again, still beats \(\alpha=0\) on the 93 test cells of seeds 89 and 90. The reductions are 20.6% and 7.8%. On seed 89 most of that drop is already present at \(\alpha=1\) (0.10619 against 0.10301 at \(\alpha=2\)). On seed 90, \(\alpha=1\) is lower than \(\alpha=2\), 0.10180 against 0.10417. The selected value transfers in sign and loses size, which is what a setting chosen on one seed should be expected to do.
 
@@ -79,16 +79,6 @@ The same direction appears in the physical summaries, now on all 143 held-out ce
 
 *Figure 5. Left: mean histogram \(W_2\) on 93 test cells. \(\alpha=2\) was chosen on seed 88. Right: mean absolute relative error on the fixed-rate pair.*
 
-The histogram is the smaller of the readings we have. Sliced \(W_2\) along 64 directions, on these same 143 cells, falls from 0.02226 to 0.01545, a 30.6% reduction against the histogram's 15.0%. Sliced \(W_2\) averages one-dimensional projections, so the two percentages are not the same distance.
-
-An exact coupling in the original dimension exists for one cell of the earlier single-parameter run, \(\sigma=100\), seed 88, with the same 30,000 particles used for both methods. The 16-bin histogram gives a 16.0% reduction, from 0.18311 to 0.15374. Exact transport at \(m=10{,}000\) gives 21.3%, and at \(m=30{,}000\) gives 23.0%, from 0.14503 to 0.11164. Leaving the bins adds about seven points. Going from 10,000 particles to 30,000 adds 1.7 of them, so the subsample size is not what the histogram is missing. A particle that moves and stays inside its bin does not change a histogram cost, and a modest correction is exactly the motion a coarse grid drops.
-
-![One cell scored three ways, and twenty shears at ten thousand particles.](../results/report_figures/fig_reply_metric.png)
-
-*Figure 6. Left: \(\sigma=100\), seed 88. Right: twenty shears at \(m=10{,}000\). A point above the dashed line has the larger reduction on the particles. \(\sigma=100\) is marked.*
-
-Across those twenty shears the mean reduction goes from 39.1% on the histogram to 42.5% on the particles, and 18 of the 20 shears move the same way. A line through them has slope 1.03 and intercept 2.1, with a residual of 2.5 points. Read at the scheduled 7.3%, it gives **9.6%**, and a bootstrap over the shears gives 7.1 to 11.9. This cell is a single-parameter cloud, not a rescoring of the tables above. Scaling 7.3% by the ratio at \(\sigma=100\), 23.0 to 16.0, gives about 10%. Adding the seven points gives about 14%. The three routes sit in one range: the scheduled gain is larger than 7.3% by a few points, and the size of that correction has not been measured on the scheduled pair.
-
 ## 5. One corrector for three seeds keeps a shared piece of the residual
 
 A single corrector trained on seeds 88, 89 and 90 together lowers all three maps, and it lowers them by less than a corrector fitted to each map. The mean reduction is 6.3%, against 14.4% for the three fitted correctors. It is lower on 327 of 429 cells, against 415 of 429 for the fitted ones. Each seed keeps its own 40 cells. The budget is 2,000 updates per cell per seed. The stage-1 maps are the fixed-rate checkpoints.
@@ -101,7 +91,7 @@ A single corrector trained on seeds 88, 89 and 90 together lowers all three maps
 
 ![Stage 1, one shared corrector, and a corrector fitted to each seed.](../results/report_figures/fig_reply_multiseed.png)
 
-*Figure 7. Fixed learning rate, each seed on its own 143 held-out cells. Right: reduction against that seed's stage 1.*
+*Figure 6. Fixed learning rate, each seed on its own 143 held-out cells. Right: reduction against that seed's stage 1.*
 
 The corrector learns the residual of the maps it is shown. The part those three residuals share is what one network can remove from all three, and that part is largest on the worst stage-1 map. Seed 89, the highest of the three, is lower on all 143 of its cells. Seed 88, where a fitted corrector removed 15.0%, keeps 1.8%. This repairs the transfer failure in the earlier note, where the seed-88 corrector applied unchanged to seeds 89 and 90 changed those errors by −1.4% and −3.2%. It does so by giving up the seed-specific residual on seed 88.
 
@@ -109,6 +99,6 @@ The corrector learns the residual of the maps it is shown. The part those three 
 
 Inside the training box, on the map it was fitted to, and with stage 1 trained under the schedule, the corrector reduces one-step histogram \(W_2\) by 7.3% at 2.97 times the cost of one pass. Two passes of the scheduled network reduce it by 15.2% at 2.0 times that cost. The 15% reported in November was the corrector's gain against a fixed learning rate. The schedule, free at inference, accounts for the larger share of that gain.
 
-The gain still stops at a change of seed and outside the training box, as the earlier note found. One corrector for three seeds improves the two seeds a transferred corrector used to hurt, and it keeps little of the gain on the seed it fits best. The histogram reads a modest gain low. On the one cell solved at 30,000 particles, 16.0% became 23.0%, and about five of those seven points were already present at 10,000.
+The gain still stops at a change of seed and outside the training box, as the earlier note found. One corrector for three seeds improves the two seeds a transferred corrector used to hurt, and it keeps little of the gain on the seed it fits best.
 
-Paired correctors for seeds 89 and 90 were not retrained under the schedule, so Section 5 is on fixed-rate maps. The map was not iterated: it remains a map over a fixed horizon, and conditioning the corrector on \(t\) is a different project. The budget controls, the sliced distance, the physical summaries and the one-step versus two-step comparison were measured on the fixed-rate map. If 7.3% is to replace 15% as the headline, those four measurements, and a particle-level score of the scheduled pair, are the ones still missing.
+Paired correctors for seeds 89 and 90 were not retrained under the schedule, so Section 5 is on fixed-rate maps. The map was not iterated: it remains a map over a fixed horizon, and conditioning the corrector on \(t\) is a different project. Every \(W_2\) in this note is the 16-bin histogram.

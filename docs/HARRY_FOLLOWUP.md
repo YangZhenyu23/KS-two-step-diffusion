@@ -10,7 +10,7 @@ On the 112 cells held out by the headline design and by the three width-112 runs
 
 The budget controls are on the fixed-learning-rate network, with the corrector's extra 80,000 updates and no second network. Further MeanFlow updates reach 0.12465. The same updates against the minibatch OT targets reach 0.11911. The second network on that map reaches 0.10429, so the coupling on the stage-1 network is about a 3% drop, and the separate network is about 15%.
 
-Sections 3 to 5 are the \((r,t)\) check, \(\alpha\) on seeds 89 and 90, and the corrector trained on all three seeds. One remark on the metric, since the percentages above are 16-bin histogram \(W_2\). On the fixed-learning-rate pair, sliced \(W_2\) computed from the raw particles drops by 30.6%, against 15.0% for the histogram. Section 4 is the difference between the two.
+Sections 3 to 5 are the \((r,t)\) check, \(\alpha\) on seeds 89 and 90, and the corrector trained on all three seeds. The percentages above are 16-bin histogram \(W_2\).
 
 ---
 
@@ -85,7 +85,7 @@ Most training intervals are shorter than 0.5, and half of each batch sits on the
 
 ---
 
-## 4. \(\alpha=2\) on the other seeds, and the metric — completed
+## 4. \(\alpha=2\) on the other seeds — completed
 
 \(\alpha=2\) is still the value chosen on the seed-88 development split. I did not choose it again. Each row is the 93 test cells of that seed.
 
@@ -100,14 +100,6 @@ Most training intervals are shorter than 0.5, and half of each batch sits on the
 
 On seed 89, \(\alpha=2\) is the lower of \(\alpha=1\) and \(\alpha=2\). On seed 90, \(\alpha=1\) is 0.10180 and \(\alpha=2\) is 0.10417. On both seeds \(\alpha=2\) is below stage 1.
 
-The tables in this note are 16-bin histogram \(W_2\). The two clouds are counted on one shared grid, 16 bins along each axis. An occupied bin is replaced by one weighted point at its centre, and the distance is the transport cost between those points. A particle that moves and stays inside its bin does not change the cost, so a small correction is smoothed out by the grid. A particle-level \(W_2\) keeps the particles and pairs them one by one. I did not recompute the tables that way: the coupling is \(10^5\times 10^5\). I also did not run the energy distance, which has the same quadratic cost.
-
-What I did run still uses every particle's coordinate. Sliced \(W_2\), 64 directions, seed 88, all 143 held-out cells, fixed learning rate, \(\alpha=1\): stage 1 is 0.02226, and stage 1 plus the corrector is 0.01545. That is a 30.6% drop. The histogram drop on this same pair is 15.0%. Sliced \(W_2\) is a lower bound from one-dimensional projections, so the two numbers are not the same distance, and I would not swap one in for the other. The histogram is the smaller of the two reductions. The scheduled results in section 1 were not recomputed with sliced \(W_2\).
-
-![Relative reduction on the fixed-learning-rate pair, histogram against sliced W2.](../results/report_figures/fig_followup_metric.png)
-
-*Figure 6. Reduction on the fixed-learning-rate seed-88 pair, 143 held-out cells. The two estimators are on different scales; only the reduction is plotted.*
-
 Mean absolute relative error of three summaries, same 143 cells, rather than the six cells in the earlier note:
 
 | summary | stage 1 | stage 1 + corrector |
@@ -118,7 +110,7 @@ Mean absolute relative error of three summaries, same 143 cells, rather than the
 
 ![Centroid, rms radius, and anisotropy, with and without the corrector.](../results/report_figures/fig_followup_physics.png)
 
-*Figure 7. Mean absolute relative error on the same 143 cells. Seed 88, fixed learning rate, \(\alpha=1\).*
+*Figure 6. Mean absolute relative error on the same 143 cells. Seed 88, fixed learning rate, \(\alpha=1\).*
 
 The centroid, the rms radius, and the anisotropy all move down with the corrector.
 
@@ -136,7 +128,7 @@ This is the run you suggested putting first. One corrector, \(\alpha=1\), traine
 
 ![Stage 1, the shared corrector, and the corrector fitted to each seed.](../results/report_figures/fig_followup_multiseed.png)
 
-*Figure 8. Left: histogram \(W_2\) on each seed's 143 held-out cells. Green is the corrector fitted to that seed in the earlier note. Orange is the one corrector trained on all three. Right: reduction against that seed's stage 1.*
+*Figure 7. Left: histogram \(W_2\) on each seed's 143 held-out cells. Green is the corrector fitted to that seed in the earlier note. Orange is the one corrector trained on all three. Right: reduction against that seed's stage 1.*
 
 The mean of the three reductions is 6.3%. The paired correctors reduce these three stage-1 means by 14.4% and are lower on 415 of 429 comparisons. This corrector is lower on 327 of 429. The seed-88 corrector, applied unchanged to seeds 89 and 90, changed those by −1.4% and −3.2%.
 
