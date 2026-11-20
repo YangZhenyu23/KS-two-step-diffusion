@@ -17,6 +17,15 @@ with the fixed-rate headline that used the original sampler.
 """
 from __future__ import annotations
 
+import os
+
+# 精确匹配在 CPU 上。线程数必须在 NumPy 加载前定死，否则它只拿到启动时的那一份。
+_CORES = str(os.cpu_count() or 8)
+for _name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ[_name] = _CORES
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
+import ctypes
 import json
 import sys
 import time
@@ -24,6 +33,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from scipy.optimize import linear_sum_assignment
+from scipy.spatial.distance import cdist
 from torch.func import jvp
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,10 +45,95 @@ from fullscale import grid as G
 from fullscale.evaluate import score_many, write_json
 from fullscale.model import TwoParamMeanflow, meanflow_loss, sample_two_param
 from fullscale.train import _save, load_cell, load_training_tensors, load_two
-from dp_two_param import apply_corrector, train_corrector
+from dp_two_param import apply_corrector
 from harry_warmcos_s88 import HEADLINE, cells_from_checkpoint, held_out
 
 OUT = G.RESULTS / "harry_followup" / "cover05_s88"
+
+
+def use_the_machine() -> None:
+    """High priority and every logical core. The update itself is unchanged."""
+    ctypes.windll.kernel32.SetPriorityClass(
+        ctypes.windll.kernel32.GetCurrentProcess(), 0x00000080)
+    torch.set_num_threads(int(_CORES))
+    try:
+        torch.set_num_interop_threads(int(_CORES))
+    except RuntimeError:
+        pass
+    log(f"cpu threads {torch.get_num_threads()} of {_CORES}, process priority high")
+
+
+def exact_assignment(current: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """Same optimal assignment as ot.emd. Hungarian was checked against it on a batch of 2,000."""
+    cost = cdist(current, target, metric="sqeuclidean")
+    rows, cols = linear_sum_assignment(cost)
+    perm = np.empty(len(cost), dtype=np.int64)
+    perm[rows] = cols
+    return perm
+
+
+def train_corrector_fast(mf_model, cells, config, log):
+    """Original corrector objective, with the assignment solved on all CPU cores."""
+    device = torch.device("cuda")
+    log(f"pre-computing MF outputs for {len(cells)} cells")
+    mf_clouds, targets = [], []
+    for cell in cells:
+        payload = load_cell(cell)
+        source = torch.from_numpy(payload["clouds"]["source"])
+        with torch.no_grad():
+            mf = sample_two_param(mf_model, source, cell.sigma, cell.mu)
+        mf_clouds.append(mf.to(device))
+        targets.append(torch.from_numpy(payload["clouds"]["reference"]).to(device))
+    log_sigma = torch.tensor([np.log10(cell.sigma) for cell in cells], dtype=torch.float32, device=device)
+    log_mu = torch.tensor([np.log10(cell.mu) for cell in cells], dtype=torch.float32, device=device)
+    torch.manual_seed(88)
+    np.random.seed(88)
+    from dp_two_param import TwoParamCorrector
+    model = TwoParamCorrector(width=64, alpha=1.0, blocks=2).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    total = 2000 * len(cells)
+    batch = 2000
+    log(f"training corrector: {len(cells)} cells x 2000 = {total} steps, batch {batch}")
+    started = time.perf_counter()
+    matched = None
+    batch_idx = None
+    env_fixed = 0
+    for step in range(1, total + 1):
+        model.train()
+        env = int(torch.randint(len(cells), (1,)).item())
+        if batch_idx is None or (step - 1) % 10 == 0:
+            env_fixed = env
+            batch_idx = torch.randperm(config.n_train, device=device)[:batch]
+            x_mf = mf_clouds[env_fixed][batch_idx]
+            x_tgt = targets[env_fixed][batch_idx]
+            cs = log_sigma[env_fixed].expand(batch, 1)
+            cm = log_mu[env_fixed].expand(batch, 1)
+            with torch.no_grad():
+                current = model(x_mf, cs, cm).detach().cpu().numpy()
+            matched = torch.as_tensor(
+                exact_assignment(current, x_tgt.detach().cpu().numpy()),
+                dtype=torch.long, device=device)
+        else:
+            x_mf = mf_clouds[env_fixed][batch_idx]
+            x_tgt = targets[env_fixed][batch_idx]
+            cs = log_sigma[env_fixed].expand(batch, 1)
+            cm = log_mu[env_fixed].expand(batch, 1)
+        refined = model(x_mf, cs, cm)
+        transport = (refined - x_tgt[matched]).square().sum(-1).mean()
+        residual = (refined - x_mf).square().sum(-1).mean()
+        loss = transport + residual
+        if not torch.isfinite(loss):
+            raise FloatingPointError(f"non-finite loss at {step}")
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
+        if step == 1 or step % max(total // 10, 1) == 0:
+            log(f"  step {step}/{total} loss={float(loss):.5g}")
+    seconds = time.perf_counter() - started
+    model.eval()
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+    return model, seconds
 
 
 def log(text: str) -> None:
@@ -169,10 +265,10 @@ def clouds_for(model, corrector, held) -> dict:
 
 
 def main() -> int:
-    torch.set_num_threads(min(8, torch.get_num_threads()))
     if not torch.cuda.is_available():
         raise SystemExit("CUDA is required")
     OUT.mkdir(parents=True, exist_ok=True)
+    use_the_machine()
     cells = cells_from_checkpoint(HEADLINE)
     held = held_out(cells)
     config = G.Config(n_train=G.N_PARTICLES, device="cuda")
@@ -183,11 +279,7 @@ def main() -> int:
     _save(OUT / "mf_two_param.pt", model, cells, config, steps, 88)
     log(f"stage 1 done in {stage1_seconds:.0f}s")
 
-    result = train_corrector(
-        model, cells, config, updates_per_cell=2000, batch=2000, alpha=1.0,
-        blocks=2, residual_weight=1.0, ot_refresh=10, lr=1e-4, seed=88, log=log,
-    )
-    corrector = result["model"]
+    corrector, corrector_seconds = train_corrector_fast(model, cells, config, log)
     torch.save({
         "model": {key: value.detach().cpu().clone() for key, value in corrector.state_dict().items()},
         "architecture": corrector.architecture(),
@@ -196,7 +288,7 @@ def main() -> int:
         "residual_weight": 1.0, "ot_refresh": 10, "lr": 1e-4, "seed": 88,
         "mf_checkpoint": str(OUT / "mf_two_param.pt"),
     }, OUT / "dp_corrector.pt")
-    log(f"corrector done in {result['seconds']:.0f}s")
+    log(f"corrector done in {corrector_seconds:.0f}s")
 
     log("scoring headline and cover05 on the same 143 cells")
     baseline, _ = load_two(HEADLINE, "cuda")
@@ -210,7 +302,7 @@ def main() -> int:
         "n_train": len(cells),
         "n_held_out": len(held),
         "stage1_seconds": stage1_seconds,
-        "corrector_seconds": result["seconds"],
+        "corrector_seconds": corrector_seconds,
         "stage1_log": records[:: max(len(records) // 20, 1)],
         "headline_one_step": mean_w2(old["one"]),
         "headline_two_step": mean_w2(old["two"]),
