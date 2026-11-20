@@ -499,6 +499,24 @@ def fig_multiseed() -> None:
     plt.close(fig)
 
 
+def fig_sampler() -> None:
+    """One seed, fixed learning rate: the original sampler against the half-interval mixture."""
+    labels = ["one step", "two steps", "then the corrector"]
+    original = [0.12277, 0.12418, 0.10429]
+    retrained = [0.13980, 0.12327, 0.11465]
+    x = np.arange(len(labels))
+    fig, ax = plt.subplots(figsize=(6.6, 3.4), layout="constrained")
+    ax.bar(x - 0.18, original, width=0.36, color=BLUE, label="original sampler", zorder=3)
+    ax.bar(x + 0.18, retrained, width=0.36, color=CLAY, label="half-intervals upweighted", zorder=3)
+    ax.set_xticks(x, labels)
+    ax.set_ylabel("histogram $W_2$")
+    ax.set_ylim(0, 0.17)
+    ax.legend(frameon=False, loc="upper right")
+    clean(ax)
+    fig.savefig(OUT / "fig_reply_sampler.png", bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     rows = particle_table()

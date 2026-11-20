@@ -36,6 +36,7 @@
 
 ### 变更
 
+- **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：按 Harry 的四问重写。四行、预算、\(\alpha\)、多种子改为表；只留学习率对照和 \((r,t)\) 两张图。第 3 节写入加重半区间的一次重训：一步 0.12277→0.13980，两步 0.12418→0.12327，修正器 0.10429→0.11465。一次约三小时，没有第二个种子，也没有扫混合比例
 - **给 Harry 的第 3 节，以及同一说法的其余文本**：撤回「参数在二维曲面上，用别的数值方法代替欧拉前馈」。前馈的自变量是流动时间 \(t\)，\((\sigma,\mu)\) 在一次生成里固定，不改变欧拉更新。没搜索过的是 \((r,t)\) 的抽样频率。只改这个分布的运行仍在进行，笔记里不写结果。改动文件：`docs/REPORT_TO_HARRY.md`、`docs/REPORT_TO_HARRY.zh.md`、`docs/discussion_log.md`、`docs/EXPERIMENTS_E1_E9.md`、`docs/TECHNICAL_NOTE.md`、`docs/ANSWER_CORE_QUESTION.md`、`scripts/build_report_docx.py`、`docs/report_for_harry.docx`
 - **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：按结果先于做法重写。每节开头是发现，接着是原因，图放在数字之后。数字和图未改：调度后修正器 7.3%，调度本身使第一步低于旧校正值 5.3%；同网络 OT 更新收回约五分之一；子步长度只占抽取的 4.2%；\(m=30{,}000\) 上 16.0% 变为 23.0%
 - **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：正文保持 DeepSeek 那一稿的说法，七张图换回纵轴从 0 起的 `fig_reply_*.png`。图注按这套图重写：四行图不再画推理代价，预算图不再用竖线，\((r,t)\) 的右图是累积比例，\(\alpha\) 图只画种子 89 和 90 并带上三个物理量，粒子图不再画 7.3% 的外推菱形
