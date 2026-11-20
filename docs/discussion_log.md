@@ -226,3 +226,13 @@ The extra updates do not account for the 15%. On the 112 cells of the four-row t
 The fifth is an average over bands that disagree. At \(\mu=2.51\) and \(\mu=3.98\) the assignments recover 74% and 79% of the corrector's drop. At \(\mu=10\) they raise the error by 8.2%, while the corrector lowers it by 11.6%. At \(\mu\le 0.16\), further MeanFlow updates lower the error by about 11%, and the assignments raise it. The cells with the larger error dominate the mean. On those cells the second network removes the error the assignment leaves in place.
 
 The assignment moves the particles farther than the corrector: mean displacement 0.067 against 0.018, at a mean cosine of 0.535. The corrector starts at the identity and is penalised for leaving the stage-1 cloud. The fine-tune has the assignment and no such penalty, so the longer step lies only partly along the correction the second network learned.
+
+### 按结论写的版本
+
+老师要判决的是：修正器降低的那 15%，若把同样的额外更新和同样的最优传输配对加在原来那一张网络上就能收回大部分，功劳是配对；收回不了大部分，功劳是第二张网络。
+
+结论：收回不了。平均的 15% 来自第二张网络。
+
+数据：四行表的 112 格上，第一步 0.12271，第二张网络 0.10422（低 15.1%）。同样的额外更新仍用原来的损失，误差升到 0.12507。改成那套配对之后，只降到 0.11926（低 2.8%），收回降幅的 18.6%。143 格上是 0.12277 到 0.11911，修正器到 0.10429，收回 19.8%。
+
+这个结论说的是平均。\(\mu=2.51\) 和 \(3.98\) 上配对收回 74% 和 79%。\(\mu=10\) 上配对把误差抬高 8.2%，只有第二张网络在降。平均被误差大的格子拉住，总的判决仍然是第二张网络。
