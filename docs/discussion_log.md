@@ -216,3 +216,13 @@ Harry 指出这个对照还漏了训练预算。两阶段模型的第一步是�
 按 \(\mu\) 的分档要写进回答，否则「第二阶段」会被说成每一格都如此。\(\mu=2.51\) 和 \(3.98\) 上耦合已经收回大部分；\(\mu=10\) 和低 \(\mu\) 不是。这是同一批结果里的结构，不需要新实验。
 
 不必为了回答这封信再训。他没有要求在日程后的第一步上重做，也没有要求给 (ii) 加上残差惩罚。步长 0.067 对 0.018 说明 (ii) 走得比修正器远。若他接着问「是不是因为没有惩罚所以走过头」，才需要第三支：同一张网络、同一套 OT 目标，加上把新地图拉回原第一步的惩罚。那一支现在没有。
+
+### 拟给 Harry 的表述
+
+还没写进 `REPORT_TO_HARRY.md`。现有第 2 节只有 143 格的三个平均数，并写成「再训 MeanFlow 是在已经走平的损失上加噪声」。逐格结果不支持这句：低 \(\mu\) 上再训是在降误差。下面这段按 112 格和分档改写。
+
+The extra updates do not account for the 15%. On the 112 cells of the four-row table, continuing stage 1 for the corrector's 80,000 updates moves histogram \(W_2\) from 0.12271 to 0.12507, higher by 1.9%, and lower on 69 of the 112. The same updates, aimed at the minibatch assignments, reach 0.11926, lower by 2.8%, on 69 of 112. The second network reaches 0.10422, lower by 15.1%, on 110 of 112. The assignments recover 18.6% of that drop, 0.00345 of 0.01849. On the 143 held-out cells the fraction is 19.8%, from 0.12277 to 0.11911, against a corrector at 0.10429. The test in the letter was whether this second control recovers most of the gain. It recovers about a fifth, so on the average the gain is the second network.
+
+The fifth is an average over bands that disagree. At \(\mu=2.51\) and \(\mu=3.98\) the assignments recover 74% and 79% of the corrector's drop. At \(\mu=10\) they raise the error by 8.2%, while the corrector lowers it by 11.6%. At \(\mu\le 0.16\), further MeanFlow updates lower the error by about 11%, and the assignments raise it. The cells with the larger error dominate the mean. On those cells the second network removes the error the assignment leaves in place.
+
+The assignment moves the particles farther than the corrector: mean displacement 0.067 against 0.018, at a mean cosine of 0.535. The corrector starts at the identity and is penalised for leaving the stage-1 cloud. The fine-tune has the assignment and no such penalty, so the longer step lies only partly along the correction the second network learned.
