@@ -145,7 +145,7 @@ The single-parameter model diverges too, by 3,745–4,015× at $k{=}8$ — rough
 
 Most of the raw growth is scale, not degradation. A longer horizon is harder, but not qualitatively different at this distance.
 
-*(A reversal worth noting: at $T'$ a two-step application **helps** (+5.5 %), whereas at $T$ it hurts (−1.1 %). By $T'$ the transport has accumulated more shear, so the flow is more curved in time and subdividing pays. This is a different curvature from the parameter-direction one.)*
+*(A reversal worth noting: at $T'$ a two-step application **helps** (+5.5 %), whereas at $T$ it hurts (−1.1 %). By $T'$ the path has accumulated more shear, and splitting the time interval helps on this run. The step integrates the flow time $t$; $(\sigma,\mu)$ stay fixed and do not change the update.)*
 
 ---
 

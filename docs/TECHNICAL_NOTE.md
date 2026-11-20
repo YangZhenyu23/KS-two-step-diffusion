@@ -385,8 +385,8 @@ rather than held-out accuracy.
 
 Single-parameter iteration also diverges, by a factor of roughly 50–70 less. So non-iterability
 is not specific to the two-parameter family: it is a property of any fixed-horizon map. The
-two-parameter case is simply worse, which is consistent with its transport being curved in a
-higher-dimensional sense (§5).
+two-parameter map diverges further on these cells. Both maps advance in the flow time \(t\);
+\((\sigma,\mu)\) are held fixed during a step and do not change the update.
 
 ### 6.2 Retraining at a longer horizon, rather than iterating
 
@@ -406,10 +406,10 @@ normalising by its radius leaves a **1.35×** increase in relative error. A long
 harder but not qualitatively different at this distance.
 
 **An unexpected reversal.** At $T'$ the two-step application *helps* (+5.5 %), whereas at $T$ it
-hurts (−1.1 %). The likely reason is that by $T'$ the transport has accumulated more shear
-(centroid 1.3 → 4.8), so the flow is more curved *in time* and subdividing pays. This does not
-contradict §5.1's finding that subdivision does not help across the *parameter* dimension: those
-are two different curvatures.
+hurts (−1.1 %). By $T'$ the path has accumulated more shear (centroid 1.3 → 4.8), and splitting
+the time interval helps on this run. The step integrates the flow time $t$. $(\sigma,\mu)$ stay
+fixed during the step and do not change the update. The sign change is a difference between
+these two time paths. It is not the parameter surface leaving the Euler step without a direction.
 
 **Physical invariants at the operating point.** Averaged over six cells spanning the box, the
 anisotropy $\lambda_1/\lambda_2$ — the quantity $\sigma$ controls — is reproduced to 1.04 %

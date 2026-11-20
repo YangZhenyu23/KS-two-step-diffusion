@@ -380,42 +380,33 @@ def main() -> int:
          "of the matched-capacity gap is not yet pinned down.",
          size=10)
 
-    h2(doc, "4.4 Why multi-step application fails for the two-parameter model")
+    h2(doc, "4.4 The two-step update integrates time, not the parameter surface")
     para(doc,
-         "Applying the same weights twice helps the single-parameter model on 18 of 20 sigma values "
-         "but degrades the two-parameter model by 1.3%. The most likely explanation is geometric "
-         "and worth stating, because it also explains why the corrector is the right place to "
-         "spend the extra pass.",
+         "Applying the same weights twice raises the error of this fixed-rate two-parameter "
+         "checkpoint by 1.3%. The update that produces that number is one step of the average "
+         "velocity along the flow time t:",
          size=10)
-    para(doc, "A MeanFlow step replaces an integral by one chord of the flow:", size=10)
     para(doc, "x_{t_lo} = x_{t_hi} - (t_hi - t_lo) u(x_{t_hi}, t_lo, t_hi)", bold=True, size=10)
     para(doc,
-         "This is exact only if the average velocity is constant along the segment. With two "
-         "sub-intervals the error per interval shrinks, but the two errors are evaluated at "
-         "different points of a *curved* transport, so they need not cancel, and the second "
-         "evaluation lands at a location that is off the path the first one assumed. In the "
-         "single-parameter setting the family is one-dimensional and the transport is close to a "
-         "rigid shear, so the curvature is small and the decomposition happens to help. In the "
-         "two-parameter setting the family of distributions is a two-dimensional surface: moving "
-         "from (sigma, mu) to a neighbouring cell changes both the shape and the scale of the "
-         "cloud, so the transport map between the prior and the target is genuinely curved and "
-         "the chord approximation does not commute with subdivision.",
+         "Sigma and mu are held fixed for the whole generation. They select which velocity the "
+         "network returns. They are not integration variables, and a one-parameter model uses the "
+         "same update. The step has one direction, the three-vector u, whether the network is "
+         "conditioned on one physical parameter or two.",
          size=10)
     para(doc,
-         "This is consistent with the parameter law measured independently: the natural distance "
-         "is W_2 ~= 0.90 |Delta(sigma T)| + 1.98 |Delta(sqrt(2 mu T))|, i.e. the response to the "
-         "two parameters is anisotropic and lives on a two-dimensional surface rather than along a "
-         "line. A one-dimensional family can be reparameterised into an approximately straight "
-         "path by choosing the right scalar coordinate; a two-dimensional family cannot, because "
-         "there is no single coordinate along which the flow straightens.",
+         "The earlier account of this 1.3% is withdrawn. That account said the family of clouds "
+         "is a two-dimensional surface, so a chord of the flow cannot choose a direction and does "
+         "not commute with subdivision. The independent variable of the step is t. A second "
+         "physical parameter does not change the rule.",
          size=10)
     para(doc,
-         "I want to be careful about the status of this explanation: it is a mechanistic argument "
-         "supported by the anisotropy measurement and by the fact that the same weights do help in "
-         "the one-parameter case. It is not a proof, and I have not measured the curvature of the "
-         "transport directly. What it does explain is why the corrector, which regresses onto the "
-         "Brenier map rather than integrating a velocity field, does not suffer from the same "
-         "failure: it never approximates an integral.",
+         "What this comparison did not search is how often each pair (r, t) is drawn in training. "
+         "The sampler was the upstream one, used as it stood. A separate run keeps the fixed "
+         "learning rate, the same 40 cells and the same 32,000 updates per cell, and changes only "
+         "that distribution. If one step stays where it is or improves, and two steps improve, "
+         "the earlier comparison had not searched the sampling frequency of the time intervals. "
+         "That result is not in this note. The corrector is a second map; it does not subdivide "
+         "[0, 1]. Whether a second stage-1 step helps is a property of the learned velocity.",
          size=10)
 
     figure(doc, FIG / "fig_four_way.png",
