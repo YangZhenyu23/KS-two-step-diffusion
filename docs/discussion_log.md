@@ -236,3 +236,21 @@ The assignment moves the particles farther than the corrector: mean displacement
 数据：四行表的 112 格上，第一步 0.12271，第二张网络 0.10422（低 15.1%）。同样的额外更新仍用原来的损失，误差升到 0.12507。改成那套配对之后，只降到 0.11926（低 2.8%），收回降幅的 18.6%。143 格上是 0.12277 到 0.11911，修正器到 0.10429，收回 19.8%。
 
 这个结论说的是平均。\(\mu=2.51\) 和 \(3.98\) 上配对收回 74% 和 79%。\(\mu=10\) 上配对把误差抬高 8.2%，只有第二张网络在降。平均被误差大的格子拉住，总的判决仍然是第二张网络。
+
+---
+
+## 2026-11-20 · 问题 3：子步为什么变差
+
+Harry 的原话：
+
+> Why sub-steps hurt in the two-parameter model. Rather than leaving the mechanism open, measure it directly. Report the (r, t) pairs sampled during training, and the MeanFlow consistency error between one evaluation on [0, 1] and the composition of [0, 0.5] and [0.5, 1] on held-out cells. If the sub-intervals are rarely trained, the degradation is expected and says little about the parametric family itself.
+
+### 按结论写的版本
+
+老师要判决的是：两段子步把误差变差，是不是因为训练时几乎抽不到这么长的时间区间。如果很少训练到，变差是预期的，说明不了这个双参数模型族本身有问题。
+
+结论：子区间确实很少被训练到。固定学习率上的变差因此是预期的，不能用来否定这个模型族。同一套抽样、同一个模型族，换了学习率日程之后，两段子步把误差降低 15.2%。所以「很少训练到」解释了原来为什么变差，没有说子步一定变差。
+
+数据：一百万次抽取里，50.0% 落在 \(r=t\) 上，95.8% 的区间短于 0.5，只有 4.2% 达到子步用的长度。143 个留出格、固定学习率：一步得到的云和两段得到的云，直方图 \(W_2\) 是 0.0814，同一颗粒子平均分开 0.0303。对参考云，112 格上固定学习率从 0.12271 升到 0.12435，高 1.3%；日程之后从 0.09859 降到 0.08358，低 15.2%。一致性误差只在固定学习率那张图上量过，那正是变差发生的那张。
+
+原因：网络学的是它抽到的那些区间上的速度。一半样本区间长度是 0，绝大多数短于半段。两段求值却要两个长度正好是 0.5 的速度。固定学习率的速度场在这两段上对不齐，所以一步和两段落到不同的地方，两段离参考更远。日程把同一个速度场训准之后，抽样没变，切开反而更接近参考。变差属于那张没训稳的速度场，不属于双参数这个结构。
