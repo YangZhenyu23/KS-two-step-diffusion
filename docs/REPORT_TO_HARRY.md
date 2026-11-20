@@ -4,11 +4,7 @@
 
 Zhenyu Yang · 20 November 2026
 
-Chinese version: [`REPORT_TO_HARRY.zh.md`](REPORT_TO_HARRY.zh.md). Every \(W_2\) below is the 16-bin histogram.
-
 The 15% in that note does not survive a better-trained stage 1. On the same 40 cells and the same 32,000 updates per cell, a warm-up and a cosine cut the corrector's reduction to **7.3%**. Stage 1 alone reaches 0.09874, which is already below 0.10429, where the old corrector stopped. The schedule removes 0.0240. The second network, on the old map, removed 0.0185. The schedule costs nothing when the map is used.
-
-The other three checks, and the shared corrector you asked to put first, are:
 
 | check | what was asked | result |
 |---|---|---|
@@ -97,7 +93,7 @@ One step is higher by 13.9%. Two steps sit 0.7% below the old two-step value, an
 
 One run takes about three hours. I did not repeat the seed, and I did not search the mixture. MeanFlow reports that the share of training pairs with \(r\neq t\) changes one-step FID on ImageNet: 0% gives 328.91, 25% gives 61.06, 50% gives 63.14, and 100% gives 67.32. Both of our models use 50%. That table is one-step image generation. It shows that the sampling rule moves the result. A search over the mixture, and a second seed, can be run if you want them.
 
-With the original sampler left as it was, two steps on the scheduled map are the lowest row in Section 1, 15.2% below one step. The fixed-rate rise and that drop share the sampler. They do not share the learning rate.
+With the original sampler left as it was, two steps on the scheduled map are the lowest row in Section 1, 15.2% below one step. 
 
 ## 4. \(\alpha=2\) on the other seeds
 
