@@ -51,6 +51,7 @@
 
 ### 新增
 
+- **`docs/REPORT_TO_HARRY.pdf`、`docs/REPORT_TO_HARRY.zh.pdf` 与 `REPORT_for_Harry.zip`**：英文和中文报告的 PDF。压缩包根目录是英文 `REPORT_TO_HARRY.md`，图片在 `results/report_figures/`，路径已改成从该文件能直接打开
 - **给 Harry 的 \(W_2\) 只用 16 箱直方图**：`warmcos_particle_w2.json` 的精确粒子传输（+2.8%）不写入笔记和报告。`HARRY_FOLLOWUP` 与 `REPORT_TO_HARRY` 的中英文稿删去切片 \(W_2\)、粒子外推和「直方图把增益读低了」
 - **`scripts/warmcos_particle_w2.py`**：调度后种子 88 的 143 格，每格 10,000 点精确传输。粒子级 \(W_2\) 0.09729→0.09455（+2.8%），同格直方图是 +7.3%。每个 \(\mu\) 档上粒子级降幅都更小。该结果不给老师
 - **`scripts/warmcos_direction_sliced.py`、`scripts/warmcos_lambda0.py`**：143 格上切片 \(W_2\) 0.01302→0.01175（+9.8%），两段与修正器位移的平均余弦 0.275。\(\lambda=0\) 的修正器 0.09874→0.09147（+7.4%，78/143）。结果在 `direction_and_sliced.json` 与 `warmcos_s88_lambda0/summary.json`
