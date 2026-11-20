@@ -274,3 +274,15 @@ Geng、Deng、Bai、Kolter、He，arXiv:2505.13447。表 1(a) 只比较了 \(r\n
 因此不能对老师说：变差是因为双参数把流动放在二维曲面上，而单参数是一条曲线。那是没测过的猜想。这封信的回答停在：区间很少抽到，固定学习率上的变差是预期的；同一模型换日程后两步变好，所以这不是模型族的属性。
 
 单参数那 18/20 和双参数用的是同一套时间。训练都是 \(\mathcal N(-0.4,1)\) 过 sigmoid，\(t\) 取大、\(r\) 取小，再把一半样本改成 \(r=t\)。两步推理都是固定切成 \([1,0.5]\) 和 \([0.5,0]\)，每段长度 0.5，没有搜过这个长度。所以单参数大多变好、双参数固定学习率变差，不是因为时间抽样或步长选得不一样。物理模拟的 \(dt=0.005\) 是造参考云用的，不参与这一对比。
+
+### 可寄出的问题 3
+
+保留的：单参数 18/20 变好、固定学习率双参数变差、两边抽样相同；论文里 \(r\neq t\) 的比例会改变一步 FID；多步不是当前重点，改抽样或改积分器都还没做。删掉的：「改了双参数的时间抽样，多步一定更好。」同一套抽样下符号已经能翻，论文也没有在两步上测过这个比例。
+
+Two-step intervals of length 0.5 are rarely drawn. Both the one-parameter and the two-parameter models use the same sampler: two draws from a normal with mean \(-0.4\) and unit variance, passed through a sigmoid, with \(t\) the larger and \(r\) the smaller, and half of each batch set to \(r=t\). In one million draws, 50.0% lie on \(r=t\) and 95.8% are shorter than 0.5, so 4.2% are at least as long as a sub-step. Two-step inference is the same fixed split in both models, \([1,0.5]\) then \([0.5,0]\). The step length was not chosen by a search.
+
+On the fixed-rate two-parameter map the two procedures disagree. Over 143 held-out cells the histogram \(W_2\) between the one-step cloud and the two-step cloud is 0.0814, and particles that share a source end 0.0303 apart. Against the reference, on the 112 common cells, the error rises from 0.12271 to 0.12435, by 1.3%. The same split on the one-parameter KS3D runs lowers the error at 18 of 20 values of \(\sigma\), by about 2% to 9%, and raises it at \(\sigma=10\) and \(\sigma=20\). The sampler and the split are the same, so that difference in sign is not a difference in how time was sampled.
+
+MeanFlow reports that the fraction of training pairs with \(r\neq t\) changes one-step FID: 0% gives 328.91, 25% gives 61.06, 50% gives 63.14, and 100% gives 67.32. Both of our models use 50%. That comparison is one-step ImageNet FID. It does not measure two-step error, so I would not claim that changing the fraction is sure to improve two-step evaluation. On the scheduled two-parameter model the sampler is unchanged, and two steps fall from 0.09859 to 0.08358, 15.2% below one step. The fixed-rate rise is what rare intervals lead one to expect from an under-trained field. It is not a property of the two-parameter family.
+
+I have not changed the sampler or the Euler update, and I am not pursuing that here. The project is the one-step map. Whether a different \((r,t)\) distribution, or an integrator other than this Euler step, would improve two-step evaluation is open.
