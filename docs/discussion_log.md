@@ -286,3 +286,29 @@ Geng、Deng、Bai、Kolter、He，arXiv:2505.13447。表 1(a) 只比较了 \(r\n
 MeanFlow 报告，训练样本里 \(r\neq t\) 的比例会改变一步生成的 FID：0% 是 328.91，25% 是 61.06，50% 是 63.14，100% 是 67.32。我们的两个模型都用 50%。这张比较是 ImageNet 上的一步 FID，没有测两步误差，所以我不能说改这个比例就一定能改善两步求值。在带学习率日程的双参数模型上，抽样器没有改，两步从 0.09859 降到 0.08358，比一步低 15.2%。固定学习率上的升高，是这些很少出现的区间在一个没训稳的速度场上会有的结果。它不属于双参数这个模型族。
 
 因为双参数模型的参数分布在二维曲面上，是否可以选取适当的数值方法替代欧拉前馈，从而改进效果，是后续可以研究的方向。目前不是这次实验所考虑的重点。
+
+---
+
+## 2026-11-20 · 问题 4：α 的选择，以及指标的范围
+
+Harry 的原话：
+
+> Selection and metric scope. α = 2 was selected on seed 88 only; please report the test gain at the selected α for the seed-89 and seed-90 pairs. The 16-bin histogram W2 is a reasonable prespecified metric, but a particle-level check (for example sliced W2 or an energy distance on held-out clouds) would show that the gain is not a binning effect. The physical summaries would also be more convincing on more than six cells.
+
+### 按结论写的版本
+
+老师要三样已经定好的核对，不要求再选一次 α。第一，α=2 只在种子 88 的开发集上选定，请报种子 89 和 90 在这个选定值上的测试下降。第二，16 箱直方图是预先规定的指标，但要有一个粒子级的核对，切片 \(W_2\) 或能量距离，用来看增益是不是箱子造成的。第三，物理量不要只报六个格子。
+
+结论：这三样仓库里都有结果，能量距离没有算。α=2 在 89 和 90 的 93 个测试格上仍然低于 α=0，分别低 20.6% 和 7.8%。种子 90 上 α=1 比 α=2 更低。固定学习率、种子 88、143 格、α=1 的切片 \(W_2\) 从 0.02226 降到 0.01545，低 30.6%，同一对的直方图是低 15.0%，所以增益不是箱子造出来的。质心、均方根半径、各向异性的平均绝对相对误差在这 143 格上都下降。
+
+数据：
+
+| 种子 | α=0 | α=1 | α=2 | α=2 相对 α=0 |
+|---|---:|---:|---:|---:|
+| 88（选定处，93 个测试格） | 0.12353 | 0.10477 | 0.09558 | 低 22.6% |
+| 89 | 0.12967 | 0.10619 | 0.10301 | 低 20.6% |
+| 90 | 0.11294 | 0.10180 | 0.10417 | 低 7.8% |
+
+来源：`results/fullscale/alpha_sweep/alpha_sweep_repaired_s88.json`，`results/fullscale/harry_followup/alpha_seeds.json`。α 是在求值时改的，没有按每个 α 重训。
+
+切片和物理量：`results/fullscale/harry_followup/particle_and_physics.json`。143 格，64 个投影，α=1。质心 0.0275 到 0.0186，均方根半径 0.00756 到 0.00590，各向异性 0.0115 到 0.00735。文件里写明能量距离没有算。调度后的一对另有切片，`direction_and_sliced.json`：0.01302 到 0.01175，低 9.8%，直方图是低 7.3%。
