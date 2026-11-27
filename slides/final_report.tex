@@ -44,7 +44,7 @@
 \setbeamertemplate{navigation symbols}{}
 \hypersetup{hidelinks}
 
-\graphicspath{{../kpp_ks/kpp_report/figs/}}
+\graphicspath{{fig/}{../kpp_ks/kpp_report/figs/}}
 % A tabular is an inline box. Without these breaks, the next sentence
 % continues on the table's baseline and collides with the rows.
 \BeforeBeginEnvironment{tabular}{\par}
@@ -145,343 +145,232 @@
     \toprule
     & Part & What it has to establish \\
     \midrule
-    5 min & Introduction & The task, the pipeline, and the four headlines \\
-    7 min & DeepParticle & Wasserstein matching, and why it is local \\
-    8 min & Two-step diffusion & One global step, then a frozen corrector \\
-    13 min & Three equations & Keller--Segel, KPP, Fokker--Planck \\
+    6 min & Introduction & The problem, the split, and the laminar picture \\
+    6 min & DeepParticle & Why a long-range coupling does not fit \\
+    7 min & Two-step diffusion & MeanFlow moves the cloud; DP only fine-tunes \\
+    14 min & Three equations & Each result, and the design that is special to it \\
     4 min & Two parameters & Continuity in $(\sigma,\mu)$ \\
     3 min & Future work & The gap, and the next experiments \\
     \bottomrule
   \end{tabular}
 
-  \vspace{0.7em}
+  \vspace{0.45em}
   \begin{alertblock}{The sentence to leave with}
-    Stage~I moves the cloud onto the right support.
-    Stage~II, trained by mini-batch optimal transport, pulls the mass into place.
+    MeanFlow moves the prior onto the support, so DeepParticle only solves a local coupling.
     At inference the particle solver is not called.
   \end{alertblock}
   \note{Read the clock once. Say that the three equations share this pipeline, and that their distances are not one number.}
 \end{frame}
 
 % ============================================================
-\renewcommand{\sectime}{About five minutes}
+\renewcommand{\sectime}{About six minutes}
 \section[Introduction]{Introduction}
 
-\begin{frame}{High-fidelity clouds are expensive}
-  Interacting particles are a flexible solver for nonlinear diffusion, aggregation, and front speeds.
-  The object we actually need is often the \emph{terminal cloud}, or a long-time invariant measure, at many values of a physical parameter.
-  \vspace{0.6em}
-  \begin{itemize}
-    \item A Keller--Segel trajectory integrates interaction, advection, and noise out to a fixed horizon.
-    \item A KPP front speed waits through thousands of Feynman--Kac generations.
-    \item The same family of clouds is required again at the next parameter value.
-  \end{itemize}
+\begin{frame}{The cloud is required many times}
+  The useful object is a particle cloud: the terminal law of an aggregation model, or the invariant measure that carries a front speed.
+  It is required again at the next value of a physical parameter.
   \vspace{0.5em}
-  The solver stays in the training pipeline.
-  The question is whether a network can emit the cloud when the solver is no longer affordable.
-  \note{Do not apologise for the solver. It is the teacher of the network.}
+  \begin{itemize}
+    \item A Keller--Segel step sums a pairwise attraction over the ensemble, then adds the flow and the noise.
+    \item A KPP speed waits through a long sequence of Feynman--Kac generations.
+    \item Each new parameter repeats that solve.
+  \end{itemize}
+  \vspace{0.4em}
+  The solver can teach a network.
+  It is a poor thing to call at every test parameter.
+  \note{State the problem before naming either network. The next slide is one sentence on DeepParticle.}
 \end{frame}
 
-\begin{frame}{What the surrogate is asked to do}
+\begin{frame}{A direct DeepParticle loss is the expensive step}
+  DeepParticle trains a map by minimising a Wasserstein coupling between the generated cloud and the reference.
+  \vspace{0.45em}
+  While the prior and the target are still far apart, that coupling is long-range, and it is rebuilt throughout training.
+  On a cloud of $10^5$ particles the exact cost matrix does not fit in a training step.
+  \vspace{0.45em}
+  That cost is the obstacle.
+  The rest of the method exists so that this loss is not asked to move the cloud the whole way.
+  \note{One breath. The linear program and the mini-batch come in the next section.}
+\end{frame}
+
+\begin{frame}{MeanFlow first, then a local correction}
   \centering
   \pipeline
 
-  \vspace{0.7em}
+  \vspace{0.5em}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.48\textwidth}
-      \textbf{Training}\\[0.3em]
+      \textbf{Stage I, MeanFlow}\\[0.25em]
       \raggedright
-      An interacting-particle method builds a reference cloud for each condition $\eta$.
-      Stage~I learns a one-step transport from a simple prior.
-      Stage~II freezes that map and learns a small correction.
+      A regression on an average velocity.
+      No coupling is formed.
+      One evaluation pulls the prior onto the target support.
     \end{column}
     \begin{column}{0.48\textwidth}
-      \textbf{Inference}\\[0.3em]
+      \textbf{Stage II, DeepParticle}\\[0.25em]
       \raggedright
-      Draw $\epsilon$ from the prior, evaluate Stage~I once, evaluate Stage~II once.
-      The output is a particle cloud at the requested $\eta$.
-      No time step, no resampling, no chemotaxis sum.
+      The first map is frozen.
+      The two clouds already overlap, so the coupling is local and the fine-tuning is much cheaper than the original long-range loss.
     \end{column}
   \end{columns}
-  \note{Point at the four boxes left to right. Emphasise that the solver is absent from the right-hand column.}
-\end{frame}
-
-\begin{frame}{What this project contributes}
-  The source paper studies three-dimensional Keller--Segel and KPP, and does not release a complete implementation.
-  This capstone rebuilds the architecture and then moves it.
-  \vspace{0.45em}
-  \begin{itemize}
-    \item Laminar and Kolmogorov Keller--Segel, with the advection amplitude as the condition.
-    \item KPP front speeds on the two-torus and on the three-torus.
-    \item A new target: a Fokker--Planck double well, with and without spatial killing.
-    \item A continuity argument for conditioning on shear and diffusivity together.
-  \end{itemize}
-  \vspace{0.35em}
-  A class-conditional sampler for handwritten digits is a separate check that the target need not come from a PDE.
-  It returns at the end.
-  \note{Four contributions. Save the digit experiment so it does not compete with the equations.}
-\end{frame}
-
-\begin{frame}{Each distance has its own ruler}
-  Every number below is a quadratic Wasserstein distance on a histogram.
-  The binning, the projection, and the number of seeds change with the equation.
   \vspace{0.4em}
-  \small
-  \begin{tabular}{@{}llp{5.7cm}@{}}
-    \toprule
-    Experiment & Ruler & How to hear it \\
-    \midrule
-    Laminar KS & 16 bins per axis, 3 seeds & The benchmark table \\
-    Kolmogorov KS & Histogram, one seed & Interim; not the 16-bin table \\
-    KPP on $\mathbb{T}^2$ & $72\times 72$, periodic & About $0.13$, not $0.19$ \\
-    KPP on $\mathbb{T}^3$ & $W_2$ of the $x$--$z$ projection & A shadow of the cloud \\
-    Fokker--Planck & $96\times 96$ & Compared with a self-distance \\
-    \bottomrule
-  \end{tabular}
-  \vspace{0.45em}
-  \normalsize
-  A smaller number is better \emph{inside one row}.
-  A $0.13$ on the torus is not a better laminar result than $0.19$.
-  \note{This slide prevents the usual question that adds the tables together. Stay on it until that is clear.}
+  \raggedright
+  At inference the solver is not called: one forward pass, then one correction.
+  \note{Point left to right. The saving is the right-hand column.}
 \end{frame}
 
-\begin{frame}{The headlines, before the details}
+\begin{frame}{What the correction changes on the laminar cloud}
+  \centering
+  \includegraphics[height=0.58\textheight]{laminar_heatmap_xz.png}\\[0.2em]
+  {\scriptsize $x$--$z$ density, seed $88$.
+  Rows: reference, MeanFlow, DeepParticle alone, MeanFlow$+$DP.
+  Mean $16$-bin $W_2$ over $\sigma=10,\ldots,200$ and three seeds:
+  $0.3545$, $0.4564$, $0.1902$.
+  The two-step map is lower at every amplitude.}
+  \note{The triangle is the result. MeanFlow finds it, DeepParticle stays round, the corrector keeps the shear. $0.1902$ is $46\%$ below $0.3545$.}
+\end{frame}
+
+\begin{frame}{The same split, on the other targets}
   \small
   \begin{tabular}{@{}lccc@{}}
     \toprule
      & Initialiser & Two-step & What changes \\
     \midrule
-    Laminar KS, 20 amplitudes & $0.3545$ & $0.1902$ & $46.35\%$ lower \\
+    Laminar KS, $20$ amplitudes & $0.3545$ & $0.1902$ & $46.35\%$ lower \\
     Kolmogorov KS, full test & $0.19152$ & $0.14270$ & $25.49\%$ lower \\
-    KPP on $\mathbb{T}^2$, 11 levels & $0.1434$ & $0.1345$ & lower on 8 of 11 \\
-    KPP on $\mathbb{T}^3$, $x$--$z$ & $0.1293$ & $0.1065$ & lower on 10 of 11 \\
+    KPP on $\mathbb{T}^2$, $11$ levels & $0.1434$ & $0.1345$ & lower on $8$ of $11$ \\
+    KPP on $\mathbb{T}^3$, $x$--$z$ & $0.1293$ & $0.1065$ & lower on $10$ of $11$ \\
     \bottomrule
   \end{tabular}
-  \vspace{0.55em}
+  \vspace{0.45em}
   \normalsize
-  On the laminar row the initialiser is MeanFlow, and DeepParticle alone sits at $0.4564$, worse than MeanFlow.
-  On the Kolmogorov row the initialiser is improved MeanFlow.
-  Fokker--Planck has no single mean in the report: the two-step cloud is closer at every plotted strength of the potential.
-  \note{Read only the laminar percentage slowly. Say the other rows are the same pattern on a different ruler.}
+  Read each row on its own histogram.
+  On Fokker--Planck the two-step cloud is closer at every plotted well strength; the report gives that ordering, not one mean.
+  The pictures for KPP, and the design that changes with each equation, come after the method.
+  \note{Do not add the four rows. The laminar picture is the one to remember from this section.}
+\end{frame}
+
+% ============================================================
+\renewcommand{\sectime}{About six minutes}
+\section[DeepParticle]{DeepParticle}
+
+\begin{frame}{The loss does not use particle labels}
+  A reference at condition $\eta$ is an empirical measure
+  \(
+    \hat\rho_N=N^{-1}\sum_{i=1}^N\delta_{X_i}.
+  \)
+  The prior and the target are drawn independently, so an index is not an identity.
+  \vspace{0.4em}
+  DeepParticle minimises the quadratic Wasserstein distance,
+  \[
+    \widehat W_2^2
+    =\min_{\gamma\in\Gamma_N}\sum_{i,j}\gamma_{ij}\,\|x_i-y_j\|_2^2.
+  \]
+  The cost sees mass and geometry.
+  Reordering either list does not change it.
+  \note{Two identical clouds in different order have distance zero. That is why the loss is a coupling.}
+\end{frame}
+
+\begin{frame}{The original loop carries the cloud the whole way}
+  The original DeepParticle method alternates two updates.
+  \vspace{0.4em}
+  \begin{enumerate}
+    \item Move the network, with the current coupling held fixed.
+    \item Rebuild the coupling, with the network held fixed.
+  \end{enumerate}
+  \vspace{0.45em}
+  In that method the same loss joins the prior to the reference.
+  Every matched pair may sit far apart in the domain, and the plan is recomputed while the network is still learning the global move.
+  \note{Name Wang, Xin, and Zhang, 2022 and 2024, without reading the titles.}
+\end{frame}
+
+\begin{frame}{That coupling is the expensive object}
+  \begin{itemize}
+    \item An exact plan on the full cloud builds a cost matrix of size $N\times N$. At $N=10^5$ that matrix does not fit in a training step.
+    \item A mini-batch makes the linear program small. It does not make a far-apart matching local: the solver is still asked to move mass across the domain.
+    \item The plan is rebuilt many times. Most of the budget is then the transport solve, not the network.
+  \end{itemize}
+  \vspace{0.45em}
+  This is the difficulty of using the original loss by itself.
+  A regression that first places the cloud lets the same loss fine-tune, instead of rearranging the domain at every refresh.
+  \note{Do not quote a speed-up factor. The full-cloud matrix is not a baseline we timed, because it does not fit.}
+\end{frame}
+
+\begin{frame}{Alone, the corrector does not build the support}
+  On the laminar sweep, the $16$-bin distance averaged over twenty amplitudes and seeds $88$, $89$, and $90$ is
+  \vspace{0.35em}
+  \begin{center}
+  \begin{tabular}{lccc}
+    \toprule
+    MeanFlow & DeepParticle alone & MeanFlow $+$ DP & From MeanFlow \\
+    \midrule
+    $0.3545$ & $0.4564$ & $0.1902$ & $46.35\%$ lower \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.3em}
+  DeepParticle alone is lower than MeanFlow only at $\sigma\in\{10,70,80,90\}$.
+  The picture in the introduction is the same fact: alone, the corrector stays a round cloud.
+  \note{The number and the triangle say the same thing. The loss is the wrong instrument for the global move.}
 \end{frame}
 
 % ============================================================
 \renewcommand{\sectime}{About seven minutes}
-\section[DeepParticle]{DeepParticle}
+\section[Two-Step]{Two-Step Diffusion}
 
-\begin{frame}{The object is a cloud, not a labelled list}
-  A reference at condition $\eta$ is an empirical measure
+\begin{frame}{Stage I spends no optimal-transport solve}
+  MeanFlow learns the average velocity on an interval,
   \[
-    \hat\rho_N=\frac1N\sum_{i=1}^N\delta_{X_i}.
+    u(z_t,r,t)
+    =v(z_t,t)-(t-r)\,\frac{\mathrm{d}}{\mathrm{d}t}u(z_t,r,t).
   \]
-  The network returns another cloud of $N$ points.
-  Nothing in the sampler tells us which generated point is supposed to match which reference point.
-  \vspace{0.45em}
-  \begin{itemize}
-    \item The prior and the target are drawn independently.
-    \item A particle index is an arbitrary label.
-    \item A pointwise mean square would change if either cloud were reordered.
-  \end{itemize}
-  \note{One concrete picture: two identical clouds, written in different order, must have distance zero.}
-\end{frame}
-
-\begin{frame}{Quadratic Wasserstein distance}
-  For measures $\mu$ and $\nu$,
-  \[
-    W_2^2(\mu,\nu)
-    =\inf_{\gamma\in\Gamma(\mu,\nu)}\int\|x-y\|_2^2\,\mathrm{d}\gamma(x,y).
-  \]
-  On two equal-weight clouds the same definition is a linear program over couplings,
-  \[
-    \widehat W_2^2
-    =\min_{\gamma\in\Gamma_N}\sum_{i,j}\gamma_{ij}\,\|x_i-y_j\|_2^2,
-    \qquad
-    \gamma\ge 0,\;
-    \gamma\mathbf{1}=\tfrac1N\mathbf{1},\;
-    \gamma^\top\mathbf{1}=\tfrac1N\mathbf{1}.
-  \]
+  The training target is a stopped regression along the straight path from a target point $x_0$ to a prior point $\epsilon$.
+  No coupling is formed while those two clouds are far apart.
   \vspace{0.35em}
-  The cost sees mass and geometry.
-  It does not see the order of the lists.
-  Exact solution of this program is the Earth Mover's distance.
-  \note{Say coupling in one sentence: a joint plan whose row and column sums recover the two clouds.}
-\end{frame}
-
-\begin{frame}{How DeepParticle uses that distance}
-  DeepParticle learns a deterministic map by minimising the empirical Wasserstein distance to particle data.
-  The original method alternates two updates:
-  \vspace{0.4em}
-  \begin{enumerate}
-    \item Move the network parameters, with the current coupling held fixed.
-    \item Recompute the coupling, with the network held fixed.
-  \end{enumerate}
-  \vspace{0.45em}
-  The first papers in this line target an invariant measure, then a finite-time Keller--Segel cloud, then a map that can also be run backwards.
-  In the two-step algorithm the same idea is used more narrowly.
-  Stage~I is expected to have done the global displacement, so the transport plan only has to finish a local alignment.
-  \note{Name Wang, Xin, and Zhang, 2022 and 2024, without reading the titles.}
-\end{frame}
-
-\begin{frame}{Where the reference cloud comes from}
-  Before either network is trained, a particle method turns the PDE into points.
-  \vspace{0.35em}
-  \begin{itemize}
-    \item Keller--Segel: Euler--Maruyama on an interacting system with a smoothed attraction kernel, a prescribed flow, and Brownian noise.
-    \item KPP: a genetic algorithm on the torus. Each generation advances one forcing period, reweights by a Feynman--Kac potential, and resamples.
-    \item Fokker--Planck: for the double well, equilibrium points can be drawn from the Gibbs law directly, because the potential factors.
-  \end{itemize}
-  \vspace{0.4em}
-  The stored cloud is the teacher.
-  Training does not rerun the long particle system at every step.
-  \note{The three constructions return in part four. Here the audience only needs to know that the teacher is a point cloud.}
-\end{frame}
-
-\begin{frame}{A corrector that starts as the identity}
-  After Stage~I is frozen, the second map is
+  The trained map does not integrate. One evaluation gives
   \[
-    f_\phi(x,\eta)=x+\alpha\, h_\phi(x,\eta).
+    x_{\mathrm{MF}}=\epsilon-u_\theta(\epsilon,0,1,\eta).
   \]
-  The last layer of $h_\phi$ is initialised at zero, so the first prediction is exactly $x$.
-  \vspace{0.4em}
-  For a mini-batch of Stage~I points and a condition-matched reference batch, the cost matrix is
+  The condition $\eta$ is a sinusoidal embedding.
+  It asks one network to carry a family of transports.
+  \note{The identity is the whole of Stage I. If time is short, read only the sampler line.}
+\end{frame}
+
+\begin{frame}{Stage II is a fine-tune, not a second global solve}
+  After $\theta$ is frozen, the corrector is
   \[
-    C_{ij}=\|f_\phi(x_i,\eta)-x^{\mathrm{ref}}_j\|_2^2.
+    f_\phi(x,\eta)=x+\alpha\, h_\phi(x,\eta),
   \]
-  An exact Earth Mover's solve on that batch produces a coupling $\gamma$.
-  The loss is the transport cost plus a penalty that keeps the step small,
+  with the last layer at zero, so the map starts as the identity.
+  On a mini-batch the exact coupling $\gamma$ of the corrected points against the reference gives
   \[
     \mathcal{L}_{\mathrm{DP}}
     =\langle C,\gamma\rangle
     +\frac{\lambda_{\mathrm{res}}}{B}\sum_{i=1}^B\|f_\phi(x_i,\eta)-x_i\|_2^2.
   \]
-  \note{The residual term is why we call the second map a corrector. Without it, nothing stops a second global rearrangement.}
+  \vspace{0.3em}
+  The default rhythm rebuilds that mini-batch coupling every $50$ steps, and redraws the batch every $1{,}500$.
+  The residual penalty keeps the step small.
+  Because MeanFlow has already placed the mass, these pairs are short.
+  \note{The formula is the original DeepParticle loss. What changed is the distance the coupling has to cover.}
 \end{frame}
 
-\begin{frame}{The coupling is exact, and it is stale on purpose}
-  The full cloud is too large for an Earth Mover's solve at every step.
-  The method therefore does three different things on three clocks.
-  \vspace{0.35em}
-  \begin{itemize}
-    \item The default Stage~II run has $20{,}000$ parameter updates.
-    \item The mini-batch is redrawn every $1{,}500$ updates.
-    \item The coupling is recomputed every $50$ updates, by an exact solve on the current batch.
-  \end{itemize}
-  \vspace{0.4em}
-  Between solves, $\gamma$ is a constant.
-  The loss can fall smoothly and then jump when the plan is replaced.
-  That jump is the schedule.
-  Mini-batch optimal transport is also a biased stand-in for the distance on the full cloud, which is accepted so that the exact solve remains possible.
-  \note{If asked why not Sinkhorn: the training target in this project is the exact mini-batch coupling.}
-\end{frame}
-
-\begin{frame}{Alone, the corrector is a weak global map}
-  On the laminar Keller--Segel sweep the same 16-bin distance, averaged over $\sigma=10,20,\ldots,200$ and over seeds $88$, $89$, and $90$, is
-  \vspace{0.35em}
-  \begin{center}
-  \begin{tabular}{lccc}
+\begin{frame}{What is no longer paid for}
+  \small
+  \begin{tabular}{@{}lll@{}}
     \toprule
-    MeanFlow & DeepParticle alone & MeanFlow $+$ DP & Reduction from MeanFlow \\
+     & Original DeepParticle & Two-step fine-tune \\
     \midrule
-    $0.3545$ & $0.4564$ & $0.1902$ & $46.35\%$ \\
+    Matched pair & prior and a far reference & MeanFlow cloud and reference \\
+    When it runs & throughout training & only after the move \\
+    The plan & full cloud, or a long-range batch & mini-batch, every $50$ steps \\
+    The network & the whole transport & a near-identity correction \\
     \bottomrule
   \end{tabular}
-  \end{center}
-  \vspace{0.35em}
-  DeepParticle alone is lower than MeanFlow only at $\sigma\in\{10,70,80,90\}$.
-  It does not build the sheared support.
-  Once MeanFlow has placed that support, the corrector is lower than both one-stage maps at every amplitude.
-  \note{This is the reason for two stages. Do not read it as a failure of optimal transport. Read it as the wrong job for a near-identity map.}
-\end{frame}
-
-% ============================================================
-\renewcommand{\sectime}{About eight minutes}
-\section[Two-Step]{Two-Step Diffusion}
-
-\begin{frame}{One global move, then a local repair}
-  Flow matching learns an instantaneous velocity.
-  Integrating that velocity still costs many network evaluations.
-  MeanFlow replaces the velocity by its average over a time interval, and the whole transport collapses to one evaluation.
-  \vspace{0.45em}
-  That one evaluation is fast, and it is a weak instrument for fine geometry.
-  DeepParticle has the opposite profile: an explicit Wasserstein loss, and no mechanism that first carries mass across the domain.
-  \vspace{0.45em}
-  \begin{block}{The split}
-    Stage~I is a one-step MeanFlow map from the prior onto the support.
-    Stage~II is a DeepParticle corrector, trained only after Stage~I is frozen.
-  \end{block}
-  \note{Say coarse, then fine. The freeze is a design choice, and it returns as a limitation.}
-\end{frame}
-
-\begin{frame}{Average velocity over an interval}
-  Let $v$ be an instantaneous velocity and write $z_t$ for the state at time $t$.
-  The average velocity from $r$ to $t$ is
-  \[
-    u(z_t,r,t)=\frac{1}{t-r}\int_r^t v(z_\tau,\tau)\,\mathrm{d}\tau,
-    \qquad 0\le r<t\le 1.
-  \]
-  Differentiating in the upper limit gives the MeanFlow identity
-  \[
-    u(z_t,r,t)
-    =v(z_t,t)-(t-r)\,\frac{\mathrm{d}}{\mathrm{d}t}u(z_t,r,t).
-  \]
-  The total derivative is a Jacobian--vector product,
-  \[
-    \frac{\mathrm{d}}{\mathrm{d}t}u
-    =\mathrm{JVP}\big[u;\,(z_t,r,t);\,(v,0,1)\big].
-  \]
-  \note{If the room is mathematical, stay on the identity. If not, say: the network is trained to predict the displacement of a whole interval, not the slope at one instant.}
-\end{frame}
-
-\begin{frame}{The path, the target, and the one evaluation}
-  Time runs from the target toward the prior.
-  A target point $x_0$ and a prior point $\epsilon$ give
-  \[
-    z_t=(1-t)\,x_0+t\,\epsilon,
-    \qquad
-    v_c=\epsilon-x_0.
-  \]
-  The regression target replaces $v$ by $v_c$ and stops the gradient through the derivative,
-  \[
-    u_{\mathrm{tar}}=v_c-(t-r)\,\mathrm{JVP}.
-  \]
-  When $r=t$ the identity reduces to ordinary flow matching.
-  A fixed fraction of the batch is placed on that boundary.
-  \vspace{0.35em}
-  The trained sampler does not integrate. From noise at time $1$,
-  \[
-    x_{\mathrm{MF}}=\epsilon-u_\theta(\epsilon,0,1,\eta).
-  \]
-  The physical condition $\eta$ enters as a sinusoidal embedding.
-  It does not change the identity.
-  It does ask one network to carry a family of transports.
-  \note{Write the sampler formula on the board if you can. It is the whole of Stage I at test time.}
-\end{frame}
-
-\begin{frame}{Stage I, as it is trained}
-  \small
-  \begin{enumerate}
-    \item Draw a condition $\eta$, a reference point $x_0$, a prior point $\epsilon$, and times $0\le r\le t\le 1$.
-    \item Form the straight path $z_t$ and the conditional velocity $v_c=\epsilon-x_0$.
-    \item For original MeanFlow, evaluate $u_\theta$ and its total derivative by a forward Jacobian--vector product. Set $u_{\mathrm{tar}}=v_c-(t-r)\dot u$ and regress $u_\theta$ toward the stopped target.
-    \item Improved MeanFlow rearranges the same identity so that the regression target is the instantaneous velocity, which does not depend on the network. The Kolmogorov experiment uses this variant. The laminar table uses the original loss.
-    \item Pixel MeanFlow is specified as a later ablation. It is not in the reported runs.
-  \end{enumerate}
-  \note{Do not derive improved MeanFlow. The only fact the later slides need is which experiment used which loss.}
-\end{frame}
-
-\begin{frame}{Stage II, after the first map is frozen}
-  \begin{enumerate}
-    \item Freeze $\theta$. Generate a Stage~I cloud for every training condition and keep the matched reference.
-    \item Zero the last layer, so $f_\phi$ begins as the identity.
-    \item On each step, map the current mini-batch through $f_\phi$.
-    \item Every $50$ steps, rebuild the cost and replace $\gamma$ by the exact mini-batch coupling.
-    \item Every $1{,}500$ steps, draw a new mini-batch.
-    \item Update $\phi$ by the sum of the transport cost and the residual penalty.
-  \end{enumerate}
-  \vspace{0.35em}
-  The Kolmogorov run reported later shortens this second stage to $10{,}000$ updates and sets its learning rate to $10^{-4}$.
-  The $20{,}000$ / $50$ / $1{,}500$ rhythm is the default method, not a claim that every table used it.
-  \note{Separate the algorithm from the run. Questions about the Kolmogorov learning rate should land here.}
+  \vspace{0.4em}
+  \normalsize
+  The Wasserstein stage is still exact on its mini-batch.
+  The training cost of that stage drops because the problem it solves is local.
+  \note{Read the second row. That is the saving. Inference then adds one forward pass, not another solve.}
 \end{frame}
 
 \begin{frame}{Inference is two evaluations}
@@ -492,286 +381,240 @@
     \;\longmapsto\;
     \hat x=f_\phi(x_{\mathrm{MF}},\eta).
   \]
-  \vspace{0.2em}
+  \vspace{0.25em}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.48\textwidth}
-      \textbf{Present at training}\\[0.25em]
+      \textbf{Paid at training}\\[0.25em]
       \raggedright
-      the particle solver,
-      the reference clouds,
-      the Jacobian--vector product,
-      and the Earth Mover's solve.
+      the particle solver that builds the teacher,
+      the MeanFlow regression,
+      and the local mini-batch couplings.
     \end{column}
     \begin{column}{0.48\textwidth}
-      \textbf{Present at inference}\\[0.25em]
+      \textbf{Paid at inference}\\[0.25em]
       \raggedright
-      one forward pass of $u_\theta$,
-      one forward pass of $f_\phi$,
+      one pass of $u_\theta$,
+      one pass of $f_\phi$,
       and the requested condition $\eta$.
     \end{column}
   \end{columns}
-  \vspace{0.45em}
-  Both maps are deterministic.
+  \vspace{0.4em}
   Changing $\eta$ changes the cloud without a new solve.
-  \note{Close the method part on this formula. The next section tests it, for about thirteen minutes.}
+  Each equation below keeps this loop and changes the teacher and the network input.
+  \note{Close the method here. Do not re-derive it on the equation slides.}
 \end{frame}
 
 % ============================================================
-\renewcommand{\sectime}{About thirteen minutes}
+\renewcommand{\sectime}{About fourteen minutes}
 \section[Equations]{Three Equations}
 
-\begin{frame}{One pipeline, three laws}
+\begin{frame}{One loop, three different inputs}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.31\textwidth}
       \begin{block}{Keller--Segel}
-        Aggregation in a prescribed flow.
-        Laminar shear, then a cellular Kolmogorov field.
-        The condition is the amplitude $\sigma$.
+        Euclidean $\mathbb{R}^3$.
+        The network reads the raw coordinates.
+        The corrector has four residual blocks.
       \end{block}
     \end{column}
     \hfill
     \begin{column}{0.31\textwidth}
       \begin{block}{KPP}
-        A reaction--diffusion front in a periodic flow.
-        The learned object is the invariant measure that carries the front speed.
+        A torus.
+        Coordinates are lifted by sine and cosine.
+        The corrector has six blocks, and the ground metric is periodic.
       \end{block}
     \end{column}
     \hfill
     \begin{column}{0.31\textwidth}
       \begin{block}{Fokker--Planck}
-        A double well in the plane.
-        First the equilibrium.
-        Then the same well with a killing field.
+        The Euclidean network of Keller--Segel.
+        The teacher is a Gibbs sample, not a trajectory.
+        A second score: the spectral gap.
       \end{block}
     \end{column}
   \end{columns}
-  \vspace{0.55em}
-  Kolmogorov flow is a second velocity in the Keller--Segel equation, not a fourth equation.
-  \note{Gesture three columns. Spend the thirteen minutes as about four, five, and four.}
+  \note{The loop is finished. Spend the time on the picture and the one design change.}
 \end{frame}
 
-\begin{frame}{Keller--Segel in three dimensions}
-  The density of cells satisfies
+\begin{frame}{Keller--Segel: raw coordinates in a shear}
+  The density satisfies
   \[
     \partial_t\rho+v\cdot\nabla\rho
-    =\mu\Delta\rho+\chi\nabla\cdot\big(\rho\,\nabla(K*\rho)\big).
+    =\mu\Delta\rho+\chi\nabla\cdot\big(\rho\,\nabla(K*\rho)\big),
   \]
-  The regularised particle system used to build the teacher is
-  \[
-    \mathrm{d}X_i
-    =-\frac{\chi}{N}\sum_{j\neq i}\nabla K_\delta(X_i-X_j)\,\mathrm{d}t
-    +v(X_i)\,\mathrm{d}t
-    +\sqrt{2\mu}\,\mathrm{d}W_i,
-  \]
-  with $K_\delta(z)=|z|/\big(4\pi(|z|^2+\delta^2)\big)$.
-  \vspace{0.25em}
-  In the laminar benchmark only the amplitude varies,
-  \[
-    v(x,y,z)=\sigma\big(e^{-y^2-z^2},\,0,\,0\big)^\top,
-    \qquad \mu=1,
-  \]
-  and $\sigma=10,20,\ldots,200$.
-  \note{Read the velocity as a shear along $x$ that is strongest near the $y=z=0$ axis. $\mu$ and $\chi$ stay fixed in this section.}
+  with the steady shear
+  \(
+    v=\sigma\,(e^{-y^2-z^2},\,0,\,0)^\top
+  \)
+  and $\mu=1$.
+  The amplitudes are $\sigma=10,20,\ldots,200$.
+  \vspace{0.4em}
+  \begin{itemize}
+    \item The network reads $(x,y,z)$ and a sinusoidal embedding of $\sigma$. There is no periodic lift.
+    \item The corrector is four residual blocks. It is the map whose failure, used alone, is the round cloud in the introduction.
+    \item The teacher is the interacting particle system: pairwise attraction, this shear, and Brownian noise.
+  \end{itemize}
+  \note{The pairwise sum is why the teacher is expensive. The network itself is the plain Euclidean map.}
 \end{frame}
 
-\begin{frame}{Laminar sweep: the corrector wins at every amplitude}
-  Exact 16-bin histogram $W_2$, mean of seeds $88$, $89$, and $90$.
-  \vspace{0.3em}
+\begin{frame}{Laminar distances}
+  Exact $16$-bin histogram $W_2$, mean of seeds $88$, $89$, and $90$.
+  \vspace{0.25em}
   \small
   \begin{tabular}{@{}lcccc@{}}
     \toprule
-    $\sigma$ & MeanFlow & DeepParticle & MeanFlow$+$DP & Reduction \\
+    $\sigma$ & MeanFlow & DeepParticle & Two-step & Reduction \\
     \midrule
     $10$  & $0.3411$ & $0.1809$ & $0.1509$ & $55.76\%$ \\
     $80$  & $0.2253$ & $0.2137$ & $0.1411$ & $37.37\%$ \\
     $140$ & $0.3384$ & $0.5182$ & $0.1699$ & $49.79\%$ \\
     $200$ & $0.8517$ & $1.1372$ & $0.4090$ & $51.98\%$ \\
     \midrule
-    Mean of all $20$ & $0.3545$ & $0.4564$ & $0.1902$ & $46.35\%$ \\
+    Mean of $20$ & $0.3545$ & $0.4564$ & $0.1902$ & $46.35\%$ \\
     \bottomrule
   \end{tabular}
-  \vspace{0.4em}
+  \vspace{0.35em}
   \normalsize
-  MeanFlow$+$DP is below both one-stage maps at all twenty amplitudes.
-  Past $\sigma=140$ every error grows. The two-step curve stays the lowest.
-  In the $x$--$z$ plane the reference becomes a sheared triangle; MeanFlow finds that support, DeepParticle alone stays rounded, and the corrector keeps the shear.
-  \note{Do not read all twenty rows. The four rows show a weak shear, a moderate shear, and the two hard amplitudes. Offer the full table if asked.}
+  The two-step row is the lowest at all twenty amplitudes.
+  Past $\sigma=140$ every error grows. DeepParticle alone grows fastest, because it never forms the sheared triangle.
+  \note{Four rows are enough. Offer the full table if asked. Point back at the figure rather than describing it again.}
 \end{frame}
 
-\begin{frame}{The same equation in Kolmogorov flow}
-  The velocity is replaced by
+\begin{frame}{Kolmogorov flow: the same network, another velocity}
+  The Euclidean map is unchanged. The velocity becomes
   \[
-    v(x,y,z)=\sigma\big(\sin 2\pi z,\,\sin 2\pi x,\,\sin 2\pi y\big)^\top.
+    v=\sigma\,(\sin 2\pi z,\,\sin 2\pi x,\,\sin 2\pi y)^\top.
   \]
-  Training uses $\sigma=10,20,\ldots,100$, and $\sigma=110$ is held out.
-  The run is improved MeanFlow for $50{,}000$ steps, then $10{,}000$ corrector steps at learning rate $10^{-4}$.
-  \vspace{0.35em}
+  Training uses $\sigma=10,\ldots,100$. The held-out value is $\sigma=110$.
+  Stage~I here is improved MeanFlow, for $50{,}000$ steps; the laminar table used the original MeanFlow loss.
+  The corrector then runs for $10{,}000$ steps.
+  \vspace{0.2em}
   \small
   \begin{tabular}{@{}lccc@{}}
     \toprule
-    Subset & iMF & iMF$+$DP & Reduction \\
+    Subset & iMF & Two-step & Reduction \\
     \midrule
     Training grid & $0.18183$ & $0.13314$ & $26.78\%$ \\
-    Interpolation   & $0.18401$ & $0.13720$ & $25.44\%$ \\
-    Extrapolation, $\sigma=110$ & $0.26659$ & $0.19772$ & $25.83\%$ \\
+    Interpolation & $0.18401$ & $0.13720$ & $25.44\%$ \\
+    $\sigma=110$, held out & $0.26659$ & $0.19772$ & $25.83\%$ \\
     Full test & $0.19152$ & $0.14270$ & $25.49\%$ \\
     \bottomrule
   \end{tabular}
+  \vspace{0.25em}
+  \normalsize
+  About a quarter of the error comes off on the grid, inside it, and outside it.
+  This run is one seed, and it predates the split between the Gaussian prior and the physical initial cloud.
+  \note{The held-out row is the result. The caveat is one sentence, so the number is not later quoted as a three-seed fact.}
+\end{frame}
+
+\begin{frame}{KPP: the network has to see the period}
+  The loop is unchanged. The state lives on a torus, so three pieces of the Keller--Segel design are replaced.
   \vspace{0.35em}
-  \normalsize
-  The corrector removes about a quarter of the error on the grid, inside it, and at $\sigma=110$.
-  One seed, and this generator predates the split between the Gaussian prior and the physical initial cloud.
-  \note{Give the extrapolation row the stress. Then say the caveat in one breath, so the number is not quoted later as a three-seed result.}
+  \begin{itemize}
+    \item On the two-dimensional map and on the corrector, each coordinate is lifted to $(x,\sin x,\cos x)$, so the ends of the period are one point. Keller--Segel reads the raw coordinates.
+    \item Stage~I pairs particles by periodic optimal transport, and the path can follow the geodesic on the torus rather than a Euclidean straight line.
+    \item The corrector has six residual blocks. The Keller--Segel corrector has four. The ground metric of its coupling is the periodic distance.
+  \end{itemize}
+  \vspace{0.3em}
+  The teacher is a resampled Feynman--Kac cloud, stored as a warm start for the front speed.
+  Here $\sigma=\kappa$. Training stops at $-\log_2\sigma=3.75$; the three levels out to $4.50$ are extrapolations.
+  \note{The lift is the design point. Do not return to the MeanFlow identity.}
 \end{frame}
 
-\begin{frame}{KPP: the front speed is stored as a cloud}
-  On a periodic flow the reaction--diffusion equation is
-  \[
-    \partial_t u+v\cdot\nabla u=\kappa\Delta u+r u(1-u).
-  \]
-  The minimal speed in a direction $e$ is a variational eigenvalue,
-  \[
-    c^*(e)=\inf_{\lambda>0}\frac{\mu(\lambda)}{\lambda}.
-  \]
-  At fixed $\lambda$ the eigenvalue is carried by a twisted diffusion.
-  On the two-torus that diffusion is
-  \[
-    \mathrm{d}X_t
-    =\big(2\kappa\lambda e_1+v(X_t,t)\big)\,\mathrm{d}t+\sqrt{2\kappa}\,\mathrm{d}W_t.
-  \]
-  \vspace{0.25em}
-  We store the long-time empirical measure, not the front itself.
-  Here $\sigma=\kappa$, $\lambda=2$, and $\theta=1$.
-  Training runs through $-\log_2\sigma=3.75$. Evaluation continues to $4.50$, so the last three levels are extrapolations.
-  \note{Translate once: a good initial cloud for the particle system is a warm start for the speed. The cloud is the object the network learns.}
+\begin{frame}{Two-dimensional ridge and distance}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.40\textwidth}
+      \raggedright
+      \small
+      A uniform cold start stays between $1.05$ and $1.17$.
+      \vspace{0.35em}
+      \begin{tabular}{@{}lcc@{}}
+        \toprule
+        $-\log_2\sigma$ & MF & DP \\
+        \midrule
+        $2.00$ & $0.0962$ & $0.1061$ \\
+        $3.75$ & $0.1424$ & $0.1368$ \\
+        $4.50$ & $0.2629$ & $0.2326$ \\
+        \midrule
+        Mean & $0.1434$ & $0.1345$ \\
+        \bottomrule
+      \end{tabular}
+      \vspace{0.3em}
+      Lower on $8$ of $11$ levels, including every extrapolation.
+      The paper's MeanFlow mean is $0.0769$.
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      \includegraphics[trim=4.20in 0 0 0,clip,width=\linewidth]{fig6_w2_2d.png}\\[0.15em]
+      {\scriptsize Dashed line: end of training.}
+    \end{column}
+  \end{columns}
+  \note{Read the rise past the dashed line, then $0.0769$. The curve is ours. The gap to the paper is still open.}
 \end{frame}
 
-\begin{frame}{The two-dimensional ridge}
+\begin{frame}{The ridge the distance is measuring}
   \centering
-  \includegraphics[height=0.62\textheight]{fig5_invariant_2d.png}\\[0.2em]
-  {\scriptsize Top row: training level $\sigma=2^{-3.75}$.
-  Bottom row: extrapolation $\sigma=2^{-4}$.
-  Columns: MeanFlow, corrector, Feynman--Kac reference.
-  Each panel has its own colour scale.}
-  \note{Point at the wavy band. MeanFlow finds the trough. The reference is grainier. The corrector does not leave the band. The miss, where there is one, is geometric.}
+  \includegraphics[height=0.60\textheight]{fig5_invariant_2d.png}\\[0.12em]
+  {\scriptsize Top: training, $\sigma=2^{-3.75}$.
+  Bottom: extrapolation, $\sigma=2^{-4}$.
+  Columns: MeanFlow, corrector, Feynman--Kac reference.}
+  \note{MeanFlow finds the wavy band. The reference is grainier. The corrector stays on the band. The miss is geometric.}
 \end{frame}
 
-\begin{frame}{Two-dimensional distance and speed}
-  A uniform cold start stays between $W_2=1.0538$ and $1.1718$ on the eleven-level grid.
-  \vspace{0.3em}
-  \begin{center}
-  \begin{tabular}{lcc}
-    \toprule
-    $-\log_2\sigma$ & MeanFlow & Corrector \\
-    \midrule
-    $2.00$ (coarsest training) & $0.0962$ & $0.1061$ \\
-    $3.75$ (end of training) & $0.1424$ & $0.1368$ \\
-    $4.50$ (farthest extrapolation) & $0.2629$ & $0.2326$ \\
-    \midrule
-    Mean of all $11$ & $0.1434$ & $0.1345$ \\
-    \bottomrule
-  \end{tabular}
-  \end{center}
-  \vspace{0.3em}
-  The corrector is lower on eight of the eleven levels, including all three extrapolations.
-  The source paper's MeanFlow mean is $0.0769$, and its value at $-\log_2\sigma=4.50$ is $0.0456$.
-  The shape of our curve matches the training boundary: the error is quiet inside the range and rises beyond it.
-  The absolute gap to the source paper is still open.
-  \note{Say $1.05$ down to $0.14$ first, against the cold start. Then say the corrector is a smaller step, and the paper is still lower.}
-\end{frame}
-
-\begin{frame}{Three-dimensional invariant measure at $\sigma=2^{-4.5}$}
+\begin{frame}{Three-dimensional result at $\sigma=2^{-4.5}$}
   \centering
-  \includegraphics[height=0.62\textheight]{fig8_projections_3d.png}\\[0.15em]
-  {\scriptsize Columns: $x$--$y$, $x$--$z$, $y$--$z$.
-  The distance on the next slide uses the middle column.}
-  \note{The middle column is the scored one. MeanFlow already has the high-$z$ mass. The corrector makes the $y$--$z$ ridge thinner and restores the two chevrons in $x$--$y$. Both generated clouds stay grainier than the reference.}
-\end{frame}
-
-\begin{frame}{Three-dimensional distance and speed}
-  The velocity is the time-dependent Kolmogorov field
-  \[
-    v(x,t)=\big(
-      \sin(x_3+\sin 2\pi t),\;
-      \sin(x_1+\sin 2\pi t),\;
-      \sin(x_2+\sin 2\pi t)
-    \big),
-  \]
-  which is divergence-free at every $t$.
-  The cold-start projection stays between $0.8895$ and $0.9600$.
-  \vspace{0.3em}
-  \begin{center}
-  \small
-  \begin{tabular}{lcc}
-    \toprule
-     & MeanFlow & Corrector \\
-    \midrule
-    Mean projected $W_2$ & $0.1293$ & $0.1065$ \\
-    Source paper, same mean & $0.1312$ & $0.0294$ \\
-    At $-\log_2\sigma=4.50$ & $0.1582$ & $0.1366$ \\
-    \bottomrule
-  \end{tabular}
-  \end{center}
-  \vspace{0.25em}
-  \normalsize
-  Our MeanFlow column sits next to the paper.
-  Our corrector improves ten of the eleven levels, and it does not reach the paper's corrector.
-  The smallest corrector error on the grid is $0.0920$, at $-\log_2\sigma=2.75$.
-  \note{This is the cleanest comparison in the KPP section. MeanFlow is reproduced. The second stage is only partly reproduced.}
+  \includegraphics[height=0.58\textheight]{fig8_projections_3d.png}\\[0.1em]
+  {\scriptsize Columns $x$--$y$, $x$--$z$, $y$--$z$.
+  The scored distance is the $x$--$z$ projection:
+  MeanFlow $0.1293$, corrector $0.1065$, against the paper's $0.1312$ and $0.0294$.
+  At $-\log_2\sigma=4.50$ the two values are $0.1582$ and $0.1366$.}
+  \note{MeanFlow matches the paper. The corrector improves ten of eleven levels and does not reach $0.0294$. The middle column is the one that is scored.}
 \end{frame}
 
 \begin{frame}{A matching speed is not a resolved ridge}
-  At $\sigma=2^{-4.5}$ the long-horizon Feynman--Kac speeds are $\hat c=0.7842$ in two dimensions and $0.6147$ in three.
-  \vspace{0.35em}
+  At $\sigma=2^{-4.5}$ the Feynman--Kac speeds are $\hat c=0.7842$ on $\mathbb{T}^2$ and $0.6147$ on $\mathbb{T}^3$.
+  \vspace{0.3em}
   \small
-  \begin{tabular}{@{}lcccc@{}}
+  \begin{tabular}{@{}lccc@{}}
     \toprule
-     & Cold start & MeanFlow, $T=1$ & MeanFlow, $T=128$ & Corrector, $T=128$ \\
+     & Cold start & MeanFlow at $T=1$ & Corrector at $T=128$ \\
     \midrule
-    $\mathbb{T}^2$ & near $0.51$ & $0.8180$ & $0.7841$ & $0.7848$ \\
-    $\mathbb{T}^3$ & near $0.36$ & $0.6148$ & $0.6131$ & $0.6142$ \\
+    $\mathbb{T}^2$ & near $0.51$ & $0.8180$ & $0.7848$ \\
+    $\mathbb{T}^3$ & near $0.36$ & $0.6148$ & $0.6142$ \\
     \bottomrule
   \end{tabular}
-  \vspace{0.45em}
+  \vspace{0.4em}
   \normalsize
   A uniform cloud needs on the order of $10^2$ generations to reach the reference speed.
   The learned warm start is already there, and in three dimensions it is there at the first generation.
-  The histogram error at the same states is still of order $10^{-1}$.
-  The log-weight estimator forgives a ridge that is too smooth.
-  The Wasserstein distance does not.
-  \note{This is the slide to slow down on. A warm start can be right for the speed and still be the wrong shape.}
+  The histogram error at those same states is still of order $10^{-1}$.
+  \note{Slow down. The speed can be right while the ridge is still too smooth.}
 \end{frame}
 
-\begin{frame}{Fokker--Planck in a double well}
-  Rotate the plane by $\pi/4$ and write $(s,u)^\top=R_{\pi/4}^\top x$.
-  With diffusion $D=0.2$ and well strength $a>0$,
-  \[
-    V_a(x)=a\left[\frac{(s^2-1)^2}{4}+\left(u-\frac{s}{2}\right)^2\right],
-    \qquad
-    \mathrm{d}X_t=-\nabla V_a(X_t)\,\mathrm{d}t+\sqrt{2D}\,\mathrm{d}B_t.
-  \]
-  The minima sit at $(s,u)=\pm(1,1/2)$.
-  The barrier at the origin is $a/4$ above either minimum, so a larger $a$ makes two sharper peaks and a harder crossing.
-  \vspace{0.3em}
-  Without killing, the stationary law is the Gibbs density proportional to $e^{-V_a/D}$.
-  Those points are sampled directly.
-  Eight geometric strengths from $a=0.25$ to $a=4$ are used for training, seven midpoints for interpolation, and $a\in\{0.2,4.5,5\}$ for extrapolation.
-  \note{The new content relative to the source paper starts on this slide. Say so.}
+\begin{frame}{Fokker--Planck: a Gibbs teacher, and a second score}
+  The network is the Euclidean map used for Keller--Segel. There is no torus lift and no periodic metric.
+  \vspace{0.35em}
+  \begin{itemize}
+    \item The condition is the well strength $a$, not a flow amplitude. Eight training values run from $0.25$ to $4$, with extrapolations at $0.2$, $4.5$, and $5$.
+    \item The teacher is drawn from the Gibbs density of a double well. No interacting trajectory is integrated.
+    \item Besides the cloud, we score the spectral gap of the same generator. A killing field $\kappa_a(x)=A(a)[1+\tanh(s/2)]$ then makes the two wells asymmetric, with basin masses in a ratio near $0.3$.
+  \end{itemize}
+  \note{This equation is not in the source paper. Say that, then the three design changes.}
 \end{frame}
 
-\begin{frame}{Equilibrium, killing, and the spectral gap}
-  On a $96\times 96$ histogram the two-step cloud has lower mean $W_2$ than MeanFlow at every plotted training strength and every plotted test strength.
-  A paired self-distance of independent reference clouds is the soft floor: an exact sampler would not score zero under this binning.
-  \vspace{0.4em}
-  The spectral gap is a second test.
-  Both models track it through the maximum near $a=0.45$ and the later decline.
+\begin{frame}{Fokker--Planck: the cloud improves, the gap does not}
+  On a $96\times 96$ histogram the two-step cloud has lower $W_2$ than MeanFlow at every plotted training strength and every plotted test strength, with and without killing.
+  Both generators reproduce the shift of mass toward the less-killed well.
+  \vspace{0.45em}
+  The spectral gap is the score the histogram does not replace.
+  Both models follow it through the maximum near $a=0.45$ and the later decline.
   At $a=5$ they still estimate a gap above $0.03$, against a finite-volume benchmark near $0.0035$.
-  The shape can look right while the relaxation rate is too fast.
   \vspace{0.4em}
-  With the killing field $\kappa_a(x)=A(a)\,[1+\tanh(s/2)]$, calibrated so the two basins hold mass in a ratio near $0.3$, both generators reproduce the asymmetry.
-  The two-step refinement again lowers the histogram distance across the tested strengths.
-  \note{Do not invent a mean $W_2$ for this section. The report gives the ordering and the gap, not one summary distance.}
+  The shape of the double well can look right while the relaxation rate is still too fast.
+  \note{Do not invent a mean $W_2$. The report gives the ordering and the gap.}
 \end{frame}
+
 
 % ============================================================
 \renewcommand{\sectime}{About four minutes}

@@ -39,6 +39,7 @@
 
 ### 变更
 
+- **`slides/final_report.tex`**：引言先讲粒子云的代价、DeepParticle 长程配对放不进训练，以及 MeanFlow 把云拉近后再做局部微调。成果用层流 \(x\)--\(z\) 对比图和四行表，不再只列方程。三个方程只保留各自的网络差别和结果：KPP 用周期特征与六块修正器，Keller--Segel 用欧氏坐标和四块修正器
 - **`docs/REPORT_TO_HARRY.pdf`、`docs/REPORT_TO_HARRY.zh.pdf` 与 `REPORT_for_Harry.zip`**：按保存后的中英文稿重新导出。压缩包仍是根目录英文稿加两张图
 - **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：开头先给四项结论。标题改为调度后降幅从 15% 收到 7.3%。第 3 节先写加重半区间后一步变差，再写抽样事实和 MeanFlow 的 FID 表
 - **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：按 Harry 的四问重写。四行、预算、\(\alpha\)、多种子改为表；只留学习率对照和 \((r,t)\) 两张图。第 3 节写入加重半区间的一次重训：一步 0.12277→0.13980，两步 0.12418→0.12327，修正器 0.10429→0.11465。一次约三小时，没有第二个种子，也没有扫混合比例
