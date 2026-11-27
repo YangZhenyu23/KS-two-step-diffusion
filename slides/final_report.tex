@@ -47,8 +47,8 @@
 \graphicspath{{fig/}{../kpp_ks/kpp_report/figs/}}
 % A tabular is an inline box. Without these breaks, the next sentence
 % continues on the table's baseline and collides with the rows.
-\BeforeBeginEnvironment{tabular}{\par}
-\AfterEndEnvironment{tabular}{\par}
+\BeforeBeginEnvironment{tabular}{\par\begin{center}}
+\AfterEndEnvironment{tabular}{\end{center}}
 
 \setbeamertemplate{headline}{%
   \begin{beamercolorbox}[wd=\paperwidth,ht=2.7ex,dp=1.05ex]{section in head/foot}%
@@ -149,7 +149,7 @@
     6 min & DeepParticle & Why a long-range coupling does not fit \\
     7 min & Two-step diffusion & MeanFlow moves the cloud; DP only fine-tunes \\
     14 min & Three equations & Each result, and the design that is special to it \\
-    4 min & Two parameters & Continuity in $(\sigma,\mu)$ \\
+    5 min & Two parameters & Forty cells for two hundred, then the $W_2$ surface \\
     3 min & Future work & The gap, and the next experiments \\
     \bottomrule
   \end{tabular}
@@ -298,7 +298,6 @@
 \begin{frame}{Alone, the corrector does not build the support}
   On the laminar sweep, the $16$-bin distance averaged over twenty amplitudes and seeds $88$, $89$, and $90$ is
   \vspace{0.35em}
-  \begin{center}
   \begin{tabular}{lccc}
     \toprule
     MeanFlow & DeepParticle alone & MeanFlow $+$ DP & From MeanFlow \\
@@ -306,7 +305,6 @@
     $0.3545$ & $0.4564$ & $0.1902$ & $46.35\%$ lower \\
     \bottomrule
   \end{tabular}
-  \end{center}
   \vspace{0.3em}
   DeepParticle alone is lower than MeanFlow only at $\sigma\in\{10,70,80,90\}$.
   The picture in the introduction is the same fact: alone, the corrector stays a round cloud.
@@ -617,78 +615,62 @@
 
 
 % ============================================================
-\renewcommand{\sectime}{About four minutes}
+\renewcommand{\sectime}{About five minutes}
 \section[Two Parameters]{Two Parameters}
 
-\begin{frame}{Interpolation needs a continuous target}
-  In the Keller--Segel experiments above, the network sees only $\sigma$.
-  Diffusivity $\mu$ and the chemotactic strength stay fixed.
-  Replacing the condition by $\eta=(\sigma,\mu)$ is legitimate only if the terminal cloud itself moves continuously.
-  \vspace{0.4em}
-  Let $\theta=(\sigma,\mu)$ and let $\nu_\theta$ be the laminar terminal cloud.
-  Training on a finite set of cells, and evaluating a cell in between, requires
+\begin{frame}{Two hundred cells, forty for training}
+  The condition is now $(\sigma,\mu)$.
+  The reference grid is the full product
   \[
-    \theta\;\longmapsto\;\nu_\theta
+    \sigma\in\{10,20,\ldots,200\}
+    \qquad
+    \mu\in\{0.1,\,0.158,\ldots,\,10\},
   \]
-  to be continuous in the same 16-bin histogram $W_2$ used to score the learned map.
-  A jump would put neighbouring parameters a finite distance apart, and no interpolation of the sampled cells would be meaningful.
-  \note{This section is about the teacher, before any network. Say that in the first sentence if the title is misread as another accuracy table.}
+  twenty amplitudes by ten geometric diffusivities, $200$ cells.
+  Every cell is a cloud of $10^5$ particles from the same initial sample.
+  \vspace{0.35em}
+  Training does not use all $200$.
+  A Latin hypercube keeps $40$ cells and leaves $160$ as the check that those $40$ stand for the grid.
+  \vspace{0.25em}
+  \small
+  \begin{tabular}{@{}lcc@{}}
+    \toprule
+     & Latin hypercube, $40$ & Random $40$ \\
+    \midrule
+    Times each $\sigma$ appears & $2$, every layer & $5$ of $20$ layers empty \\
+    Times each $\mu$ appears & $4$, every layer & from $1$ to $8$ \\
+    Minimum separation & $0.1053$ & $0.0526$ \\
+    \bottomrule
+  \end{tabular}
+  \vspace{0.3em}
+  \normalsize
+  The $40$ points are then spread, and $\sigma$ is not correlated with $\mu$.
+  A missing $\sigma$ layer would be a strip of the grid the network never sees.
+  \note{First the grid, then the rule: two per $\sigma$ column, four per $\mu$ row. The random column is why the rule is there.}
 \end{frame}
 
-\begin{frame}{The modulus suggested by the particle system}
-  Couple two copies of the Keller--Segel particles to the same initial cloud and the same Brownian motion.
-  The shear enters linearly in $\sigma$.
-  The diffusion coefficient is $\sqrt{2\mu}$, so that direction is square-root H\"older and is the weaker of the two.
-  The resulting modulus is
+\begin{frame}{The cloud has to move continuously}
+  A network trained on $40$ cells is asked for the cells in between.
+  That request is meaningful only if the terminal cloud itself depends continuously on $(\sigma,\mu)$, in the same $16$-bin histogram $W_2$ used to score the map.
+  \vspace{0.35em}
+  The particle system supplies the form of that dependence.
+  The shear is linear in $\sigma$, and the diffusion coefficient is $\sqrt{2\mu}$, so
   \[
     W_2(\nu_{\theta_1},\nu_{\theta_2})
     \le L\Big(|\sigma_1-\sigma_2|+\sqrt{|\mu_1-\mu_2|}\Big).
   \]
-  \vspace{0.4em}
-  This is the claim the next table is built to test.
-  It is not a curve fitted to the measurements.
-  The interaction kernel is fixed, and at the regularisation used here it does not change the form of the modulus.
-  \note{Lipschitz in $\sigma$, square-root in $\mu$. The table will not estimate $L$. It will show that the distance falls as the step falls.}
+  A jump would leave two nearby parameters a finite distance apart.
+  No choice of the $40$ cells could then control the cells between them.
+  \note{Continuity is a property of the teacher, before the network. The next slide is the picture of it.}
 \end{frame}
 
-\begin{frame}{A local test around $(\sigma,\mu)=(100,1)$}
-  Same $10^5$ initial particles. The distance is the 16-bin histogram $W_2$.
-  Two clouds at one $\theta$ sit at a floor of $0.0644$.
-  The step is $h=|\Delta\log_{10}\theta|$, and the last column removes that floor in quadrature.
-  \vspace{0.45em}
-  \small
-  \begin{tabular}{@{}llccc@{}}
-    \toprule
-    Direction & Neighbour & $h$ & $W_2$ & Corrected$/h$ \\
-    \midrule
-    $\sigma$, at $\mu=1$ & $\sigma=110$ & $0.0414$ & $0.1874$ & $4.25$ \\
-    $\sigma$, at $\mu=1$ & $\sigma=105$ & $0.0212$ & $0.1309$ & $5.38$ \\
-    $\sigma$, at $\mu=1$ & $\sigma=102.5$ & $0.0107$ & $0.0922$ & $6.16$ \\
-    $\mu$, at $\sigma=100$ & $\mu=2$ & $0.3010$ & $0.1466$ & $0.437$ \\
-    $\mu$, at $\sigma=100$ & $\mu=1.5$ & $0.1761$ & $0.1019$ & $0.449$ \\
-    $\mu$, at $\sigma=100$ & $\mu=1.25$ & $0.0969$ & $0.0723$ & $0.338$ \\
-    \bottomrule
-  \end{tabular}
-  \vspace{0.45em}
-  \normalsize
-  $W_2$ falls as $h$ falls. The ratio stays within a factor $1.45$ along $\sigma$ and $1.33$ along $\mu$.
-  A jump would send that ratio to infinity.
-  \note{The last $\mu$ step is only $0.008$ above the floor. A finer $\mu$ step would not be visible in this histogram. Say that before someone asks for one.}
-\end{frame}
-
-\begin{frame}{What continuity licenses}
-  Stage~I and Stage~II are compositions of continuous layers in $(\log_{10}\sigma,\log_{10}\mu)$.
-  Every cloud they can represent moves continuously with the condition.
-  \vspace{0.4em}
-  \begin{itemize}
-    \item If $\nu_\theta$ jumped, that function class would be the wrong class. Matching the sampled cells would not control the cells between them.
-    \item The measurement says the laminar teacher does not jump, on the same 16-bin distance the network is scored by.
-    \item The $\sigma$ direction is the steep one. The measured ratios along $\sigma$ are about an order of magnitude larger than those along $\mu$.
-  \end{itemize}
-  \vspace{0.35em}
-  Continuity makes interpolation a meaningful request.
-  It does not by itself choose how densely to sample a direction that is ten times steeper than the other.
-  \note{Hand off to future work on the last sentence. Do not quote a joint-model accuracy from a different note.}
+\begin{frame}{One valley, and no cliff}
+  \centering
+  \includegraphics[height=0.58\textheight]{continuity_surface.png}\\[0.12em]
+  {\scriptsize Height: $16$-bin $W_2$ from the cloud at $(\sigma,\mu)=(100,1)$ to each other cell of the $200$.
+  Same initial particles. The valley sits at that cell.
+  Moving in $\sigma$ climbs faster than moving in $\log_{10}\mu$.}
+  \note{A discontinuity would be a cliff that stays high while the parameter approaches $(100,1)$. The sheet has a single valley. $\sigma$ is the steep wall, $\mu$ is the gentle one.}
 \end{frame}
 
 % ============================================================

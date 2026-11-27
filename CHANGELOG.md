@@ -39,6 +39,7 @@
 
 ### 变更
 
+- **`slides/final_report.tex`**：双参数改为先讲 20 个 \(\sigma\) 乘 10 个 \(\mu\) 的 200 格，以及拉丁超立方抽出 40 格（每层 \(\sigma\) 两次、每层 \(\mu\) 四次）。连续依赖性用 \((100,1)\) 到其余格子的 16 箱 \(W_2\) 曲面。全稿表格居中
 - **`slides/final_report.tex`**：引言先讲粒子云的代价、DeepParticle 长程配对放不进训练，以及 MeanFlow 把云拉近后再做局部微调。成果用层流 \(x\)--\(z\) 对比图和四行表，不再只列方程。三个方程只保留各自的网络差别和结果：KPP 用周期特征与六块修正器，Keller--Segel 用欧氏坐标和四块修正器
 - **`docs/REPORT_TO_HARRY.pdf`、`docs/REPORT_TO_HARRY.zh.pdf` 与 `REPORT_for_Harry.zip`**：按保存后的中英文稿重新导出。压缩包仍是根目录英文稿加两张图
 - **`docs/REPORT_TO_HARRY.md` 与 `docs/REPORT_TO_HARRY.zh.md`**：开头先给四项结论。标题改为调度后降幅从 15% 收到 7.3%。第 3 节先写加重半区间后一步变差，再写抽样事实和 MeanFlow 的 FID 表
