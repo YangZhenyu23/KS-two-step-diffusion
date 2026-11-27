@@ -1,0 +1,13 @@
+# Beamer 中间文件。编译得到的 PDF 保留。
+*.aux
+*.fdb_latexmk
+*.fls
+*.nav
+*.out
+*.snm
+*.toc
+*.synctex.gz
+*.bbl
+*.blg
+*.xdv
+preview/
