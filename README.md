@@ -24,6 +24,7 @@
 | **C. 双参数全量**（v0.3） | **200 格 × 100k 粒子**（论文版），LHS-40，训练至收敛 | [`docs/FULLSCALE_REPORT.md`](docs/FULLSCALE_REPORT.md) |
 | **D. 样本效率三实验**（v0.5） | 全量对照 / 学习曲线 / LHS vs 随机（多种子） | [`docs/SAMPLE_EFFICIENCY.md`](docs/SAMPLE_EFFICIENCY.md) |
 | **E. 三条改进路径的否定实验**（v0.6） | W2 覆盖准则 / 更大网络 / Fourier 编码 —— **全部无效** | [`docs/DESIGN_CRITERION.md`](docs/DESIGN_CRITERION.md) |
+| **F. KPP 与 KS 基础项目** | 自写的 KPP 2D/3D 两步扩散，以及 `example/` 里的 KS 基础训练。与上游 KS3D 全量复现分开存放 | [`kpp_ks/README.md`](kpp_ks/README.md) |
 
 ### 改进尝试的边界（E 部分，全部为否定结果）
 
@@ -170,6 +171,7 @@
 │   ├── projection_hero*.png      #   论文风格 3x3 / 误差图 / 合并图
 │   └── projection_sweep_*.png    #   五个留出参数的三视图扫掠
 ├── twoparam/                     # B 的代码（7 个模块）
+├── kpp_ks/                       # F. KPP 2D/3D 与 KS 基础两步扩散（代码、权重、指标；不含粒子云）
 ├── docs/                         # 复现报告、论文对比、上游审计、连续性证明
 ├── scripts/                      # sync.ps1 + 11 个分析脚本
 ├── CHANGELOG.md                  # 变更日志（每次更新必登记）
@@ -360,7 +362,7 @@ git checkout <commit> -- <file>     # 取回某个文件的旧版本
 
 ## 已知局限
 
-- 只复现了 **3D**（`ks3d`）；上游还有 4D、KPP 2D/3D、cubic，本次未跑。
+- 上游 `paper_reproduction` 这条线只跑了 **KS3D**；4D 与 cubic 未跑。KPP 2D/3D 与 KS 基础训练在 [`kpp_ks/`](kpp_ks/README.md)，协议不同，不能和 `results/ks3d/` 直接横比。
 - 上游没有 KS **2D** 的论文口径实验（`deepparticle` 里的 `ks2d` 是通用管线，指标/协议不同，不能直接对比）。
 - 所有 W2 都是"16 箱/轴直方图 OT"，不是经验测度的真 W2；**跨网格比较无意义**。
 - 计时受笔记本功耗墙/温度影响，只反映本机状态。

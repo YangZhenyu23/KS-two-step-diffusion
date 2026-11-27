@@ -1,0 +1,215 @@
+"""Shared command-line runner used by run_2d.py and run_3d.py."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import List, Optional
+
+import torch
+
+from .config import Config, smoke_config
+from .data_io import EVAL_LEVELS, TRAIN_LEVELS
+from .eval_kpp import evaluate
+from .models import DPResNet, MFMLP
+from .plot_kpp import plot_cT_curve, plot_final_distributions, plot_w2_curve
+from .stage1 import generate_mf, load_model, train_stage1
+from .stage2 import generate_dp, train_stage2
+
+
+RUNS_ROOT = Path(__file__).resolve().parent / "runs"
+
+
+def _parse_levels(text: Optional[str], default: List[float]) -> List[float]:
+    if not text:
+        return list(default)
+    return [float(x) for x in text.split(",") if x.strip()]
+
+
+def _resolve_device(cfg: Config, requested: Optional[str]) -> None:
+    if requested:
+        cfg.stage1.device = requested
+        cfg.stage2.device = requested
+        cfg.evalt.device = requested
+        return
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    cfg.stage1.device = device
+    cfg.stage2.device = device
+    cfg.evalt.device = device
+
+
+def run(exp: str, mode: str, args: argparse.Namespace) -> Path:
+    exp = "kpp2d"
+    if mode == "smoke":
+        cfg = smoke_config(exp)
+        cfg.train_levels = _parse_levels(args.levels, [-2.0])
+        cfg.eval_levels = _parse_levels(args.eval_levels, [-2.0, -4.5])
+        cfg.run_name = "smoke"
+    else:
+        cfg = Config(exp=exp, run_name=args.run_name or "run")
+        cfg.train_levels = _parse_levels(args.levels, TRAIN_LEVELS)
+        cfg.eval_levels = _parse_levels(args.eval_levels, EVAL_LEVELS)
+
+    _resolve_device(cfg, args.device)
+    torch.manual_seed(cfg.stage1.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(cfg.stage1.seed)
+    # 2D defaults live in Stage2Config (6-block, no wrap, shorter refresh).
+
+    run_dir = RUNS_ROOT / exp / cfg.run_name
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "config.json").write_text(
+        json.dumps(cfg.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    if getattr(args, "pair_mode", None):
+        cfg.stage1.pair_mode = args.pair_mode
+    if getattr(args, "stage1_lr", None) is not None:
+        cfg.stage1.lr = float(args.stage1_lr)
+    if getattr(args, "stage1_steps", None) is not None:
+        cfg.stage1.steps = int(args.stage1_steps)
+    if getattr(args, "endpoint_weight", None) is not None:
+        cfg.stage1.endpoint_weight = float(args.endpoint_weight)
+    # Stage II weights. The ORACLE experiment showed the 36-bin histogram term
+    # sits on a plateau (a perfect cloud still scores ~0.054 of its 0.063
+    # starting value), so its 1.0 weight drowns the EMD signal at 0.15.
+    for flag, attr in (
+        ("hist_weight", "hist_weight"),
+        ("residual_weight", "residual_weight"),
+        ("ot_weight", "ot_weight"),
+    ):
+        val = getattr(args, flag, None)
+        if val is not None:
+            setattr(cfg.stage2, attr, float(val))
+    if getattr(args, "displacement_cap", None) is not None:
+        cfg.stage2.displacement_cap = float(args.displacement_cap)
+    if getattr(args, "gamma_refresh", None) is not None:
+        cfg.stage2.gamma_refresh = int(args.gamma_refresh)
+    if getattr(args, "batch_refresh", None) is not None:
+        cfg.stage2.batch_refresh = int(args.batch_refresh)
+    if getattr(args, "adaptive_power", None) is not None:
+        cfg.stage1.adaptive_power = float(args.adaptive_power)
+    if getattr(args, "mf_width", None) is not None:
+        cfg.stage1.width = int(args.mf_width)
+    if getattr(args, "mf_depth", None) is not None:
+        cfg.stage1.depth = int(args.mf_depth)
+    if getattr(args, "mf_frequencies", None) is not None:
+        cfg.stage1.n_frequencies = int(args.mf_frequencies)
+    # Persist the effective config after CLI overrides so a run can always be
+    # reproduced from its own config.json.
+    (run_dir / "config.json").write_text(
+        json.dumps(cfg.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    dim = 2 if exp == "kpp2d" else 3
+    stage1_model = MFMLP(
+        dim=dim,
+        width=getattr(cfg.stage1, "width", 64),
+        depth=getattr(cfg.stage1, "depth", 5),
+        n_frequencies=getattr(cfg.stage1, "n_frequencies", 4),
+    )
+    dp_model = DPResNet(
+        dim=dim,
+        depth=cfg.stage2.depth,
+        alpha=cfg.stage2.alpha,
+        wrap_output=cfg.stage2.wrap_output,
+        displacement_cap=getattr(cfg.stage2, "displacement_cap", None),
+    )
+
+    if mode in ("train-stage1", "all", "smoke"):
+        train_stage1(cfg, stage1_model, run_dir, levels=cfg.train_levels)
+
+    if mode in ("train-stage2", "all", "smoke"):
+        device = torch.device(cfg.stage1.device)
+        stage1_model = load_model(stage1_model, run_dir / "stage1_final.pt", device)
+        train_stage2(cfg, stage1_model, dp_model, run_dir, levels=cfg.train_levels)
+
+    if mode in ("evaluate", "all", "smoke"):
+        device = torch.device(cfg.evalt.device)
+        if not (run_dir / "stage1_final.pt").exists():
+            raise FileNotFoundError(
+                "stage1_final.pt is missing; run train-stage1 before evaluate"
+            )
+        if not (run_dir / "stage2_final.pt").exists():
+            raise FileNotFoundError(
+                "stage2_final.pt is missing; run train-stage2 before evaluate"
+            )
+        stage1_model = load_model(stage1_model, run_dir / "stage1_final.pt", device)
+        dp_model.load_state_dict(torch.load(run_dir / "stage2_final.pt", map_location=device))
+        dp_model = dp_model.to(device)
+        results = evaluate(
+            cfg,
+            stage1_model,
+            dp_model,
+            run_dir,
+            levels=cfg.eval_levels,
+            compute_cT=(mode != "smoke"),
+        )
+        try:
+            plot_w2_curve(results, run_dir / "w2_curve.png")
+            if mode != "smoke":
+                plot_cT_curve(results, run_dir / "cT_curve.png")
+            plot_final_distributions(
+                cfg.exp,
+                stage1_model,
+                dp_model,
+                run_dir,
+                levels=[cfg.evalt.cT_sigma],
+                device=device,
+                bins=cfg.evalt.bins,
+            )
+        except Exception as exc:  # plotting should never block metric output
+            print(f"plot skipped: {exc}")
+
+    return run_dir
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Two-Step Diffusion KPP runner")
+    parser.add_argument(
+        "--mode",
+        choices=["smoke", "train-stage1", "train-stage2", "evaluate", "all"],
+        default="all",
+    )
+    parser.add_argument("--levels", default=None, help="comma-separated train sigma")
+    parser.add_argument("--eval-levels", default=None, help="comma-separated eval sigma")
+    parser.add_argument("--run-name", default=None)
+    parser.add_argument("--device", default=None, help="cuda or cpu")
+    parser.add_argument(
+        "--pair-mode",
+        default=None,
+        choices=["independent", "ot_periodic", "ot_global"],
+        help="Stage I pairing. ot_global = one global assignment, no chunk noise.",
+    )
+    parser.add_argument("--stage1-lr", default=None, help="override Stage I learning rate")
+    parser.add_argument("--stage1-steps", default=None, help="override Stage I step count")
+    parser.add_argument(
+        "--endpoint-weight",
+        default=None,
+        help="weight on the explicit u(eps,0,1) endpoint term (0 = historical default)",
+    )
+    parser.add_argument("--hist-weight", default=None, help="Stage II histogram term weight")
+    parser.add_argument("--residual-weight", default=None, help="Stage II residual penalty")
+    parser.add_argument("--ot-weight", default=None, help="Stage II mini-batch EMD weight")
+    parser.add_argument(
+        "--displacement-cap",
+        default=None,
+        help="hard bound on |f(x)-x| in radians for the DP corrector (None = unbounded)",
+    )
+    parser.add_argument(
+        "--gamma-refresh",
+        default=None,
+        help="re-solve the OT coupling every N steps (large N = stationary objective)",
+    )
+    parser.add_argument(
+        "--adaptive-power",
+        default=None,
+        help="adaptive per-particle weighting exponent (paper uses 0.25; 0 = plain MSE)",
+    )
+    parser.add_argument("--mf-width", default=None, help="Stage I MLP width (paper: 64)")
+    parser.add_argument("--mf-depth", default=None, help="Stage I MLP depth (paper: 5)")
+    parser.add_argument(
+        "--mf-frequencies", default=None, help="Fourier features for (r,t,sigma) (paper: compact)"
+    )
+    return parser

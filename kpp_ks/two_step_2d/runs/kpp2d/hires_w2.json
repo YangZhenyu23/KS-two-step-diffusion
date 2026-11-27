@@ -1,0 +1,45 @@
+{
+  "reference": "KPP data/data/kpp2d_hires, GPU FK, M=200000, T=4096, seed=666",
+  "models": {
+    "meanflow": "two_step_2d/runs/kpp2d/w2_ft_mf8/mf_l-3.0_best.pt",
+    "deepparticle": "two_step_2d/runs/kpp2d/w2_ft_dp8/dp_l-3.0_best.pt"
+  },
+  "eval": "100000 model particles vs first 100000 reference particles; floor is the two reference halves",
+  "levels": {
+    "-3.0": {
+      "c_hat": 1.025,
+      "floor_bins72": 0.0392,
+      "floor_bins144": 0.0305,
+      "mf_bins72": 0.0582,
+      "dp_bins72": 0.0587,
+      "mf_bins144": 0.0473,
+      "dp_bins144": 0.0474,
+      "paper_mf": 0.0639,
+      "paper_dp": 0.0106,
+      "bins72_vs_n": {
+        "10000": {"floor": 0.0769, "mf": 0.0847, "dp": 0.0830},
+        "25000": {"floor": 0.0591, "mf": 0.0684, "dp": 0.0687},
+        "50000": {"floor": 0.0454, "mf": 0.0617, "dp": 0.0617},
+        "100000": {"floor": 0.0392, "mf": 0.0582, "dp": 0.0587}
+      },
+      "hires_finetune": {
+        "checkpoint": "two_step_2d/runs/kpp2d/w2_ft_hires/mf_best.pt",
+        "probe_n20000_vs_holdout40000": {"step0": 0.0687, "best": 0.0600, "floor": 0.0623},
+        "bins72": {
+          "50000": {"floor": 0.0454, "before": 0.0617, "after": 0.0511},
+          "100000": {"floor": 0.0392, "before": 0.0582, "after": 0.0461}
+        },
+        "bins144_100000": {"floor": 0.0305, "before": 0.0473, "after": 0.0365}
+      }
+    },
+    "-4.5": {
+      "c_hat": 0.7843,
+      "floor_bins72": 0.04,
+      "floor_bins144": 0.0306,
+      "mf_bins72": 0.1728,
+      "dp_bins72": 0.1665,
+      "paper_mf": 0.1176,
+      "paper_dp": 0.0456
+    }
+  }
+}
