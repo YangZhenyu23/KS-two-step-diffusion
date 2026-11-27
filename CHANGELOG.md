@@ -33,6 +33,7 @@
 
 ### 移除
 
+- **`kpp_ks/kpp_report/` 下的 LaTeX 中间文件**（`.aux`、`.fdb_latexmk`、`.fls`、`.out`）：由 `kpp_ks/.gitignore` 继续排除
 - **`docs/REPLY_TO_HARRY.md`、`docs/REPLY_TO_HARRY.zh.md` 与 `scripts/reply_figures.py` 及 `fig_reply_*.png`**：由 `docs/REPORT_TO_HARRY.*` 取代。旧稿按节复述仓库做过什么，图也把不同格子数的结果画在同一条轴上
 
 ### 变更
