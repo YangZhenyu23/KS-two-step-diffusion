@@ -506,88 +506,81 @@
   \note{The held-out row is the result. The caveat is one sentence, so the number is not later quoted as a three-seed fact.}
 \end{frame}
 
-\begin{frame}{KPP: the network has to see the period}
-  The loop is unchanged. The state lives on a torus, so three pieces of the Keller--Segel design are replaced.
+\begin{frame}{KPP: an eigenvalue, stored as a measure}
+  The concentration in a periodic flow satisfies
+  \[
+    \partial_t u+v\cdot\nabla u=\kappa\Delta u+r u(1-u).
+  \]
+  The minimal speed in a direction \(e\) is the variational eigenvalue
+  \[
+    c^*(e)=\inf_{\lambda>0}\frac{\mu(\lambda)}{\lambda},
+  \]
+  where \(\mu(\lambda)\) is the principal eigenvalue of a twisted diffusion on the torus.
   \vspace{0.35em}
-  \begin{itemize}
-    \item On the two-dimensional map and on the corrector, each coordinate is lifted to $(x,\sin x,\cos x)$, so the ends of the period are one point. Keller--Segel reads the raw coordinates.
-    \item Stage~I pairs particles by periodic optimal transport, and the path can follow the geodesic on the torus rather than a Euclidean straight line.
-    \item The corrector has six residual blocks. The Keller--Segel corrector has four. The ground metric of its coupling is the periodic distance.
-  \end{itemize}
-  \vspace{0.3em}
-  The teacher is a resampled Feynman--Kac cloud, stored as a warm start for the front speed.
-  Here $\sigma=\kappa$. Training stops at $-\log_2\sigma=3.75$; the three levels out to $4.50$ are extrapolations.
-  \note{The lift is the design point. Do not return to the MeanFlow identity.}
+  That eigenvalue is carried by an invariant measure.
+  The network learns the measure.
+  A Feynman--Kac system started from the learned cloud returns \(\mu(\lambda)\), and therefore the speed.
+  Here \(\sigma=\kappa\).
+  \note{The equation, then one sentence: we do not learn the front. We learn the measure that carries its eigenvalue.}
 \end{frame}
 
-\begin{frame}{Two-dimensional ridge and distance}
+\begin{frame}{How close the learned measure is}
   \begin{columns}[c,onlytextwidth]
     \begin{column}{0.40\textwidth}
       \raggedright
       \small
-      A uniform cold start stays between $1.05$ and $1.17$.
-      \vspace{0.35em}
+      Periodic \(W_2\) on \(\mathbb{T}^2\).
+      A uniform cloud stays between \(1.05\) and \(1.17\).
+      \vspace{0.3em}
       \begin{tabular}{@{}lcc@{}}
         \toprule
-        $-\log_2\sigma$ & MF & DP \\
+        \(-\log_2\sigma\) & MF & DP \\
         \midrule
-        $2.00$ & $0.0962$ & $0.1061$ \\
-        $3.75$ & $0.1424$ & $0.1368$ \\
-        $4.50$ & $0.2629$ & $0.2326$ \\
+        \(2.00\) & \(0.0962\) & \(0.1061\) \\
+        \(3.75\) & \(0.1424\) & \(0.1368\) \\
+        \(4.50\) & \(0.2629\) & \(0.2326\) \\
         \midrule
-        Mean & $0.1434$ & $0.1345$ \\
+        Mean & \(0.1434\) & \(0.1345\) \\
         \bottomrule
       \end{tabular}
-      \vspace{0.3em}
-      Lower on $8$ of $11$ levels, including every extrapolation.
-      The paper's MeanFlow mean is $0.0769$.
     \end{column}
     \begin{column}{0.58\textwidth}
       \centering
-      \includegraphics[trim=4.20in 0 0 0,clip,width=\linewidth]{fig6_w2_2d.png}\\[0.15em]
+      \includegraphics[trim=4.20in 0 0 0,clip,width=\linewidth]{fig6_w2_2d.png}\\[0.1em]
       {\scriptsize Dashed line: end of training.}
     \end{column}
   \end{columns}
-  \note{Read the rise past the dashed line, then $0.0769$. The curve is ours. The gap to the paper is still open.}
+  \note{Cold start is above \(1\). The learned measure is near \(0.14\). The rise past the dashed line is the extrapolation.}
 \end{frame}
 
-\begin{frame}{The ridge the distance is measuring}
+\begin{frame}{The invariant measure on the torus}
   \centering
-  \includegraphics[height=0.60\textheight]{fig5_invariant_2d.png}\\[0.12em]
-  {\scriptsize Top: training, $\sigma=2^{-3.75}$.
-  Bottom: extrapolation, $\sigma=2^{-4}$.
+  \includegraphics[height=0.62\textheight]{fig5_invariant_2d.png}\\[0.1em]
+  {\scriptsize Top: training, \(\sigma=2^{-3.75}\).
+  Bottom: extrapolation, \(\sigma=2^{-4}\).
   Columns: MeanFlow, corrector, Feynman--Kac reference.}
-  \note{MeanFlow finds the wavy band. The reference is grainier. The corrector stays on the band. The miss is geometric.}
+  \note{This is the measure whose eigenvalue we want. MeanFlow finds the wavy ridge. The corrector stays on it.}
 \end{frame}
 
-\begin{frame}{Three-dimensional result at $\sigma=2^{-4.5}$}
-  \centering
-  \includegraphics[height=0.58\textheight]{fig8_projections_3d.png}\\[0.1em]
-  {\scriptsize Columns $x$--$y$, $x$--$z$, $y$--$z$.
-  The scored distance is the $x$--$z$ projection:
-  MeanFlow $0.1293$, corrector $0.1065$, against the paper's $0.1312$ and $0.0294$.
-  At $-\log_2\sigma=4.50$ the two values are $0.1582$ and $0.1366$.}
-  \note{MeanFlow matches the paper. The corrector improves ten of eleven levels and does not reach $0.0294$. The middle column is the one that is scored.}
-\end{frame}
-
-\begin{frame}{A matching speed is not a resolved ridge}
-  At $\sigma=2^{-4.5}$ the Feynman--Kac speeds are $\hat c=0.7842$ on $\mathbb{T}^2$ and $0.6147$ on $\mathbb{T}^3$.
-  \vspace{0.3em}
-  \small
-  \begin{tabular}{@{}lccc@{}}
-    \toprule
-     & Cold start & MeanFlow at $T=1$ & Corrector at $T=128$ \\
-    \midrule
-    $\mathbb{T}^2$ & near $0.51$ & $0.8180$ & $0.7848$ \\
-    $\mathbb{T}^3$ & near $0.36$ & $0.6148$ & $0.6142$ \\
-    \bottomrule
-  \end{tabular}
-  \vspace{0.4em}
-  \normalsize
-  A uniform cloud needs on the order of $10^2$ generations to reach the reference speed.
-  The learned warm start is already there, and in three dimensions it is there at the first generation.
-  The histogram error at those same states is still of order $10^{-1}$.
-  \note{Slow down. The speed can be right while the ridge is still too smooth.}
+\begin{frame}{The eigenvalue converges at once}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.49\textwidth}
+      \centering
+      {\small \(\mathbb{T}^2\), long run \(0.7842\)}\\[0.15em]
+      \includegraphics[trim=3.85in 0 0 0,clip,width=\linewidth]{fig7_eigen_2d.png}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \centering
+      {\small \(\mathbb{T}^3\), long run \(0.6147\)}\\[0.15em]
+      \includegraphics[trim=3.85in 0 0 0,clip,width=\linewidth]{fig10_eigen_3d.png}
+    \end{column}
+  \end{columns}
+  \vspace{0.2em}
+  {\scriptsize \(\sigma=2^{-4.5}\).
+  A uniform cloud needs about \(10^2\) generations.
+  In three dimensions the learned cloud is already \(0.6148\) at the first generation, against \(0.6147\).
+  In two dimensions it is \(0.7841\) by generation \(128\), against \(0.7842\).}
+  \note{Point at the flat warm-start curves against the climbing cold start. This is the eigenvalue the measure was learned for.}
 \end{frame}
 
 \begin{frame}{Fokker--Planck: a Gibbs teacher, and a second score}
@@ -722,7 +715,7 @@
   \begin{enumerate}
     \item A frozen one-step MeanFlow map, followed by a near-identity optimal-transport corrector, emits a parameter-conditioned cloud with two evaluations.
     \item On laminar Keller--Segel that composition lowers the 16-bin distance from $0.3545$ to $0.1902$, and it is the best of the three maps at every amplitude.
-    \item On KPP the same warm start reaches the front speed in a few generations, while the shape error shows that the ridge is not yet the reference ridge.
+    \item On KPP the learned measure puts the front-speed eigenvalue on the long-run value at once. A uniform cloud still needs about \(10^2\) generations.
     \item The laminar teacher depends continuously on $(\sigma,\mu)$, with the steeper response in $\sigma$. Interpolation is a well-posed request. A uniform grid is not yet a good design.
   \end{enumerate}
   \vspace{0.55em}
